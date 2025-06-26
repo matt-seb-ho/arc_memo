@@ -1,0 +1,6 @@
+name: arc-agi
+split: train 
+# split options: {train, validation, barc_seeds, not_barc_seeds}
+# where everything is from the public set
+# barc_seeds is the 160 manually annotated problems from public train
+# not_barc_seeds is train - barc_seeds

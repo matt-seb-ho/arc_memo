@@ -1,0 +1,23 @@
+defaults:
+  - default
+  - _self_
+
+data:
+  dataset: arc-agi
+  split: barc_seeds
+  problem_ids: "data/lesson_hint_uids.json"
+
+prompt:
+  include_hint: true
+  test_hint_file: "data/vlm_inputs/concise_descriptions.json"
+
+model:
+  provider: openai
+  name: o3-mini-2025-01-31
+
+generation:
+  n: 1
+  temperature: 0.3
+  max_tokens: 24000
+  top_p: 1
+  batch_size: 16

@@ -1,0 +1,24 @@
+defaults:
+  - default
+  - _self_
+
+data:
+  dataset: arc-agi
+  split: validation
+  # problem_ids: "data/validation_n100_uids.json"
+  problem_ids: data/vlm_desc_retrieval/validation_n100_uids.json
+
+prompt:
+  include_hint: true
+  test_hint_file: "data/validation_retrieved_concept_k3.json"
+
+model:
+  provider: openai
+  name: o3-mini-2025-01-31
+
+generation:
+  n: 1
+  temperature: 0.3
+  max_tokens: 32000
+  top_p: 1
+  batch_size: 16

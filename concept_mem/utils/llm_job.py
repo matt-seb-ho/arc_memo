@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def run_llm_job(
     prompts: list[str],
-    metadata: list[str | list[str] | namedtuple],
+    metadata: list[str | tuple],
     llm_client: LLMClient,
     model: str,
     gen_cfg: GenerationConfig,

@@ -1,0 +1,17 @@
+problems: null # all barc seeds
+thought_processes: data/thought_process/thought_process.json
+
+examples: 
+    retrieval: 
+        execute: false       # Set to true to use retrieval
+        embed_model: "GPT"   # ('all_miniLM', 'GPT', 'local_embed_LLM')
+        cache_path: "./data/lesson_retrieval_cache.json"
+
+        initialize_barc_seed: false # Set to true to include all VARC into the pool
+
+        top_k: 3
+    example_ids: 
+      - cf98881b # subsection_example,
+      - 4093f84a # bar_example,
+      - 045e512c # repeat_example,
+example_file: data/icl_examples/lesson_from_trace/lessons_dict.json

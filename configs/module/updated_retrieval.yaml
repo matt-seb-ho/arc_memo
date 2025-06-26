@@ -1,0 +1,13 @@
+top_k: 5
+problems: data/vlm_desc_retrieval/validation_n100_uids.json
+description_file: outputs/2025-05-27/14-51-25/descriptions.json # gpt-4.1
+lesson_file: data/lessons/from_trace_fs/parsed_lessons.json
+situation_only: false
+use_hint_v2: false
+
+# choices: null (single), "concatenate", "llm_summary"
+ensemble_method: null
+
+summary_generation:
+  temperature: 0.0
+  max_tokens: 1024

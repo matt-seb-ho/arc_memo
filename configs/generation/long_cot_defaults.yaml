@@ -1,0 +1,7 @@
+n: 1
+temperature: 0.3
+max_tokens: 32000
+top_p: 1
+batch_size: 32
+seed: 88
+ignore_cache: false

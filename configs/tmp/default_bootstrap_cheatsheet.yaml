@@ -1,0 +1,18 @@
+defaults:
+  - _self_
+  - override hydra/job_logging: custom
+
+data:
+  split: barc_seeds
+  problems: null # all barc seeds
+  limit_problems: null
+  thought_process_file: data/thought_process/thought_process.json
+  hint_file_target_uids: data/vlm_desc_retrieval/validation_n100_uids.json
+
+model:
+  provider: openai
+  name: gpt-4.1
+
+generation:
+  temperature: 0.3
+  max_tokens: 4096

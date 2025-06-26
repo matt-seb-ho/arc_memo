@@ -1,0 +1,6 @@
+n: 1
+temperature: 0.3
+max_tokens: 8192
+top_p: 1
+batch_size: 8
+seed: 88

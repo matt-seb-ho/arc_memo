@@ -1,0 +1,13 @@
+problem_solutions: null
+
+# problems: null # all barc seeds
+example_thought_processes: data/thought_process/thought_process.json
+thought_processes: data/thought_process/thought_process.json
+examples: 
+  - cf98881b # subsection_example,
+  - 4093f84a # bar_example,
+  - 045e512c # repeat_example,
+example_file: data/icl_examples/lesson_from_trace/lessons_dict.json
+
+retrieve_examples: false
+

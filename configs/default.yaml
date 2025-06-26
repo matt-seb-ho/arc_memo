@@ -1,0 +1,99 @@
+defaults:
+  - _self_
+  - model: deepseek-chat
+  - data: barc
+  - generation: gen_default
+  - module: null
+  - override hydra/job_logging: custom
+
+puzzle_retry:
+  _target_: detective.evaluation.retry_policy.RetryPolicy
+  max_passes: 3 # includes the first try (i.e. 3 means you get 1 initial try + up to 2 retries)
+  criterion: "train" # options: "train", "test", "all"
+  error_feedback: "all"   # options: "first", "all"
+  num_feedback_passes: 1 # -1 for all
+  include_past_outcomes: true # whether attempts before most recent should show outcomes
+  lesson_file: data/lessons/from_trace_fs/parsed_lessons.json
+  reselect_concepts: false
+
+data:
+  dataset: barc0/200k_HEAVY_gpt4o-description-gpt4omini-code_generated_problems
+  split: train
+  num_problems: 500
+  random_seed: 88
+  # str | list[int | str] | null
+  # - str: path made relative to a list[int | str]
+  # - list[int | str]: list of indices (barc) or problem uids (arc-agi)
+  problem_ids: null 
+
+prompt:
+  # ICL examples
+  include_examples: false
+  num_examples: null
+  example_ids: null # see data.problem_ids documentation
+
+  # common lib
+  include_common_lib: false
+
+  # hint
+  # - file should be path (relative to repo root) to a json storing a list[str]
+  include_hint: false
+  hint_file: null
+  test_hint_file: null
+  hint_template_key: selected # options: "min", "selected", "all_hints"
+  require_hint_citations: false
+
+  # ground truth concept (barc)
+  include_concepts: false
+
+  # problem data 
+  # - a json path pointing to a dict[str, dict[str, dict]], where
+  #   - the outermost key is problem id,
+  #   - the second key is a prompt variation id,
+  #   - the innermost keys are prompt specific data (e.g. "hint", "description")
+  # - this supercedes the hint_file and test_hint_file settings
+  problem_data: null
+
+  # fixed prompt settings
+  instruction_key: default # options: "default", "concise", "cite"
+  system_prompt_key: default # options: "default", "concise"
+
+  # file override
+  file: null
+
+model:
+  provider: deepseek
+  name: deepseek-chat
+
+generation:
+  _target_: llmplus.GenerationConfig
+  n: 1
+  temperature: 0.6
+  max_tokens: 1024
+  top_p: 1
+  batch_size: 16
+  ignore_cache: false
+  # whether or not each request for n completions needs to be expanded into n requests
+  # - using `true` forces it to expand regardless if the API supports n > 1 in a single request
+  # - using `false` defers to the API's capability (as defined in Provider class)
+  expand_multi: null 
+  seed: 88
+
+long_cot_selection:
+  _target_: detective.evaluation.runner.LongCoTSelectionConfig
+  use_lcs: false
+  concept_memory_file: "data/anno_scheme/concept_memory_v5_g41.json"
+  annotation_file: "data/anno_scheme/anno_v5_g41_merged.json"
+  detailed_examples: 3
+  max_examples: 5
+  pass_initial_analysis_notes: null # null means ensemble both ways
+  selected_concepts_file: null
+
+# artifact from BARC code, should always be false
+transpose: false
+excluded_concepts:
+  - color change # apparently, too common and misleading
+# dry run: only write prompts to file
+dry_run: false
+# debugging flag
+debug: false

@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - /model: gpt41
+  - /data: val100
+  - /generation: gen_default
+  - override /hydra/job_logging: custom
+
+mode: image_caption # options: image_caption; TODO: text, text_object
+concept_list: 

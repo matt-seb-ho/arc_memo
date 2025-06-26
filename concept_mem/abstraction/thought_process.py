@@ -152,7 +152,7 @@ async def async_main(cfg: DictConfig) -> None:
         dotenv_path=REPO_ROOT / ".env",
     )
 
-    problem_solutions = cfg.concept_abstraction.problem_solutions
+    problem_solutions = cfg.abstraction.problem_solutions
     if problem_solutions is None:
         problem_solutions = {uid: "" for uid in load_arc_data("barc_seeds")}
     else:

@@ -1,0 +1,7 @@
+# choices: train, validation, barc_seeds
+split: validation
+puzzle_file: "data/vlm_desc_retrieval/validation_n100_uids.json"
+num_puzzles: 100
+seed: 88
+max_tokens: 1024
+
