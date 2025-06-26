@@ -7,7 +7,7 @@ defaults:
   - override hydra/job_logging: custom
 
 puzzle_retry:
-  _target_: detective.evaluation.retry_policy.RetryPolicy
+  _target_: concept_mem.evaluation.retry_policy.RetryPolicy
   max_passes: 3 # includes the first try (i.e. 3 means you get 1 initial try + up to 2 retries)
   criterion: "train" # options: "train", "test", "all"
   error_feedback: "all"   # options: "first", "all"
@@ -80,7 +80,7 @@ generation:
   seed: 88
 
 long_cot_selection:
-  _target_: detective.evaluation.runner.LongCoTSelectionConfig
+  _target_: concept_mem.evaluation.driver.LongCoTSelectionConfig
   use_lcs: false
   concept_memory_file: "data/anno_scheme/concept_memory_v5_g41.json"
   annotation_file: "data/anno_scheme/anno_v5_g41_merged.json"

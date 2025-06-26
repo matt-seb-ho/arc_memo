@@ -134,15 +134,15 @@ class EvaluationRunner:
                 else:
                     backup_lcs_entry = {}
                 lcs_entry = lcs_initial_res.get(puzzle_id, backup_lcs_entry)
-                prompts = self.build_initial_lcs_prompts(
+                puzzle_prompts = self.build_initial_lcs_prompts(
                     puzzle=problem,
                     lcs_entry=lcs_entry,
                 )
             else:
-                prompts = self.prompt_builder.build_initial_prompts(
+                puzzle_prompts = self.prompt_builder.build_initial_prompts(
                     problem=problem,
                 )
-            for branch_id, prompt in prompts.items():
+            for branch_id, prompt in puzzle_prompts.items():
                 self.initial_prompts[(puzzle_id, branch_id)] = prompt
                 metadata.append((puzzle_id, branch_id))
                 prompts.append(prompt)

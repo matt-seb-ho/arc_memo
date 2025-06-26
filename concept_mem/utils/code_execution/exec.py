@@ -103,29 +103,30 @@ def _worker(
     # Override import to restrict modules
     safe_builtins["__import__"] = _safe_import
 
-    buf_out = io.StringIO()
-    buf_err = io.StringIO()
+    # buf_out = io.StringIO()
+    # buf_err = io.StringIO()
 
     ctx = {"__builtins__": safe_builtins}
     try:
-        with redirect_stdout(buf_out), redirect_stderr(buf_err):
-            exec(source, ctx)
+        # with redirect_stdout(buf_out), redirect_stderr(buf_err):
+        #     exec(source, ctx)
+        exec(source, ctx)
         if return_var_name not in ctx:
             raise RuntimeError(f"'{return_var_name}' not found in execution context")
         return ExecutionResult(
             status="ok",
             output=ctx[return_var_name],
             error=None,
-            stdout=buf_out.getvalue(),
-            stderr=buf_err.getvalue(),
+            # stdout=buf_out.getvalue(),
+            # stderr=buf_err.getvalue(),
         )
     except Exception as e:
         return ExecutionResult(
             status="error",
             output=None,
             error=str(e),
-            stdout=buf_out.getvalue(),
-            stderr=buf_err.getvalue(),
+            # stdout=buf_out.getvalue(),
+            # stderr=buf_err.getvalue(),
         )
 
 

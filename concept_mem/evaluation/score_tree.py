@@ -9,7 +9,7 @@ from concept_mem.evaluation.solution_tree import (
     SolutionTree,
 )
 from concept_mem.types import IOPair, Problem
-from concept_mem.utils import extract_code_block_contents
+from concept_mem.utils import extract_python_block
 from concept_mem.utils.code_execution.exec_transform import execute_transforms
 
 # -----------------------------------------------------------------------------
@@ -30,7 +30,7 @@ def evaluate_solution_on_io_pairs(
         input_grids=input_grids,
         timeout=2.0,
         function_name="transform",
-        max_workers=8,
+        max_workers=1,
     )
     output_list = []
     for i, tr in enumerate(transform_results):
@@ -54,7 +54,7 @@ def evaluate_solution_on_io_pairs(
         # add to output list
         output_list.append(
             IOPairExecutionResult(
-                output_grid=output_grid,
+                output=output_grid,
                 correct=binary_score,
                 error=tr.error,
                 stdout=tr.stdout,
@@ -67,7 +67,7 @@ def score_problem_attempt(
     problem: Problem,
     attempt: SolutionStep,
 ) -> None:
-    code = extract_code_block_contents(attempt.completion)
+    code = extract_python_block(attempt.completion)
     if code is None:
         attempt.code_extracted = False
         return
