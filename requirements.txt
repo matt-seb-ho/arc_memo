@@ -1,0 +1,24 @@
+orjson
+arckit
+numpy
+pandas
+datasets
+tqdm
+openai
+diskcache
+orjson
+tiktoken
+tenacity
+python-dotenv
+arc-py @ git+https://github.com/xu3kev/arc-py.git@bdad42e595c395decac6e40d9b96c33e7d52656f
+arckit
+drawsvg
+pillow
+ipython
+psutil
+func_timeout
+hydra-core
+omegaconf
+PyYAML
+chromadb
+llmpus @ git+https://github.com/matt-seb-ho/llm_wrapper.git
