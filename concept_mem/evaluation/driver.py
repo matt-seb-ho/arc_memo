@@ -175,8 +175,6 @@ class EvaluationRunner:
                 score_problem_attempt(problems[puzzle_id], step)
                 thread.steps.append(step)
 
-        self.compute_and_report_scores()
-
     async def retry_solving_step(
         self, problems: dict[str, Problem], output_dir: Path
     ) -> None:
@@ -268,8 +266,6 @@ class EvaluationRunner:
             score_problem_attempt(problems[puzzle_id], step)
             thread.steps.append(step)
 
-        self.compute_and_report_scores()
-
     async def _run_iteration(
         self,
         problems: dict[str, Problem],
@@ -281,6 +277,7 @@ class EvaluationRunner:
             await self.initial_solve_step(problems, self.output_dir)
         else:
             await self.retry_solving_step(problems, output_dir)
+        self.compute_and_report_scores(iteration, output_dir)
 
     def build_initial_lcs_prompts(
         self,
