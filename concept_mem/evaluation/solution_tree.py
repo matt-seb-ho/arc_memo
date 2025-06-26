@@ -34,7 +34,7 @@ class SolutionStep:
     # - whether the solution was validated
     validated: bool = False
     # - whether we extracted a markdown code block from the completion
-    code_extracted: bool = False
+    parsing_error: str | None = None
     train_results: list[IOPairExecutionResult] = field(default_factory=list)
     test_results: list[IOPairExecutionResult] = field(default_factory=list)
 

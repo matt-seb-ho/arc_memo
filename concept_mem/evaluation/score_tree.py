@@ -3,6 +3,7 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
+from concept_mem.constants import NO_CODE_BLOCK_MESSAGE
 from concept_mem.evaluation.solution_tree import (
     IOPairExecutionResult,
     SolutionStep,
@@ -20,6 +21,7 @@ from concept_mem.utils.code_execution.exec_transform import execute_transforms
 def evaluate_solution_on_io_pairs(
     code: str,
     io_pairs: list[IOPair],
+    is_train: bool = True,
 ) -> list[IOPairExecutionResult]:
     """returns a tuple containing code extraction status and execution results."""
     # prepare code solution and inputs
@@ -54,6 +56,8 @@ def evaluate_solution_on_io_pairs(
         # add to output list
         output_list.append(
             IOPairExecutionResult(
+                is_train=is_train,
+                pair_idx=i,
                 output=output_grid,
                 correct=binary_score,
                 error=tr.error,
@@ -63,22 +67,37 @@ def evaluate_solution_on_io_pairs(
     return output_list
 
 
+def parse_code_solution(
+    completion: str | None,
+) -> tuple[str | None, str | None]:
+    if completion is None:
+        return None, "null completion."
+    if completion == "":
+        return None, "empty completion."
+    code = extract_python_block(completion)
+    if code is None:
+        return None, NO_CODE_BLOCK_MESSAGE
+    return code, None
+
+
 def score_problem_attempt(
     problem: Problem,
     attempt: SolutionStep,
 ) -> None:
-    code = extract_python_block(attempt.completion)
-    if code is None:
-        attempt.code_extracted = False
+    code, parsing_error = parse_code_solution(attempt.completion)
+    if parsing_error:
+        attempt.parsing_error = parsing_error
+        attempt.validated = True
         return
-    attempt.code_extracted = True
     attempt.train_results = evaluate_solution_on_io_pairs(
         code=code,
         io_pairs=problem.train_pairs,
+        is_train=True,
     )
     attempt.test_results = evaluate_solution_on_io_pairs(
         code=code,
         io_pairs=problem.test_pairs,
+        is_train=False,
     )
     attempt.validated = True
 
@@ -117,7 +136,7 @@ def _iter_rows(solution_trees: dict[str, SolutionTree]):
                             "pair_idx": res.pair_idx,
                             "correct": res.correct,
                             "validated": step.validated,
-                            "code_extracted": step.code_extracted,
+                            "parsing_error": step.parsing_error,
                         }
 
 

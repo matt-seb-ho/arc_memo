@@ -319,10 +319,11 @@ def make_prompt(
 
 def make_retry_prompt(
     initial_prompt: str,
-    solution_path: SolutionThread,
+    solution_thread: SolutionThread,
     num_feedback_passes: int = 1,
     error_feedback: Literal["first", "all"] = "first",
     include_past_outcomes: bool = False,
+    new_concepts: str | None = None,
 ) -> str:
     """
     Compose the final retry prompt.
@@ -332,29 +333,35 @@ def make_retry_prompt(
     """
 
     previous_responses = _format_previous_responses(
-        solution_thread=solution_path,
-        num_steps=num_feedback_passes,
+        solution_thread=solution_thread,
+        num_passes=num_feedback_passes,
         error_feedback=error_feedback,
         include_past_outcomes=include_past_outcomes,
     )
 
-    return "\n".join(
-        [
-            initial_prompt,
-            "",
-            "### Your Previous Response(s) and Outcomes",
-            previous_responses,
-            "",
-            "### New Instructions",
-            (
-                "Please reflect on the above issues (code formatting, code execution error, "
-                "or grid outputs differing from the expected/correct example outputs), "
-                "and revise your reasoning, transformation rule hypothesis, or code accordingly. "
-                "Please reflect on the your previous response and consider whether your transformation rule hypothesis is incorrect "
-                "or if the code implementation is flawed."
-            ),
-        ]
-    )
+    components = [
+        initial_prompt,
+        "",
+        "### Your Previous Response(s) and Outcomes",
+        previous_responses,
+        "",
+        "### New Instructions",
+        (
+            "Please reflect on the above issues (code formatting, code execution error, "
+            "or grid outputs differing from the expected/correct example outputs), "
+            "and revise your reasoning, transformation rule hypothesis, or code accordingly. "
+            "Please reflect on the your previous response and consider whether your transformation rule hypothesis is incorrect "
+            "or if the code implementation is flawed."
+        ),
+    ]
+    if new_concepts:
+        components.append("")
+        components.append(
+            "### Reselected Lessons\n"
+            f"Here are reselected lessons that may or may not be helpful for solving this puzzle:\n{new_concepts}"
+        )
+
+    return "\n".join(components)
 
 
 OUTPUT_MISMATCH_FEEDBACK_HEADER = """\
@@ -364,16 +371,16 @@ The puzzle provides reference examples containing input and output pairs. Here a
 
 def _format_previous_responses(
     solution_thread: SolutionThread,
-    num_steps: int,
+    num_passes: int,
     error_feedback: Literal["first", "all"],
     include_past_outcomes: bool,
 ) -> str:
-    if num_steps == -1:
+    if num_passes == -1:
         attempts = solution_thread.steps
         first_attempt_num = 1
     else:
-        attempts = solution_thread.steps[-num_steps:]
-        first_attempt_num = len(solution_thread.steps) - num_steps + 1
+        attempts = solution_thread.steps[-num_passes:]
+        first_attempt_num = len(solution_thread.steps) - num_passes + 1
 
     # gather entries for each pass/previous response
     blocks: list[str] = []
@@ -382,7 +389,7 @@ def _format_previous_responses(
         body = att.completion
         footer_lines: list[str] = []
         # populate footer_lines with outcomes as necessary
-        if include_past_outcomes or (idx == len(solution_thread.passes)):
+        if include_past_outcomes or (idx == len(solution_thread.steps)):
             errs, mism = _extract_errors_and_mismatches(att)
             if error_feedback == "first":
                 errs = errs[:1]
@@ -394,8 +401,8 @@ def _format_previous_responses(
             if mism:
                 footer_lines.append(OUTPUT_MISMATCH_FEEDBACK_HEADER)
                 for ex_idx, grid in mism:
-                    if isinstance(grid, str) or grid is None:
-                        grid_txt = grid
+                    if grid is None or isinstance(grid, str):
+                        grid_txt = str(grid)
                     else:
                         grid_txt = np.array2string(
                             np.array(grid, dtype=int), separator=", "
@@ -409,10 +416,10 @@ def _format_previous_responses(
 
 
 def _extract_errors_and_mismatches(
-    attempt: SolutionStep,
+    step: SolutionStep,
 ) -> tuple[list[str], list[tuple[int, np.ndarray | str | None]]]:
     """
-    Given a SampleResult, return:
+    Given a solution step/attempt, return:
       errors      – list[str]            (parsing error or exec errors)
       mismatches  – list[(ex_idx, grid)] (index starts at 1)
     """
@@ -420,21 +427,22 @@ def _extract_errors_and_mismatches(
     errors: list[str] = []
     mismatches: list[tuple[int, np.ndarray]] = []
 
-    if not attempt.code_extracted:
-        errors.append(
-            "Failed to extract a markdown fenced code block from the response."
-        )
+    if step.parsing_error:
+        errors.append(step.parsing_error)
         return errors, mismatches
 
-    for i, pair_result in enumerate(attempt.train_results):
-        if pair_result.correct:
+    # execution / scoring phase on TRAIN examples only
+    if len(step.train_results) == 0:
+        return errors, mismatches
+
+    for result in step.train_results:
+        if result.correct:
             continue
-        if pair_result.error:
-            # execution error
-            errors.append(pair_result.error)
+        if result.error:
+            errors.append(result.error)
         else:
-            # grid mismatch
-            mismatches.append((i, pair_result.output))
+            # if no error, but not correct, it means grid mismatch
+            mismatches.append((result.pair_idx + 1, result.output))
 
     return errors, mismatches
 
