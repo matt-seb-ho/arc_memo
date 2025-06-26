@@ -104,7 +104,7 @@ class PromptBuilder:
     ) -> str:
         return make_retry_prompt(
             initial_prompt=initial_prompt,
-            solution_path=solution_thread,
+            solution_thread=solution_thread,
             num_feedback_passes=self.retry_policy.num_feedback_passes,
             error_feedback=self.retry_policy.error_feedback,
             include_past_outcomes=self.retry_policy.include_past_outcomes,
