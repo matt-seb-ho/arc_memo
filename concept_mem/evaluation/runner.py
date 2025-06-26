@@ -99,13 +99,14 @@ class EvaluationRunner:
             if self.lcs_cfg.selected_concepts_file:
                 lcs_initial_res = read_json(self.lcs_cfg.selected_concepts_file)
             else:
+                lcs_output_dir = self.output_dir / "lcs_initial_selection"
                 lcs_initial_res = await select_concepts_using_long_cot(
                     puzzles=problems,
                     concept_mem=self.concept_mem,
                     llm_client=self.llm,
                     model=self.model,
                     gen_cfg=self.gen_cfg,
-                    output_dir=self.output_dir,
+                    output_dir=lcs_output_dir,
                     dry_run=self.dry_run,
                 )
 

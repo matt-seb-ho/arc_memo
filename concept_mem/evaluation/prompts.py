@@ -12,6 +12,16 @@ from concept_mem.types import Problem
 # prompt constants
 # ------------------------------------------------------------------------------
 
+# -- system prompts ------------------------------------------------------------
+# DEFAULT_SYSTEM_PROMPT = "You are an world-class puzzle solver who are extremely good at spotting patterns and solving puzzles. You are also an expert Python programmer who can write code to solve puzzles."
+DEFAULT_SYSTEM_PROMPT_IND = "You are a world-class puzzle solver with exceptional pattern recognition skills and expertise in Python programming. Your task is to analyze puzzles and provide Python solutions."
+DEFAULT_SYSTEM_PROMPT_TRAN = "You are a world-class puzzle solver with exceptional pattern recognition skills. Your task is to analyze puzzles, spot patterns, and provide direct solutions."
+CONCISE_SYSTEM_PROMPT = "You are a world-class puzzle solver with exceptional pattern recognition skills and expertise in Python programming. Your task is to analyze puzzles and provide Python solutions. Be concise and think through puzzles without being unnecessarily verbose."
+SYSTEM_PROMPTS = {
+    "default": DEFAULT_SYSTEM_PROMPT_IND,
+    "concise": CONCISE_SYSTEM_PROMPT,
+}
+
 # -- section intro -------------------------------------------------------------
 ARC_INTRO = """\
 ### Introduction

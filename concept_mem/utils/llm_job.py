@@ -1,5 +1,6 @@
 import logging
 import tempfile
+from collections import namedtuple
 from pathlib import Path
 
 from llmplus import GenerationConfig, LLMClient
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def run_llm_job(
     prompts: list[str],
-    metadata: list[str | list[str]],
+    metadata: list[str | list[str] | namedtuple],
     llm_client: LLMClient,
     model: str,
     gen_cfg: GenerationConfig,
@@ -23,7 +24,8 @@ async def run_llm_job(
         output_dir.mkdir(parents=True, exist_ok=True)
         progress_file = output_dir / "gen_progress.json"
         write_json(prompts, output_dir / "prompts.json")
-        write_json(metadata, output_dir / "metadata.json")
+        serializable_md = [e._asdict() if is_namedtuple(e) else e for e in metadata]
+        write_json(serializable_md, output_dir / "metadata.json")
     else:
         logger.info(
             "no output directory specified, using sys tmp dir for progress file"
@@ -52,7 +54,6 @@ async def run_llm_job(
 
     # write generation artifacts to output directory
     if output_dir:
-        # save metadata, prompt info, model output, and token usage
         write_json(results, output_dir / "model_outputs.json")
         write_json(token_info, output_dir / "token_usage.json")
     else:
@@ -61,3 +62,10 @@ async def run_llm_job(
 
     # pass results through
     return results
+
+
+def is_namedtuple(obj):
+    """Check if an object is a namedtuple."""
+    return (
+        isinstance(obj, tuple) and hasattr(obj, "_asdict") and hasattr(obj, "_fields")
+    )

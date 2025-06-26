@@ -51,6 +51,11 @@ class PromptBranch:
     threads: dict[str, SolutionThread] = field(default_factory=dict)
     prompt: str | None = None
 
+    def get_or_create_thread(self, thread_id: str):
+        if thread_id not in self.threads:
+            self.threads[thread_id] = SolutionThread(thread_id=thread_id)
+        return self.threads[thread_id]
+
 
 @dataclass
 class SolutionTree:
@@ -61,6 +66,11 @@ class SolutionTree:
         initial_dict = asdict(self)
         _make_solution_tree_dict_serializable(initial_dict)
         return initial_dict
+
+    def get_or_create_branch(self, branch_id: str):
+        if branch_id not in self.prompt_branches:
+            self.prompt_branches[branch_id] = PromptBranch(branch_id=branch_id)
+        return self.prompt_branches[branch_id]
 
 
 def _make_solution_tree_dict_serializable(d) -> None:
