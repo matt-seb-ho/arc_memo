@@ -5,7 +5,7 @@ from typing import Literal
 
 from concept_mem.constants import REPO_ROOT
 from concept_mem.evaluation.prompts import make_prompt, make_retry_prompt
-from concept_mem.evaluation.solution_trace_types import SolutionPath
+from concept_mem.evaluation.solution_tree import SolutionThread
 from concept_mem.evaluation.retry_policy import RetryPolicy
 from concept_mem.types import Problem
 from concept_mem.utils import read_json
@@ -99,12 +99,12 @@ class PromptBuilder:
     def build_retry_prompt(
         self,
         initial_prompt: str,
-        solution_path: SolutionPath,
+        solution_thread: SolutionThread,
         new_concepts: str | None = None,
     ) -> str:
         return make_retry_prompt(
             initial_prompt=initial_prompt,
-            solution_thread=solution_path,
+            solution_path=solution_thread,
             num_feedback_passes=self.retry_policy.num_feedback_passes,
             error_feedback=self.retry_policy.error_feedback,
             include_past_outcomes=self.retry_policy.include_past_outcomes,

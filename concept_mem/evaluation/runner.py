@@ -177,7 +177,7 @@ class EvaluationRunner:
             base_prompt = self.initial_prompts[(puzzle_id, prompt_id)]
             retry_prompt = self.prompt_builder.build_retry_prompt(
                 initial_prompt=base_prompt,
-                solution_path=path,
+                solution_thread=path,
                 new_concepts=new_concepts.get(puzzle_id, None),
             )
             tasks.append(
