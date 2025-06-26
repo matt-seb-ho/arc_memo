@@ -35,7 +35,7 @@ from concept_mem.evaluation.solution_tree import (
 from concept_mem.selection.description.select import reselect_concepts
 from concept_mem.selection.long_cot import select_concepts_using_long_cot
 from concept_mem.types import Problem
-from concept_mem.utils import load_arc_data, read_json, run_llm_job
+from concept_mem.utils import load_arc_data, read_json, run_llm_job, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -314,9 +314,21 @@ class EvaluationRunner:
             prompts.pop("with_notes")
         return prompts
 
-    def compute_and_report_scores(self, iteration: int, output_dir: Path) -> None:
+    def compute_and_report_scores(
+        self,
+        iteration: int,
+        output_dir: Path,
+        save_tree: bool = True,
+        save_csv: bool = False,
+    ) -> None:
         df = flatten_solution_trees(self.trees)
-        df.to_csv(output_dir / "evaluation.csv")
+        if save_tree:
+            serializable_trees = {
+                k: t.to_serializable_dict() for k, t in self.trees.items()
+            }
+            write_json(serializable_trees, output_dir / "solution_trees.json")
+        if save_csv:
+            df.to_csv(output_dir / "evaluation.csv")
         official_score_ = official_score(df, step_selection="all")
         strict_score_ = strict_score(df, include_train=True, step_selection="last")
         logger.info(
