@@ -137,6 +137,7 @@ def _iter_rows(solution_trees: dict[str, SolutionTree]):
                             "correct": res.correct,
                             "validated": step.validated,
                             "parsing_error": step.parsing_error,
+                            "completion": step.completion,
                         }
 
 
