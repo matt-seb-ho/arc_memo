@@ -53,6 +53,7 @@ def execute_transforms(
         return_var_name="output_grid",
         timeout=timeout,
         max_workers=max_workers,
+        tqdm_kwargs={"leave": False},
     )
     # post-process: (check output type, shape, value range)
     transform_results = []

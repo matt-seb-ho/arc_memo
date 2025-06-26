@@ -275,7 +275,7 @@ class EvaluationRunner:
         output_dir = self.output_dir / f"iteration_{iteration}"
         output_dir.mkdir(parents=True, exist_ok=True)
         if iteration == 1:
-            await self.initial_solve_step(problems, self.output_dir)
+            await self.initial_solve_step(problems, output_dir)
         else:
             await self.retry_solving_step(problems, output_dir)
         self.compute_and_report_scores(iteration, output_dir)
