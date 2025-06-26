@@ -204,7 +204,7 @@ class EvaluationRunner:
             for puzzle_id, branch_id, thread_id, step_idx in puzzles_to_retry:
                 step = (
                     self.trees[puzzle_id]
-                    .branches[branch_id]
+                    .prompt_branches[branch_id]
                     .threads[thread_id]
                     .steps[step_idx - 1]
                 )
@@ -229,7 +229,7 @@ class EvaluationRunner:
         # create new prompts
         prompts: list[str] = []
         for puzzle_id, branch_id, thread_id, step_idx in puzzles_to_retry:
-            thread = self.trees[puzzle_id].branches[branch_id].threads[thread_id]
+            thread = self.trees[puzzle_id].prompt_branches[branch_id].threads[thread_id]
             base_prompt = self.initial_prompts[(puzzle_id, branch_id)]
             retry_prompt = self.prompt_builder.build_retry_prompt(
                 initial_prompt=base_prompt,
