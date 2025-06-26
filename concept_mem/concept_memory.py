@@ -183,3 +183,117 @@ def merge_hand_and_machine_annotations(
         with open(output_file, "wb") as f:
             f.write(orjson.dumps(merged, option=orjson.OPT_INDENT_2))
     return merged
+
+
+# local updated version (23.06.2025)
+"""
+import logging
+from pathlib import Path
+from dataclasses import asdict, dataclass, field
+from detective.utils import read_json, write_json, read_yaml, extract_yaml_block
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Concept:
+    title: str
+    # concept notes:
+    # - mapping puzzle_id -> note
+    #   to retain note providence
+    notes: dict[str, list[str]] = field(default_factory=dict)
+    # use cases:
+    # - mapping puzzle_id -> use case description
+    use_cases: dict[str, str] = field(default_factory=dict)
+
+    def to_string(self, include_notes: bool = True) -> str:
+        components = [f"- concept: {self.title}"]
+        if include_notes:
+            formatted_notes = self._format_notes()
+            if formatted_notes:
+                components.append(formatted_notes)
+        return "\n".join(components)
+
+    def _format_notes(self, indent_size: int = 2) -> str | None:
+        note_set = set()
+        for puzzle_notes in self.notes.values():
+            if not puzzle_notes:
+                continue
+            for note in puzzle_notes:
+                note_set.add(note.strip())
+        if not note_set:
+            return None
+        indent = " " * indent_size
+        components = [indent + "notes:"]
+        for note in note_set:
+            components.append(f"- {note}")
+        return "\n".join(indent + line for line in components)
+
+
+class ConceptMemory:
+    def __init__(self):
+        self.concepts: dict[str, Concept] = {}
+
+    def get_concept(self, title: str) -> Concept | None:
+        return self.concepts.get(title, None)
+
+    def add_concept(
+        self, puzzle_id: str, title: str, notes: list[str], use_case: str | None
+    ) -> None:
+        if title in self.concepts:
+            concept = self.concepts[title]
+        else:
+            concept = Concept(title=title)
+            self.concepts[title] = concept
+        puzzle_notes = concept.notes.setdefault(puzzle_id, [])
+        puzzle_notes.extend(notes)
+        concept.use_cases[puzzle_id] = use_case or ""
+
+    def load_from_file(self, file_path: Path | str) -> None:
+        data = read_json(file_path)
+        for title, concept_data in data.items():
+            concept = Concept(title=title)
+            concept.notes = concept_data.get("notes", {})
+            concept.use_cases = concept_data.get("use_cases", {})
+            self.concepts[title] = concept
+
+    def save_to_file(self, file_path: Path | str) -> None:
+        data = {title: asdict(concept) for title, concept in self.concepts.items()}
+        write_json(data, file_path)
+        logger.info(f"concept memory saved to {file_path}")
+
+    def initialize_from_annotations(self, file_path: Path | str) -> None:
+        annotation_data = read_yaml(file_path)
+        for puzzle_id, annotation in annotation_data.items():
+            if "concepts" not in annotation:
+                continue
+            self.update_memory_from_annotation(puzzle_id, annotation)
+
+    def update_memory_from_model_output(
+        self, puzzle_id: str, model_output: str
+    ) -> None:
+        yaml_block = extract_yaml_block(model_output)
+        try:
+            yaml_data = read_yaml(yaml_block)
+        except Exception:
+            logger.info(
+                f"Failed to parse YAML block from model output for puzzle {puzzle_id}. "
+            )
+        self.update_memory_from_annotation(puzzle_id, yaml_data)
+
+    def update_memory_from_annotation(self, puzzle_id: str, annotation: dict) -> None:
+        annotated_concepts = annotation["concepts"]
+        for annotated_concept in annotated_concepts:
+            title = annotated_concept["concept"]
+            notes = annotated_concept.get("notes", [])
+            use_case = annotated_concept.get("use_case", "")
+            self.add_concept(puzzle_id, title, notes, use_case)
+
+    def to_string(self, include_notes: bool = True) -> str:
+        components = []
+        for concept in self.concepts.values():
+            components.append(concept.to_string(include_notes=include_notes))
+        return "\n".join(components)
+
+"""
