@@ -4,7 +4,8 @@ from pathlib import Path
 
 from llmplus import GenerationConfig
 
-from concept_mem.evaluation.solution_trace_types import RefinementPass
+# from concept_mem.evaluation.solution_trace_types import RefinementPass
+from concept_mem.evaluation.solution_tree import SolutionStep
 
 
 class RetryCriterion(Enum):
@@ -44,7 +45,7 @@ class RetryPolicy:
     reselect_gen_cfg: GenerationConfig = field(default_factory=GenerationConfig)
     reselect_k: int = 5
 
-    def needs_retry(self, latest: RefinementPass) -> bool:
+    def needs_retry(self, latest: SolutionStep) -> bool:
         """
         Determine if the latest attempt in should be retried.
 
@@ -57,7 +58,12 @@ class RetryPolicy:
         Return True if *latest* SampleResult fails the chosen criterion.
         """
         if self.criterion == RetryCriterion.TRAIN:
-            scores = latest.train_scores
+            results = latest.train_results
         else:
-            scores = latest.test_scores
-        return (scores is None) or (len(scores) == 0) or (not all(scores))
+            results = latest.test_results
+        if len(results) == 0:
+            return True
+        for result in results:
+            if not result.correct:
+                return True
+        return False
