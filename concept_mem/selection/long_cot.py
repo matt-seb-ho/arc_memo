@@ -8,7 +8,7 @@ from llmplus import GenerationConfig, LLMClient
 from concept_mem.concept_memory import ConceptMemory
 from concept_mem.evaluation.prompts import ARC_INTRO, format_puzzle_for_prompt
 from concept_mem.types import Problem
-from concept_mem.utils import write_json
+from concept_mem.utils import run_llm_job, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -68,20 +68,16 @@ async def select_concepts_using_long_cot(
         )
         puzzle_ids.append(puzzle_id)
         prompts.append(prompt)
-    if dry_run:
-        # write the prompts to a file and exit
-        logger.info("Dry run mode: writing prompts to file and exiting.")
-        if output_dir:
-            write_json(prompts, output_dir / "concept_selection_prompts.json")
-        else:
-            logger.info(f"first prompt: {prompts[0]}")
-        return {}
 
     # generate responses
-    responses = await llm_client.async_batch_generate(
+    responses = await run_llm_job(
         prompts=prompts,
+        metadata=puzzle_ids,
+        llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
+        output_dir=output_dir,
+        dry_run=dry_run,
     )
 
     # parse response
@@ -108,16 +104,9 @@ async def select_concepts_using_long_cot(
         except Exception as e:
             logger.info(f"Error processing puzzle {puzzle_id}: {e}, output: {response}")
 
+    # save parsed output
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
-        # save prompts
-        prompt_dict = {
-            puzzle_id: prompt for puzzle_id, prompt in zip(puzzle_ids, prompts)
-        }
-        write_json(prompt_dict, output_dir / "concept_selection_prompts.json")
-        # save raw output
-        write_json(puzzle_responses, output_dir / "concept_selection_model_output.json")
-        # save parsed output
         write_json(res, output_dir / "concept_selection.json")
 
     return res

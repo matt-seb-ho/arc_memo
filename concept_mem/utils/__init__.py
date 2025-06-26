@@ -12,6 +12,7 @@ from .common import (
     write_json_lines,
     write_yaml,
 )
+from .llm_job import run_llm_job
 from .puzzle_utils import (
     extract_barc_concepts,
     load_arc_data,
@@ -50,4 +51,5 @@ __all__ = [
     "task_repr",
     "visualize_barc_problem",
     "visualize_problem",
+    "run_llm_job",
 ]

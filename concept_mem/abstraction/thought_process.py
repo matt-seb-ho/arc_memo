@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from pathlib import Path
 
@@ -13,9 +12,9 @@ from concept_mem.types import Problem
 from concept_mem.utils import (
     extract_comment_sections,
     get_arc_problem_by_uid,
+    run_llm_job,
     load_arc_data,
     read_json,
-    write_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -125,39 +124,17 @@ async def thought_process(
         problem_solutions=problem_solutions,
         example_files=example_files,
     )
-    if dry_run:
-        logger.info("Dry run enabled, first prompt:")
-        logger.info(prompts[0])
-        return {}, {}
-
-    res = await llm_client.async_batch_generate(
-        prompts,
+    outputs = await run_llm_job(
+        prompts=prompts,
+        metadata=uids,
+        llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
+        output_dir=output_dir,
+        dry_run=dry_run,
     )
-    # report token usage
+    thought_processes = {uid: output for uid, output in zip(uids, outputs)}
     token_usage_dict = llm_client.get_token_usage_dict()
-    logger.info(f"Token usage: {json.dumps(token_usage_dict, indent=2)}")
-    prompt_dict = {}
-
-    thought_processes = {}
-    for uid, prompt, trace in zip(uids, prompts, res):
-        prompt_dict[uid] = prompt
-        thought_processes[uid] = trace[0]
-
-    if output_dir is not None:
-        prompts_file = output_dir / "thought_process_prompts.json"
-        write_json(prompt_dict, prompts_file)
-        logger.info(f"Wrote thought process prompts to {prompts_file}")
-
-        output_file = output_dir / "thought_processes.json"
-        write_json(thought_processes, output_file)
-        logger.info(f"Wrote thought processes to {output_file}")
-
-        token_usage_file = output_dir / "thought_process_token_usage.json"
-        write_json(token_usage_dict, token_usage_file)
-        logger.info(f"Wrote token usage report to {token_usage_file}")
-
     return thought_processes, token_usage_dict
 
 

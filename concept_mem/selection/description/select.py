@@ -14,6 +14,7 @@ from tqdm import tqdm
 from concept_mem.constants import DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.utils import (
     read_json,
+    run_llm_job,
     write_json,
 )
 
@@ -133,9 +134,110 @@ We will provide you with a numbered list of lessons and a puzzle description.
 {description} 
 """
 
+RESELECT_PROMPT = """\
+### Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule.
+
+We have a list of puzzle solving "lessons" or "rules" that provide a suggestion of how to solve the puzzle given a certain situation.
+
+### Instructions
+We will provide you with a numbered list of lessons and a previous attempt at solving the puzzle.
+- Your task is to identify the most relevant {top_k} lessons for the given puzzle.
+- Please output your final selection as a list of lesson numbers in a markdown yaml block, e.g.
+```yaml
+- 18
+- 77
+- 19
+```
+
+### Lessons
+{concept_list}
+
+### Previous Attempt
+{completion} 
+"""
+
 
 CONCAT_DESC_INTRO = "Here are the descriptions of the puzzles from different sources:"
 DEFAULT_SCORE_THRESHOLD = 0.5
+
+
+def prepare_concept_list(
+    lessons: dict[str, list[dict]],
+) -> tuple[str, dict[int, tuple[str, int]]]:
+    # returns a formatted string of lessons and a mapping from lesson number to (uid, index)
+    concept_entries = []
+    concept_number_to_uid = {}
+    for uid, puzzle_lessons in lessons.items():
+        for i, lesson in enumerate(puzzle_lessons):
+            num = len(concept_entries) + 1
+            entry = f"lesson {num}.\n- situation: {lesson['situation']}\n- suggestion: {lesson['suggestion']}"
+            concept_entries.append(entry)
+            concept_number_to_uid[num] = (uid, i)
+    concept_list = "\n".join(concept_entries)
+    return concept_list, concept_number_to_uid
+
+
+async def reselect_concepts(
+    puzzles: list[str],
+    completions: dict[str, str],
+    lessons: dict[str, list[dict]],
+    llm_client: LLMClient,
+    model: str,
+    gen_cfg: GenerationConfig,
+    top_k: int,
+    output_dir: Path | None,
+) -> tuple[dict[str, str], dict[str, list[str]]]:
+    """Reselect concepts based on previous completion."""
+    logger.info("Reselecting concepts based on previous completion...")
+
+    # prepare prompts
+    formatted_concept_list, concept_number_to_uid = prepare_concept_list(lessons)
+    uids = []
+    prompts = []
+    for uid in puzzles:
+        uids.append(uid)
+        prompt = RESELECT_PROMPT.format(
+            top_k=top_k,
+            concept_list=formatted_concept_list,
+            completion=completions[uid],
+        )
+        prompts.append(prompt)
+
+    # gather completions
+    completions = await run_llm_job(
+        prompts=prompts,
+        metadata=uids,
+        llm_client=llm_client,
+        model=model,
+        gen_cfg=gen_cfg,
+        output_dir=output_dir,
+    )
+
+    # parse completions, extract retrieved lesson uids, and prepare hint file
+    retrieved_concept_uids = {}
+    retrieved_lessons = {}
+    parsing_errors = []
+    for uid, completion in zip(uids, completions):
+        try:
+            concept_numbers = parse_top_k_yaml_list(completion[0])
+        except yaml.YAMLError as e:
+            parsing_errors.append((uid, completion[0], str(e)))
+            continue
+        concept_uids = [concept_number_to_uid[i] for i in concept_numbers]
+        retrieved_concept_uids[uid] = concept_uids
+        retrieved_lessons[uid] = format_retrieved_lesson_hint(lessons, concept_uids)
+    logger.info(f"Parsing error count: {len(parsing_errors)}")
+
+    # write out parsed results to file
+    if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        write_json(retrieved_concept_uids, output_dir / "concept_uids.json")
+        write_json(retrieved_lessons, output_dir / "reselected_lessons.json")
+        write_json(parsing_errors, output_dir / "parsing_errors.json")
+        logger.info(f"Wrote to {output_dir}")
+
+    return retrieved_lessons, retrieved_concept_uids
 
 
 async def select_concepts(
@@ -199,27 +301,18 @@ async def select_concepts(
         uids.append(uid)
         prompts.append(prompt)
 
-    # write prompts to file
-    prompt_file = output_dir / "prompts.json"
-    prompt_dict = {uid: prompt for uid, prompt in zip(uids, prompts)}
-    write_json(prompt_dict, prompt_file)
-    logger.info(f"Wrote prompts to {prompt_file}")
-
     # query model
-    completions = await llm_client.async_batch_generate(
+    completions = await run_llm_job(
         prompts=prompts,
+        metadata=uids,
+        llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
-        progress_file=(output_dir / "gen_progress.json"),
+        output_dir=output_dir,
     )
-    # logger.info(f"LLM query error count: {sum(len(e) for e in errors)}")
-    prompt_dict = {}
-    completion_dict = {}
-    for uid, prompt, completion in zip(uids, prompts, completions):
-        prompt_dict[uid] = prompt
-        completion_dict[uid] = completion[0]
 
     # parse completions, extract retrieved lesson uids, and prepare hint file
+    completion_dict = {uid: completion[0] for uid, completion in zip(uids, completions)}
     retrieved_concept_uids = {}
     retrieved_lessons = {}
     parsing_errors = []
@@ -255,16 +348,11 @@ async def select_concepts(
         retrieved_lessons[uid] = format_retrieved_lesson_hint(lessons, concept_uids)
     logger.info(f"Parsing error count: {len(parsing_errors)}")
 
-    # write out everything to file (prompts, model outputs, uids, lessons, errors, token_usage)
+    # write out parsed results to file
     output_dir.mkdir(parents=True, exist_ok=True)
-    write_json(prompt_dict, output_dir / "prompts.json")
-    write_json(completion_dict, output_dir / "model_outputs.json")
     write_json(retrieved_concept_uids, output_dir / "retrieved_concept_uids.json")
     write_json(retrieved_lessons, output_dir / "retrieved_lessons.json")
     write_json(parsing_errors, output_dir / "parsing_errors.json")
-
-    token_usage_dict = llm_client.get_token_usage_dict()
-    write_json(token_usage_dict, output_dir / "token_usage.json")
     logger.info(f"Wrote to {output_dir}")
     return retrieved_lessons
 

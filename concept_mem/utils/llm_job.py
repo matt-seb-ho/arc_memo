@@ -1,4 +1,5 @@
 import logging
+import tempfile
 from pathlib import Path
 
 from llmplus import GenerationConfig, LLMClient
@@ -17,42 +18,46 @@ async def run_llm_job(
     output_dir: Path | None,
     dry_run: bool = False,
 ) -> list[list[str]]:
-    # prepare file paths
+    # set up file paths and write prompts and metadata
     if output_dir is not None:
         output_dir.mkdir(parents=True, exist_ok=True)
         progress_file = output_dir / "gen_progress.json"
+        write_json(prompts, output_dir / "prompts.json")
+        write_json(metadata, output_dir / "metadata.json")
     else:
-        progress_file = "gen_progress.json"
+        logger.info(
+            "no output directory specified, using sys tmp dir for progress file"
+        )
+        tmp_dir = Path(tempfile.gettempdir())
+        progress_file = tmp_dir / "gen_progress.json"
 
     # save prompts only for dry runs
-    prompt_info = {
-        "prompts": prompts,
-        "metadata": metadata,
-    }
     if dry_run:
-        logger.info(
-            "dry run enabled, writing prompts to output directory and returning dummy strings"
-        )
-        if output_dir:
-            write_json(prompt_info, output_dir / "prompts.json")
+        logger.info("dry run enabled, returning dummy results without generation")
         return [["dummy"] for _ in prompts]
 
-    # generate completions
+    # generate completions and track token usage
+    previous_token_usage = llm_client.get_token_usage_dict()
     results = await llm_client.async_batch_generate(
         prompts=prompts,
         model=model,
         gen_cfg=gen_cfg,
         progress_file=progress_file,
     )
+    token_usage = llm_client.get_token_usage_dict()
+    token_info = {
+        "before": previous_token_usage,
+        "after": token_usage,
+    }
 
-    # write artifacts to output directory
+    # write generation artifacts to output directory
     if output_dir:
         # save metadata, prompt info, model output, and token usage
-        write_json(metadata, output_dir / "metadata.json")
-        write_json(prompts, output_dir / "prompts.json")
         write_json(results, output_dir / "model_outputs.json")
-        token_usage = llm_client.get_token_usage_dict()
-        write_json(token_usage, output_dir / "token_usage.json")
+        write_json(token_info, output_dir / "token_usage.json")
+    else:
+        tmp_dir = Path(tempfile.gettempdir())
+        write_json(token_info, tmp_dir / "token_usage.json")
 
     # pass results through
     return results

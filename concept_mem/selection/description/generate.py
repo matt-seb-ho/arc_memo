@@ -11,11 +11,11 @@ from concept_mem.constants import (
     HYRDA_CONFIG_PATH,
     REPO_ROOT,
 )
-from concept_mem.description.parse import parse_obs_spec_output, reformat_description
-from concept_mem.description.prompts import build_image_caption_query_messages
+from .parse import parse_obs_spec_output, reformat_description
+from .prompts import build_image_caption_query_messages
 from concept_mem.evaluation.run import _load_problems
 from concept_mem.types import Problem
-from concept_mem.utils import read_json, write_json
+from concept_mem.utils import read_json, run_llm_job, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -48,17 +48,15 @@ async def generate_image_captions(
                 include_puzzle_text=include_puzzle_text,
             )
         )
-    if dry_run:
-        # write the queries to a file and exit
-        logger.info("Dry run mode: writing queries to file and exiting.")
-        write_json(queries, output_dir / "queries.json")
-        return {}
     logger.info("Generating captions...")
-    responses = await llm_client.async_batch_generate(
+    responses = await run_llm_job(
         prompts=queries,
+        metadata=uids,
+        llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
-        progress_file=(output_dir / "gen_progress.json"),
+        output_dir=output_dir,
+        dry_run=dry_run,
     )
     logger.info("Processing responses...")
     results = {}
