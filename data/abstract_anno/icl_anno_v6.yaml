@@ -1,0 +1,469 @@
+0d3d703e:
+  pseudocode:
+  - recolor objects:
+      which: all
+      color scheme: fixed substitution cipher
+  general: substitution cipher based recoloring
+  concepts:
+  - concept: recoloring
+    description: changing the color of object(s)
+  - concept: color subsitution cipher
+    description: where recoloring follows a fixed input color to output color scheme
+    notes:
+    - a specific case of recoloring
+    - look for objects being in the same position, shape, size
+cf98881b:
+  pseudocode:
+  - split input grid at dividers
+  - layer split regions:
+      top down layer order: regions left to right
+  general: split input grid along dividers and stack regions
+  concepts:
+  - concept: region dividers
+    description: lines that split the input grid into regions
+    use_case: splits input grid into regions to be combined
+    notes:
+    - the split regions may need to be combined in some way
+    - a divider can also specify a guide object
+  - concept: z-axis layers
+    description: regions are layered on top of each other with some rule to resolve how to 
+      combine pixels from different layers
+    use_case: layer regions from left to right, top-down (leftmost region has highest
+      priority)
+    notes:
+    - look for split regions of the same size
+    - where you need to understand the layering scheme (what pixel to output given
+      the corresponding pixel from several layers)
+    - sometimes the layering is scheme is just some layers always have priority, other
+      times its color based, other times still it's some operation comparing pixels
+228f6490:
+  pseudocode:
+  - move objects:
+      which: objects that whose shape matches cavity of another object
+      destination: inside the cavity
+  general: move colored objects into matching holes
+  concepts:
+  - concept: object movement
+    description: shifting an object to a new position and potentially a different orientation
+  - concept: holes
+    description: where an object has a cavity (background color) inside it
+    notes:
+    - holes can be used as target destinations for moving objects
+    - holes might also be a countable quantity
+  - concept: hole matching criteria
+    description: conditioning on whether an object fits inside a hole
+    notes:
+    - whether a object cleanly fits inside or against another object
+    - hole matching specifically determined if an object's shape is equivalent to
+      the hole shape
+d2abd087:
+  pseudocode:
+  - recolor objects:
+      which: all
+      color scheme: red if size is 6 else blue
+  general: size based object recoloring
+  concepts:
+  - concept: recoloring
+    use_case: conditional recoloring (new color depends on some condition)
+  - concept: size criteria
+    description: where object size is conditioned on
+    use_case: objects having size over a threshold
+4093f84a:
+  pseudocode:
+  - slide with collision:
+      direction: inwards towards central rectangle (if rectangle spans grid height,
+        pixels left of the rectangle slide right, etc.)
+  - recolor objects:
+      which: pixels that were moved
+      color scheme: same color as central rectangle
+  general: slide pixels towards central rectangle with collision and recolor moved
+    pixels
+  concepts:
+  - concept: sliding with collision
+    description: object movement but instead of fixing a destination, you keep moving until
+      you hit another object or the grid edge
+    use_case: slide pixels towards a central object with direction given by central
+      object orientation
+    notes:
+    - keep moving target object one pixel over until another object is blocking (i.e.
+      moving the target object again would override another object's pixel)
+    - sliding direction can either be fixed across all examples, but if it changes
+      it is usually indicated by a guide object's orientation or position.
+1bfc4729:
+  pseudocode:
+  - output fixed shape:
+      color scheme: two pixels in input grid indicate top half and bottom half color
+  general: output a fixed shape with colors determined by input grid
+  concepts:
+  - concept: guide indicated color scheme
+    description: guide objects' colors inform output structures' colors
+    use_case: input grids contain exactly two non-background pixels, use their colors
+      (top, bottom) as the color scheme.
+  - concept: fixed shape output
+    description: consistently output a shape with a fixed size and structure
+    notes:
+    - where the output shape is fixed across the examples but minor aspects such as
+      color or size vary based on the input grids
+5168d44c:
+  pseudocode:
+  - move objects:
+      which: red square
+      direction: rightwards if dotted line is horizontal, downwards if vertical
+      amount: two pixels
+  general: move object along a path
+  concepts:
+  - concept: object movement
+    use_case: null
+    notes: null
+  - concept: guide object indicated direction
+    description: guide object informs movement direction
+    use_case: horizontal dotted line indicates horizontal direction, etc.
+    notes:
+    - guide objects can indicate direction via their orientation, shape, or position
+    - 'orientation example: if there was a guide object in the shape of an arrow pointing in a cardinal direction'
+    - 'position example: if there was a guide object at the one of the 4 edges of
+      the grid'
+bd4472b8:
+  pseudocode:
+  - separate input grid with divider
+  - define guide:
+      where: row of pixels above divider
+  - create repeating pattern:
+      pattern: horizontal rows
+      where: beneath the divider
+      color scheme: top to bottom should match guide left to right order
+  general: recolor rows using a guide
+  concepts:
+  - concept: region divider
+    use_case: separates guide object from canvas to modify
+  - concept: guide indicated color scheme
+    use_case: guide selected from colored region separated by divider
+  - concept: recoloring
+776ffc46:
+  pseudocode:
+  - define guide:
+      where: inside an empty 4-sided rectangle
+  - recolor objects:
+      which: objects matching guide shape
+      color scheme: guide object color
+  general: recolor objects according to a guide
+  concepts:
+  - concept: recoloring
+  - concept: containment criteria
+    description: where object(s) are selected for recoloring based on being contained
+      inside another object
+    use_case: guide object is contained inside a box, and distractors are partially
+      contained
+  - concept: guide shape matching criteria
+    description: where an object's operation is conditioned on its shape matching
+      a guide object
+    use_case: selected by being contained on 4 sides by a box
+  - concept: guide shape indicated color
+9f236235:
+  pseudocode:
+  - convert meta grid to pixel grid:
+      conversion rule: meta cells only contain a single color, use that color for
+        the corresponding pixel
+  - reflect:
+      orientation: left to right
+  general: parse meta grid and reflect left to right
+  concepts:
+  - concept: meta grid
+    description: where we treat regions of the pixel grid as cells and these cells form their
+      own grid
+    use_case: uniform row and column size with 1 pixel, uniform color dividers
+  - concept: meta grid cell to single pixel conversion
+    use_case: meta grid cells contain a single color, map the meta grid to a smaller
+      grid where each meta grid cell is represented by a single pixel
+    notes:
+    - where you abstract the meta grid cell to a single pixel and remove the dividers
+      if there are any
+    - need to determine the rule for how to convert a meta grid cell to a single pixel
+  - concept: reflection
+09629e4f:
+  pseudocode:
+  - select meta grid cell:
+      criteria: does not contain cyan pixels
+  - create meta grid:
+      cell size: 3x3
+      dividers: 1 pixel thick, grey
+      cell content: full color with corresponding pixel in selected 3x3
+  general: select a meta grid cell and expand it to a meta grid
+  concepts:
+  - concept: meta grid
+    use_case: expecting meta grid input and output
+    notes:
+    - horizontal and vertical lines dividing overall grid into meta cells
+    - meta grid cells can be uniform size
+    - meta grid cells can be proper grids (i.e. uniform row/column cell count)
+  - concept: color exclusion criteria
+    use_case: each cell contains mostly the same color, select the cell to be expanded
+      if it excludes teal
+e21d9049:
+  pseudocode:
+  - replicate pattern:
+      pattern: horizontal line
+      direction: horizontal
+      limit: grid edges
+      gap: none
+      color scheme: initial segment
+  - replicate pattern:
+      pattern: vertical line
+      direction: vertical
+      limit: grid edges
+      gap: none
+      color scheme: copy initial segment
+  general: expand cross shaped pattern to grid edge
+  concepts:
+  - concept: pattern replication
+    description: copying a pattern from the input grid potentially multiple times
+    notes:
+    - output grid may contain multiple copies of the same pattern
+    - the copied pattern may be rotated or reflected as well
+    - often need to repeat a pattern in a certain direction until the grid edges are
+      reached
+1e32b0e9:
+  pseudocode:
+  - define guide:
+      where: inside top left meta grid cell
+  - draw in meta grid cells:
+      which: all
+      what: guide shape (without overwriting existing non-background cells)
+      color: meta grid cell border
+  general: copy top left meta grid cell shape to other cells
+  concepts:
+  - concept: meta grid
+  - concept: guide object indicated shape
+    use_case: selected by being in a fixed meta grid position (top left corner)
+  - concept: pattern completion
+    use_case: complete pattern defined by a guide object using a fixed color without
+      overriding the existing pattern pixels
+025d127b:
+  pseudocode:
+  - move pixels:
+      which: object pixels if there exists colored pixels to bottom right of it
+      direction: right
+      amount: 1
+  general: shift portion of objects
+  concepts:
+  - concept: sub-object movement
+    description: moving pixels within an object
+    use_case: move all pixels of the object except for it there is a colored pixel
+      in the bottom right direction
+  - concept: directional scan criteria
+    description: where a pixel/object is selected if scanning in certain direction(s) finds something
+    use_case: the entire region that is right and down of the current pixel was scanned
+8d5021e8:
+  pseudocode:
+  - expand grid via reflection:
+      region: full grid
+      direction: leftwards
+  - expand grid via reflection:
+      region: full grid
+      direction: upwards
+  - expand grid via reflection:
+      region: bottom 2 rows
+      direction: downwards
+  general: augment original pattern by reflecting it
+  concepts:
+  - concept: reflection expansion
+    description: where you expand a grid by reflecting it in a certain direction and concatenating
+      the reflected grid to the original grid
+ff28f65a:
+  pseudocode:
+  - count objects:
+      which: red 2x2 squares
+  - create a repeating pattern:
+      pattern: blue pixel checkerboard
+      start: top left corner
+      direction: left to right in a row, top down
+      limit: use blue pixels equal to count
+  general: count shape in input grid and display count in output grid
+  concepts:
+  - concept: counting
+    description: where some quantity needs to be counted and the count is subsequently used
+    use_case: count is used for how many pixels to draw of a new pattern
+    notes:
+    - count could be used for output object size
+  - concept: repeating pattern
+    use_case: create checkerboard pattern on a fixed size output with a variable number
+      of pixels
+1b60fb0c:
+  pseudocode:
+  - extract rotationally repeated unit
+  - add rotated unit to missing side using red pixels
+  general: complete a symmetric/repeating pattern
+  concepts:
+  - concept: pattern completion
+    description: where a pattern is completed by adding missing parts
+    use_case: fill in arm of the pattern such that the overall shape is rotationally
+      symmetric
+    notes:
+    - completing a pattern may involve matching a guide, or making the result rotationally
+      or reflectively symmetric
+6e19193c:
+  pseudocode:
+  - define guides:
+    - which: all input grid objects
+  - draw lines: null
+    for each: guide
+    color: match guide object
+    start: guide defines a position
+    direction: guide defines a direction (diagonal direction between arms of
+      the L-shaped guide)
+  general: draw diagonal lines according to guide objects
+  concepts:
+  - concept: line drawing
+    use_case: diagonally starting from one pixel away from a guide
+  - concept: guide indicated direction
+    use_case: guide indicates which of 4 diagonal directions to start towards and
+      keep going in
+  - concept: guide indicated color
+  - concept: guide indicated position
+    use_case: guide objects are rotationally congruent, the indicated position is
+      what would preserve the symmetry
+3e980e27:
+  pseudocode:
+  - define guide:
+      where: object with a single pixel of another shape
+  - define anchor points:
+      where: all free floating pixels in the input grid not part of a guide
+  - replicate pattern:
+      for each: anchor point
+      color: match guide object
+      position: start at anchor point
+      pattern: guide object
+  - reflect objects:
+      for each: anchor point
+      which: if anchor pixel is red
+      axis: about anchor pixel
+  general: copy guide objects to anchors points, reflecting based on color
+  concepts:
+  - concept: anchor
+    description: a specific type of guide object that indicates position-- a starting point for some operation
+    use_case: anchor point color determines which of 2 guides to follow
+    notes:
+    - similar to guide objects, but instead specifying a position
+    - serves as a position indicator for where to replicate a shape, or start a pattern
+  - concept: guide indicated color
+  - concept: pattern replication
+  - concept: reflection
+  - concept: color criteria
+    use_case: anchor color decides whether to reflect a pattern
+aba27056:
+  pseudocode:
+  - fill object:
+      for each: cup objects
+      color: yellow
+  - draw line:
+      for each: cup object, for each pixel in opening
+      direction: cup opening direction
+      color: yellow
+  - draw lines:
+      for each: 2 outermost cup opening pixels
+      direction: diagonal away from cup opening
+      color: yellow
+  general: fill cup object and draw lines out of the opening
+  concepts:
+  - concept: cup
+    description: a container with an opening that defines an interior without it being fully contained
+    use_case: cup filling and lines out the opening
+    notes:
+    - a cup is nearly a container, but has one opening
+  - concept: filling
+    description: filling a hole or with a color
+    use_case: cup cavity is filled
+    notes:
+    - holes can be filled with a certain color
+    - it may or may not be a flood fill (i.e. if a cavity has an opening, it may not
+      fill outside the cavity)
+  - concept: line drawing
+48d8fb45:
+  pseudocode:
+  - define guide:
+      which: single grey pixel
+  - crop object:
+      which: object touching the guide
+  general: crop the marked object
+  concepts:
+  - concept: guide object adjacency criteria
+    description: when objects are selected based on their adjacency to a marker guide object
+    use_case: grey pixel acting as a marker guide object
+    notes:
+    - guide object could serve as a marker that selects adjacent construct(s)
+  - concept: cropping
+    description: yielding a smaller grid by removing outside rows and columns not containing selected objects
+    use_case: crop the object touching the guide object
+    notes:
+    - cropping removes all the rows and columns that do not contain the guide object
+469497ad:
+  pseudocode:
+  - count unique colors:
+      which: all
+  - scale:
+      target: full input grid
+      factor: unique color count
+  - define guide:
+      which: rectangle object
+  - draw lines:
+      for each: corner of guide
+      direction: diagonal away from the corner
+      color: red
+      limit: grid edges and other objects
+  general: scale input grid according to unique color count
+  concepts:
+  - concept: counting
+    use_case: count unique colors in the input grid
+    notes:
+    - in addition to counting concrete objects, you can also count abstract properties
+      such as unique colors
+    - the count can be used for sorting, a scaling factor, or corresponding to a color
+  - concept: scaling
+    description: increasing or decreasing a grid or object's size
+    use_case: scale factor determined by counting result
+    notes:
+    - need to determine target (could be individual objects or full grids)
+    - need to determine scaling factor
+  - concept: guide indicated direction
+    use_case: diagonally outward from guide object corners
+  - concept: guide indicated position
+    use_case: guide object corner as starting point
+6cdd2623:
+  pseudocode:
+  - new empty grid:
+      dimensions: same as input grid
+  - define guides:
+      which: pairs of pixels on on opposite edges of the grid if they are aligned
+  - draw connecting object:
+      for each: guide pair
+      start: guide pair first pixel
+      end: guide pair second pixel
+      color: match guide
+  general: connect aligned pixels on grid edge with lines
+  concepts:
+  - concept: aligned criteria
+    description: where action is taken depending if objects are aligned, sharing either one or all rows or columns
+    use_case: pairs of aligned pixels on opposite edges of the grid
+    notes:
+    - objects are aligned if they are on the same row(s) or column(s)
+    - alignment criteria often is used in tandem with connection or line drawing concepts
+  - concept: line drawing
+  - concept: connection
+    description: connecting multiple objects by drawing a shape between them
+    use_case: to connect aligned pixels with a line
+    notes:
+    - connect objects by drawing a line or a shape between them
+d6ad076f:
+  pseudocode:
+  - define guides:
+      which: two rectangles to connect
+  - draw shape:
+      shape: rectangle
+      color: teal
+      where: connecting guides
+      size: match the smaller guide but one pixel shorter on each side (in the direction
+        perpedicular to the connection)
+  general: connect rectangles with a rectangle
+  concepts:
+  - concept: connection
+    use_case: connect two rectangles with a rectangle
