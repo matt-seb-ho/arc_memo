@@ -1,6 +1,7 @@
 import builtins
 import io
 import logging
+import multiprocessing as mp
 import os
 import signal
 import time
@@ -13,6 +14,8 @@ from pebble import ProcessExpired, ProcessPool
 from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
+mp.set_start_method("fork", force=True)
+logger.info("Using 'fork' start method for multiprocessing")
 
 # Disallow imports that can escape the sandbox
 DISALLOWED_IMPORTS = ("os", "sys", "subprocess", "multiprocessing", "pathlib")
