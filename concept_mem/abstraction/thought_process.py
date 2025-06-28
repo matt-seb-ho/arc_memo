@@ -57,10 +57,17 @@ Write out the thought process of someone solving the puzzle.
 """
 
 
-def get_compressed_solution(problem: Problem) -> str | None:
+def get_soluton_summary(problem: Problem, description_only: bool = False) -> str | None:
+    """
+    Extract a solution summary from a BARC seed puzzle solution
+    where summary := the description comment (and optionally the concepts comment)
+    NOTE: the summary excludes the solution code itself
+    """
     if getattr(problem, "code", DEFAULT_CODE) == DEFAULT_CODE:
         return None
     concepts, description = extract_comment_sections(problem.code)
+    if description_only:
+        return f"# description:\n{description}"
     return f"# concepts:\n{concepts}\n\n# description:\n{description}"
 
 

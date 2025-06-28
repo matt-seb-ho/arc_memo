@@ -1,8 +1,17 @@
+defaults:
+- /model: gpt41
+- /generation: gen_default
+
+# either a path to a json containing {uid: str -> solution: str}
+# -OR- null for BARC seed solutions
 problem_solutions: null
 
-# problems: null # all barc seeds
-example_thought_processes: data/thought_process/thought_process.json
+# also paths to a json containing {uid: str -> thought_process: str}
+# - thought process (for solutions to target puzzles)
+# - example thought process (for examples)
 thought_processes: data/thought_process/thought_process.json
+example_thought_processes: data/thought_process/thought_process.json
+
 examples: 
   - cf98881b # subsection_example,
   - 4093f84a # bar_example,
@@ -10,4 +19,11 @@ examples:
 example_file: data/icl_examples/lesson_from_trace/lessons_dict.json
 
 retrieve_examples: false
+example_retrieval:
+  top_k: 5
+  embed_model: null # TODO
+  cache_path: null # TODO
+  init_with_barc_seeds: true
+
+use_barc_solution: false
 

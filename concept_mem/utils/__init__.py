@@ -15,6 +15,7 @@ from .common import (
 from .llm_job import run_llm_job
 from .puzzle_utils import (
     extract_barc_concepts,
+    get_arc_problem_by_uid,
     load_arc_data,
     load_barc_seeds,  # legacy function (keeping to recall seed puzzle order)
 )
@@ -44,8 +45,10 @@ __all__ = [
     "extract_barc_concepts",
     "load_arc_data",
     "load_barc_seeds",  # legacy function
+    "get_arc_problem_by_uid",
     "display_img_file",
     "draw_io_grids",
+    "display_img_file",
     "grid_repr",
     "example_repr",
     "task_repr",
