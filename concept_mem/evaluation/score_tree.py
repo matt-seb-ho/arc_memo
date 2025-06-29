@@ -174,12 +174,13 @@ def _official_per_pair(group: pd.DataFrame, attempts_allowed: int | None) -> boo
     # log‑prob) if you have it.
     if attempts_allowed is not None:
         head = group.sort_values("step_idx").head(attempts_allowed)
-    return head["correct"].any()
+        return head["correct"].any()
+    return group["correct"].any()
 
 
 def official_score(
     df: pd.DataFrame,
-    attempts_allowed: int = 2,
+    attempts_allowed: int | None = None,
     step_selection: Literal["all", "last"] = "all",
 ) -> float:
     """Compute the *official* score

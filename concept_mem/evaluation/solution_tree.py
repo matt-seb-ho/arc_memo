@@ -18,6 +18,11 @@ class IOPairExecutionResult:
     error: str | None = None
     stdout: str | None = None
 
+    def __post_init__(self):
+        if isinstance(self.output, list):
+            # if output is a list, convert it to a numpy array
+            self.output = np.array(self.output)
+
 
 @dataclass
 class SolutionStep:
@@ -86,3 +91,34 @@ def _make_solution_tree_serializable_dict(d) -> dict:
         return d
     else:
         return d
+
+
+def create_solution_tree_from_serialized_dict(d: dict) -> SolutionTree:
+    tree = SolutionTree(puzzle_id=d["puzzle_id"])
+    branches_dict = d.get("prompt_branches", {})
+    for b_id, b_dict in branches_dict.items():
+        branch = tree.get_or_create_branch(b_id)
+        threads = b_dict.get("threads", {})
+        for t_id, t_dict in threads.items():
+            thread = branch.get_or_create_thread(t_id)
+            steps = t_dict.get("steps", [])
+            for step_dict in steps:
+                step = SolutionStep(
+                    step_idx=step_dict["step_idx"],
+                    thread_id=t_id,
+                    branch_id=b_id,
+                    puzzle_id=d["puzzle_id"],
+                    completion=step_dict.get("completion", None),
+                    validated=step_dict.get("validated", False),
+                    parsing_error=step_dict.get("parsing_error", None),
+                )
+                step.train_results = [
+                    IOPairExecutionResult(**res)
+                    for res in step_dict.get("train_results", [])
+                ]
+                step.test_results = [
+                    IOPairExecutionResult(**res)
+                    for res in step_dict.get("test_results", [])
+                ]
+                thread.steps.append(step)
+    return tree
