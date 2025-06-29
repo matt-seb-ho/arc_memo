@@ -22,7 +22,7 @@ if package_path not in sys.path:
 
 from llmplus import GenerationConfig, LLMClient, Provider
 
-from concept_mem.constants import DOTENV_PATH, REPO_ROOT
+from concept_mem.constants import DATA_DIR, DOTENV_PATH, REPO_ROOT
 from concept_mem.types import Problem
 from concept_mem.utils import (
     load_arc_data,

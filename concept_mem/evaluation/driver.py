@@ -168,7 +168,7 @@ class EvaluationRunner:
                 step = SolutionStep(
                     step_idx=0,
                     thread_id=thread_id,
-                    prompt_id=branch_id,
+                    branch_id=branch_id,
                     puzzle_id=puzzle_id,
                     completion=completion,
                 )
@@ -260,7 +260,7 @@ class EvaluationRunner:
             step = SolutionStep(
                 step_idx=step_idx,
                 thread_id=thread_id,
-                prompt_id=branch_id,
+                branch_id=branch_id,
                 puzzle_id=puzzle_id,
                 completion=completion,
             )

@@ -15,6 +15,7 @@ from .common import (
 from .llm_job import run_llm_job
 from .puzzle_utils import (
     extract_barc_concepts,
+    extract_barc_seed_comment_sections,
     get_arc_problem_by_uid,
     load_arc_data,
     load_barc_seeds,  # legacy function (keeping to recall seed puzzle order)
@@ -43,6 +44,7 @@ __all__ = [
     "Singleton",
     "get_hf_access_token",
     "extract_barc_concepts",
+    "extract_barc_seed_comment_sections",
     "load_arc_data",
     "load_barc_seeds",  # legacy function
     "get_arc_problem_by_uid",

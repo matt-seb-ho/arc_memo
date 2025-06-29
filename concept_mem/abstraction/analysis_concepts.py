@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import hydra
+import yaml
 from llmplus import GenerationConfig, LLMClient, Provider
 from omegaconf import DictConfig
 
@@ -23,10 +24,12 @@ from concept_mem.constants import HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.types import Problem
 from concept_mem.utils import (
+    extract_yaml_block,
     get_arc_problem_by_uid,
     load_arc_data,
     read_json,
     run_llm_job,
+    write_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,44 +57,50 @@ async def extract_lessons(
     dry_run: bool = False,
 ) -> tuple[dict[str, Any], dict]:
     """Return lesssons and token usage"""
-    uids = []
+    problem_ids = []
     prompts = []
-    for uid, problem in problems.items():
+    for problem_id, problem in problems.items():
         # solution = get_compressed_solution(problem)
         solution = _get_puzzle_solution(
-            puzzle_id=uid,
+            puzzle_id=problem_id,
             problems=problems,
             solutions=solutions,
             use_barc_solution=use_barc_solution,
         )
         if not solution:
             logger.warning(
-                f"No solution found for puzzle {uid}. Skipping lesson extraction."
+                f"No solution found for puzzle {problem_id}. Skipping lesson extraction."
             )
             continue
-        uids.append(uid)
+        thought_proc = thought_processes.get(problem_id) if thought_processes else None
+        rxs_for_puzzle = (
+            retrieved_examples.get(problem_id, None) if retrieved_examples else None
+        )
         prompt = build_abstraction_prompt(
             problem=problem,
             solution=solution,
-            thought_process=thought_processes.get(uid) if thought_processes else None,
-            fixed_examples=fixed_examples.get(uid) if fixed_examples else None,
-            retrieved_examples=retrieved_examples.get(uid)
-            if retrieved_examples
-            else None,
+            thought_process=thought_proc,
+            fixed_examples=fixed_examples,
+            retrieved_examples=rxs_for_puzzle,
             example_thought_processes=example_thought_processes,
         )
+        problem_ids.append(problem_id)
         prompts.append(prompt)
     res = await run_llm_job(
         prompts=prompts,
-        metadata=uids,
+        metadata=problem_ids,
         llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
         dry_run=dry_run,
     )
-    lessons = {uid: lesson_batch[0] for uid, lesson_batch in zip(uids, res)}
     token_usage_dict = llm_client.get_token_usage_dict()
+    lessons = parse_lessons(
+        problem_ids=problem_ids,
+        model_outputs=res,
+    )
+    write_json(lessons, output_dir / "lessons.json")
     return lessons, token_usage_dict
 
 
@@ -139,13 +148,7 @@ def build_abstraction_prompt(
                 solution=solution,
                 thought_process=thought_process,
             )
-        elif fixed_examples is None:
-            # zero-shot abstraction (no examples)
-            prompt = EXTRACT_LESSON_FROM_TRACE_ZS_TEMPLATE.format(
-                solution=solution,
-                thought_process=thought_process,
-            )
-        else:
+        elif fixed_examples is not None:
             # few-shot ICL using fixed examples
             formatted_examples = format_lesson_examples(
                 fixed_examples,
@@ -156,7 +159,33 @@ def build_abstraction_prompt(
                 solution=solution,
                 thought_process=thought_process,
             )
+        else:
+            # zero-shot abstraction (no examples)
+            prompt = EXTRACT_LESSON_FROM_TRACE_ZS_TEMPLATE.format(
+                solution=solution,
+                thought_process=thought_process,
+            )
     return prompt
+
+
+def parse_lessons(
+    problem_ids: list[str],
+    model_outputs: list[list[str]],
+) -> dict[str, list[dict]]:
+    """Parse the model outputs into a dict of lessons."""
+    lessons = {}
+    for problem_id, model_output in zip(problem_ids, model_outputs):
+        try:
+            yaml_block = extract_yaml_block(model_output[0])
+            lesson_list = yaml.safe_load(yaml_block)
+        except Exception as e:
+            logger.error(
+                f"Error extracting lesson for problem {problem_id}: {e}. Model output: {model_output}"
+            )
+            lesson_list = []
+        if lesson_list:
+            lessons[problem_id] = lesson_list
+    return lessons
 
 
 def retrieve_examples(
@@ -281,8 +310,11 @@ async def async_main(cfg: DictConfig) -> None:
 
     # load thought processes and examples
     if cfg.abstraction.thought_processes:
-        thought_processes = read_json(REPO_ROOT / cfg.abstraction.thought_processes)
-        etp = read_json(REPO_ROOT / cfg.abstraction.example_thought_processes)
+        thought_processes = read_json(cfg.abstraction.thought_processes)
+        if cfg.abstraction.example_thought_processes:
+            etp = read_json(cfg.abstraction.example_thought_processes)
+        else:
+            etp = thought_processes
     else:
         thought_processes = None
 

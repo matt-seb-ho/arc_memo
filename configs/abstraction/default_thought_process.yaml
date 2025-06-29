@@ -1,1 +1,5 @@
+defaults:
+- /model: gpt41
+- /generation: gen_default
+
 problem_solutions: null

@@ -24,7 +24,7 @@ class SolutionStep:
     # tags
     step_idx: int
     thread_id: str
-    prompt_id: str
+    branch_id: str
     puzzle_id: str
 
     # model output
@@ -64,7 +64,7 @@ class SolutionTree:
 
     def to_serializable_dict(self) -> dict:
         initial_dict = asdict(self)
-        _make_solution_tree_dict_serializable(initial_dict)
+        _make_solution_tree_serializable_dict(initial_dict)
         return initial_dict
 
     def get_or_create_branch(self, branch_id: str):
@@ -73,12 +73,16 @@ class SolutionTree:
         return self.prompt_branches[branch_id]
 
 
-def _make_solution_tree_dict_serializable(d) -> None:
+def _make_solution_tree_serializable_dict(d) -> dict:
     if isinstance(d, np.ndarray):
         return d.tolist()
     elif isinstance(d, dict):
         for k, v in d.items():
-            d[k] = _make_solution_tree_dict_serializable(v)
+            d[k] = _make_solution_tree_serializable_dict(v)
+        return d
     elif isinstance(d, list):
         for i in range(len(d)):
-            d[i] = _make_solution_tree_dict_serializable(d[i])
+            d[i] = _make_solution_tree_serializable_dict(d[i])
+        return d
+    else:
+        return d

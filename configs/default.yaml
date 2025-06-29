@@ -1,9 +1,10 @@
 defaults:
   - _self_
-  - model: deepseek-chat
+  - model: deepseek_chat
   - data: barc
   - generation: gen_default
   - module: null
+  - selection: default
   - override hydra/job_logging: custom
 
 puzzle_retry:

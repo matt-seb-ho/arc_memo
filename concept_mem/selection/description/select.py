@@ -187,6 +187,7 @@ async def reselect_concepts(
     gen_cfg: GenerationConfig,
     top_k: int,
     output_dir: Path | None,
+    dry_run: bool = False,
 ) -> tuple[dict[str, str], dict[str, list[str]]]:
     """Reselect concepts based on previous completion."""
     logger.info("Reselecting concepts based on previous completion...")
@@ -212,6 +213,7 @@ async def reselect_concepts(
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
+        dry_run=dry_run,
     )
 
     # parse completions, extract retrieved lesson uids, and prepare hint file
@@ -255,6 +257,7 @@ async def select_concepts(
     top_p: float = 0.95,
     output_dir: Path = REPO_ROOT / "data/llm_concept_retrieval",
     use_hint_v2: bool = False,
+    dry_run: bool = False,
 ) -> dict[str, str]:
     # prepare prompts
     concept_entries = []
@@ -309,6 +312,7 @@ async def select_concepts(
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
+        dry_run=dry_run,
     )
 
     # parse completions, extract retrieved lesson uids, and prepare hint file
@@ -418,10 +422,10 @@ def parse_lessons_from_yaml_block(
         except yaml.YAMLError:
             try:
                 yaml_data = parse_situation_suggestion(yaml_string)
+                assert isinstance(yaml_data, list)
+                assert isinstance(yaml_data[0], dict)
             except Exception as e:
                 errors.append((uid, yaml_string, str(e)))
-        assert isinstance(yaml_data, list)
-        assert isinstance(yaml_data[0], dict)
         individual_lessons[uid] = yaml_data
     # report parsing error count
     logger.info(f"{len(errors)} parsing errors")
@@ -524,17 +528,17 @@ def _route_template(
 async def get_descriptions(
     cfg: DictConfig, llm_client: LLMClient, model: Enum, output_dir: Path
 ) -> dict[str, str]:
-    ensemble_method = cfg.module.ensemble_method
+    ensemble_method = cfg.selection.ensemble_method
     # handle simple case
     if (not ensemble_method) or ensemble_method == "none":
-        assert isinstance(cfg.module.description_file, str)
-        desc_dict = read_json(REPO_ROOT / cfg.module.description_file)
+        assert isinstance(cfg.selection.description_file, str)
+        desc_dict = read_json(REPO_ROOT / cfg.selection.description_file)
         return desc_dict
 
     # combine multiple description files into dict[str, list[str]]
-    assert isinstance(cfg.module.description_file, list)
+    assert isinstance(cfg.selection.description_file, list)
     description_tables = []
-    for description_file in cfg.module.description_file:
+    for description_file in cfg.selection.description_file:
         desc_dict = read_json(REPO_ROOT / description_file)
         description_tables.append(desc_dict)
     description_lists = _combine_description_tables(description_tables)
@@ -557,7 +561,7 @@ async def get_descriptions(
             prompts.append(_build_summary_prompt(desc_list))
         # query model
         summary_generation_kwargs = OmegaConf.to_container(
-            cfg.module.summary_generation, resolve=True
+            cfg.selection.summary_generation, resolve=True
         )
         completions = await llm_client.batch_generate_async(
             prompts, n=1, model=model, **summary_generation_kwargs
@@ -576,7 +580,7 @@ async def get_descriptions(
         # save summarized descriptions to file
         summarized_description_path = output_dir / "summarized_descriptions.json"
         summarized_description_info = {
-            "sources": cfg.module.description_file,
+            "sources": cfg.selection.description_file,
             "ensemble_method": ensemble_method,
             "descriptions": descriptions,
         }
@@ -592,8 +596,8 @@ async def async_main(cfg: DictConfig) -> None:
     logger.info(f"Output directory: {output_dir}")
 
     # set up LLM client
-    provider = Provider(cfg.model.provider)
-    model = cfg.model.name
+    provider = Provider(cfg.selection.model.provider)
+    model = cfg.selection.model.name
     llm_client = LLMClient(
         provider=provider,
         cache_dir=str(REPO_ROOT / "cache"),
@@ -602,19 +606,19 @@ async def async_main(cfg: DictConfig) -> None:
     logger.info(f"Using model: {model}, from provider: {provider.value}")
 
     # preprocess config values
-    if isinstance(cfg.module.problems, str):
-        problems = read_json(REPO_ROOT / cfg.module.problems)
+    if isinstance(cfg.selection.problems, str):
+        problems = read_json(REPO_ROOT / cfg.selection.problems)
     else:
-        assert isinstance(cfg.module.problems, list)
-        problems = cfg.module.problems
+        assert isinstance(cfg.selection.problems, list)
+        problems = cfg.selection.problems
     descriptions = await get_descriptions(
         cfg=cfg,
         llm_client=llm_client,  # needed only for summary generation
         model=model,
         output_dir=output_dir,
     )
-    lessons = read_json(REPO_ROOT / cfg.module.lesson_file)
-    gen_cfg = hydra.utils.instantiate(cfg.generation)
+    lessons = read_json(REPO_ROOT / cfg.selection.lesson_file)
+    gen_cfg = hydra.utils.instantiate(cfg.selection.generation)
 
     # retrieve concepts
     _ = await select_concepts(
@@ -624,15 +628,10 @@ async def async_main(cfg: DictConfig) -> None:
         llm_client=llm_client,
         model=model,
         gen_cfg=gen_cfg,
-        situation_only=cfg.module.situation_only,
-        top_k=cfg.module.top_k,
+        situation_only=cfg.selection.situation_only,
+        top_k=cfg.selection.top_k,
         output_dir=output_dir,
-        use_hint_v2=cfg.module.use_hint_v2,
-    )
-    token_usage_dict = llm_client.get_token_usage_dict()
-    write_json(
-        token_usage_dict,
-        output_dir / "token_usage.json",
+        use_hint_v2=cfg.selection.use_hint_v2,
     )
 
 

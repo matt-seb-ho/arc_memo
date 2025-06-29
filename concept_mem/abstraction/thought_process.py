@@ -10,11 +10,12 @@ from concept_mem.constants import DEFAULT_CODE, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.types import Problem
 from concept_mem.utils import (
-    extract_comment_sections,
+    extract_barc_seed_comment_sections,
     get_arc_problem_by_uid,
-    run_llm_job,
     load_arc_data,
     read_json,
+    run_llm_job,
+    write_json,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,7 +66,11 @@ def get_soluton_summary(problem: Problem, description_only: bool = False) -> str
     """
     if getattr(problem, "code", DEFAULT_CODE) == DEFAULT_CODE:
         return None
-    concepts, description = extract_comment_sections(problem.code)
+    comments = extract_barc_seed_comment_sections(problem.code)
+    concepts = comments.get("concepts", "")
+    description = comments.get("description", "")
+    if concepts == "" or description == "":
+        logger.info(f"concept/description extraction failed on barc seed {problem.uid}")
     if description_only:
         return f"# description:\n{description}"
     return f"# concepts:\n{concepts}\n\n# description:\n{description}"
@@ -96,7 +101,7 @@ def prepare_prompts(
         uids.append(uid)
         if use_barc_solution and uid in barc_seeds:
             problem = barc_seeds[uid]
-            concepts, description = extract_comment_sections(problem.code)
+            concepts, description = extract_barc_seed_comment_sections(problem.code)
             solution = f"```python\n# concepts:\n{concepts}\n\n# description:\n{description}\n```"
         else:
             problem, _ = get_arc_problem_by_uid(uid)
@@ -112,7 +117,7 @@ def prepare_prompts(
             examples=thought_process_examples,
             puzzle=puzzle,
             solution=solution,
-        )
+        ).strip()
         prompts.append(fewshot_thought_prompt)
     return prompts, uids
 
@@ -147,12 +152,15 @@ async def thought_process(
 
 async def async_main(cfg: DictConfig) -> None:
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
-    provider = Provider(cfg.model.provider)
-    model = cfg.model.name
+    logger.info(f"Output directory: {output_dir}")
+    provider = Provider(cfg.abstraction.model.provider)
+    model = cfg.abstraction.model.name
     print(
-        f"model: {model}, provider: {provider.value}, temperature: {cfg.generation.temperature}, max_tokens: {cfg.generation.max_tokens}"
+        f"model: {model}, provider: {provider.value}, "
+        f"temperature: {cfg.abstraction.generation.temperature}, "
+        f"max_tokens: {cfg.abstraction.generation.max_tokens}"
     )
-    gen_cfg = hydra.utils.instantiate(cfg.generation)
+    gen_cfg = hydra.utils.instantiate(cfg.abstraction.generation)
     llm_client = LLMClient(
         provider=provider,
         cache_dir=str(REPO_ROOT / "cache"),
@@ -165,7 +173,7 @@ async def async_main(cfg: DictConfig) -> None:
     else:
         problem_solutions = read_json(problem_solutions)
 
-    _, _ = await thought_process(
+    thought_procs, _ = await thought_process(
         problem_solutions=problem_solutions,
         model=model,
         llm_client=llm_client,
@@ -173,6 +181,8 @@ async def async_main(cfg: DictConfig) -> None:
         gen_cfg=gen_cfg,
         dry_run=cfg.dry_run,
     )
+    write_json(thought_procs, output_dir / "thought_processes.json")
+    logger.info(f"Output directory: {output_dir}")
 
 
 @hydra.main(version_base=None, config_path=HYRDA_CONFIG_PATH, config_name="default")

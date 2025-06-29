@@ -10,7 +10,8 @@ problem_solutions: null
 # - thought process (for solutions to target puzzles)
 # - example thought process (for examples)
 thought_processes: data/thought_process/thought_process.json
-example_thought_processes: data/thought_process/thought_process.json
+# example_thought_processes: data/thought_process/thought_process.json
+example_thought_processes: null
 
 examples: 
   - cf98881b # subsection_example,

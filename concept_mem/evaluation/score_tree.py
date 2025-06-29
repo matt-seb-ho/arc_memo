@@ -129,7 +129,6 @@ def _iter_rows(solution_trees: dict[str, SolutionTree]):
                         yield {
                             "puzzle_id": puzzle_id,
                             "branch_id": branch_id,
-                            "prompt_id": step.prompt_id,
                             "thread_id": thread_id,
                             "step_idx": step.step_idx,
                             "is_train": res.is_train,
@@ -199,7 +198,7 @@ def official_score(
     test_df = df[~df["is_train"]]
     solved_per_pair = (
         test_df.groupby(["puzzle_id", "pair_idx"], sort=False)
-        .apply(lambda g: _official_per_pair(g, attempts_allowed))
+        .apply(lambda g: _official_per_pair(g, attempts_allowed), include_groups=False)
         .reset_index(name="solved")
     )
 

@@ -28,7 +28,7 @@ class TransformFunctionResult(ExecutionResult):
 
 
 def execute_transforms(
-    transform_functions: list[str],
+    transform_functions: str | list[str],
     input_grids: list[np.ndarray],
     timeout: float = 2.0,
     function_name: str = "main",
@@ -39,6 +39,10 @@ def execute_transforms(
     Each function is expected to take an input grid and return a transformed grid.
     """
     # prepare function calls
+    # - if `transform_functions` is a string,
+    #   assume we want to evaluate the same function for all inputs
+    if isinstance(transform_functions, str):
+        transform_functions = [transform_functions] * len(input_grids)
     sources = [
         EXECUTE_TRANSFORM_TEMPLATE.format(
             input_grid_definition=build_input_grid_code(input_grid),

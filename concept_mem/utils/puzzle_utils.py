@@ -132,9 +132,7 @@ def load_arc_data(split: str = "train") -> dict[str, Problem]:
         from arc import validation_problems
 
         full_problem_list = validation_problems
-        uids = set(
-            read_json(REPO_ROOT / "data/vlm_desc_retrieval/validation_n100_uids.json")
-        )
+        uids = set(read_json(REPO_ROOT / "data/testbeds/validation_n100_uids.json"))
         problem_list = [problem for problem in full_problem_list if problem.uid in uids]
     else:
         raise ValueError(f"Invalid split: {split}. Must be 'train' or 'validation'")
@@ -214,7 +212,7 @@ def _get_concepts_from_lines(lines):
     return concepts
 
 
-def extract_comment_sections(solution: str) -> dict[str, str]:
+def extract_barc_seed_comment_sections(solution: str) -> dict[str, str]:
     """
     Scan through `lines` until the first function definition, pulling out
     any comment‑blocks labelled "# concepts:" and "# description:".

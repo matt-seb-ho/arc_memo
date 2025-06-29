@@ -2,6 +2,7 @@ from pathlib import Path
 
 # paths
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = REPO_ROOT / "data"
 DOTENV_PATH = REPO_ROOT / ".env"
 COMMON_LIB_PATH = REPO_ROOT / "data/common_lib.txt"
 HYRDA_CONFIG_PATH = str(REPO_ROOT / "configs")
