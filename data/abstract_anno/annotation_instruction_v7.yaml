@@ -1,0 +1,43 @@
+pseudocode:
+- a list of pseudocode steps that describe the transformation rule
+- a step can be a string or dict
+- for a parameterized operation, use a dict mapping the operation to a keyword argument dict:
+    param name: param value
+    tip: be careful about indenting the argument dict enough
+- try to express control flow using operation parameters instead of top level if/for/etc.
+- some examples of parameters expressing control flow:
+    which: if the operation only happens to certain objects 
+    if: if the operation only happens under certain conditions
+    for each: another parameter that can be used in place of a for loop
+general: condense the solution/pseudocode into a one-liner description of the transform
+concepts:
+- concept: each list entry is a dict representing a concept-- an idea used in the transform
+  description: a short description of the concept
+  detection: optional plain-English rule for spotting this concept automatically
+  helper_routines: a list of Python helper code strings (zero or more) in the form of ```def helper_function_name(grid):```, taking in the input grid and return a transformed grid
+  use_case: a string describing how this concept is used in this puzzle
+  notes:
+  - elaborate on the concept's meaning, usage, etc.
+  - use this section to record any helpful pointers or takeaways on this concept from this solution
+  - we want these annotations to be helpful for solving future puzzles
+  - do not repeat notes already in the repository (listed as indented bullets under the concept)
+- concept: new concepts vs. reusing existing
+  description: a guideline for when to introduce new concepts versus reusing existing ones
+  use_case: we want to build a rich yet concise concept repository
+  notes:
+  - use existing concepts if possible to avoid redundancy
+  - if there are new ideas or substantial variations, feel free to introduce new concepts
+  - if you decide to reuse a concept for a variation, make sure to specify the variation in the use_case and notes fields
+  - when reusing a concept, notes fields are additive, but new description field values override the existing ones
+- concept: concept categories
+  description: concepts generally describe an operation, a predicate, or any other pattern
+  use_case: when introducing new concepts consider if they modify objects/grids or are logic blocks controlling conditional operations
+  notes:
+  - some concepts describe an operation that directly transforms a grid
+  - other concepts describe a criteria, which is a predicate that facilitates conditional operations. Please name these concepts with criteria in the name for consistency
+- concept: guide objects
+  description: when an object in the input grid dictates transform parameters
+  use_case: in a number of puzzles, the transformation depends on some object(s) in the input grid where their position, shape, size, color, etc. influences how to transform the grid
+  notes:
+  - for consistency, refer to such objects as guide objects
+  - consider a specific guide objects called an anchor that indicates a position to build around
