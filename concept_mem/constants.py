@@ -21,3 +21,5 @@ NO_CODE_BLOCK_MESSAGE = "No code block found in the response."
 # that's 4 chars for outer braces, and 30 * 3 = 90 chars for pixels
 # to be safe, we'll use 120 as the max line width
 MAX_LINE_WIDTH = 120
+
+O4M_ID = "o4-mini-2025-04-16"

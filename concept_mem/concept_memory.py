@@ -25,62 +25,40 @@ class Concept:
     use_cases: dict[str, str | None] = field(default_factory=dict)
     notes: dict[str, str] = field(default_factory=dict)
 
-    helper_routines: list[str] = field(
-        default_factory=list
-    )  # Python helper functions that operationalise the concept
+    # python helper functions that operationalise the concept
+    helper_routines: list[str] = field(default_factory=list)
 
     def to_string(
         self,
-        style: str = "puzzle",  # "selection" or "puzzle"
-        *,
+        include_detection: bool = True,
         include_notes: bool = True,
         include_case_info: bool = False,
-        include_helpers: bool = True,
+        include_helpers: bool = False,
         indentation: int = 0,
     ) -> str:
-        """
-        Parameters
-        ----------
-        style : {"selection", "puzzle"}
-            * ``selection``: only name/desc/detection.
-            * ``puzzle``: verbose form for prompt-building.
-        """
-        style = style.lower()
-
-        if style.startswith("sel"):
-            lines: list[str] = [
-                f"- concept: {self.name}",
-                f"  description: {self.description or '—'}",
-                f"  detection: {self.detection or '—'}",
-            ]
-        else:
-            lines: list[str] = [
-                f"- concept: {self.name}",
-                f"  description: {self.description or '—'}",
-            ]
-            if self.detection:
-                lines.append("  detection: " + self.detection)
-
-            if include_helpers and self.helper_routines:
-                lines.append("  helper_routines:")
-                for r in self.helper_routines:
-                    lines.append("  - " + r.splitlines()[0][:72] + "…")
-
-            # de-duplicate notes 
-            if include_notes and self.notes:
-                seen: dict[str, None] = {}
-                for note_list in self.notes.values():
-                    for note in note_list or []:
-                        seen.setdefault(note.strip(), None)
-                if seen:                           
-                    lines.append("  notes:")
-                    for n in seen.keys():
-                        lines.append("  - " + n)
-
-            if include_case_info and self.use_cases:
-                lines.append("  use_cases:")
-                for pid, uc in self.use_cases.items():
-                    lines.append(f"  - {pid}: {uc}")
+        lines: list[str] = [
+            f"- concept: {self.name}",
+            f"  description: {self.description or '—'}",
+        ]
+        if include_detection and self.detection:
+            lines.append(f"  detection: {self.detection}")
+        if include_helpers and self.helper_routines:
+            lines.append("  helper routines:")
+            for r in self.helper_routines:
+                lines.append(f"  - `{r.splitlines()[0][:72]}`...")
+        if include_notes and self.notes:
+            deduplicated_notes = set()
+            for note_list in self.notes.values():
+                for note in note_list or []:
+                    deduplicated_notes.add(note.strip())
+            if deduplicated_notes:
+                lines.append("  notes:")
+                for note in deduplicated_notes.keys():
+                    lines.append(f"  - {note}")
+        if include_case_info and self.use_cases:
+            lines.append("  use_cases:")
+            for puzzle_id, uc in self.use_cases.items():
+                lines.append(f"  - {puzzle_id}: {uc}")
 
         result = "\n".join(lines)
         if indentation:

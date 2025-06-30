@@ -13,11 +13,9 @@ general: condense the solution/pseudocode into a one-liner description of the tr
 concepts:
 - concept: each list entry is a dict representing a concept-- an idea used in the transform
   description: a short description of the concept
-  detection: optional plain-English rule for spotting this concept automatically
-  helper_routines: a list of Python helper code strings (zero or more) in the form of ```def helper_function_name(grid):```, taking in the input grid and return a transformed grid
+  relevance_cues: what cues to look for in the reference input-output grid pairs indicate that this concept is relevant
   use_case: a string describing how this concept is used in this puzzle
   notes:
-  - elaborate on the concept's meaning, usage, etc.
   - use this section to record any helpful pointers or takeaways on this concept from this solution
   - we want these annotations to be helpful for solving future puzzles
   - do not repeat notes already in the repository (listed as indented bullets under the concept)
@@ -28,9 +26,10 @@ concepts:
   - use existing concepts if possible to avoid redundancy
   - if there are new ideas or substantial variations, feel free to introduce new concepts
   - if you decide to reuse a concept for a variation, make sure to specify the variation in the use_case and notes fields
-  - when reusing a concept, notes fields are additive, but new description field values override the existing ones
+  - when reusing a concept, notes fields are additive, but new description and relevance_cues field values override the existing ones
+  - in other words, when you reuse a concept you can either skip the description/relevance_cues field to keep them the same, or rewrite them completely
 - concept: concept categories
-  description: concepts generally describe an operation, a predicate, or any other pattern
+  description: concepts generally describe an operation, a predicate, recurring structure, or any other pattern
   use_case: when introducing new concepts consider if they modify objects/grids or are logic blocks controlling conditional operations
   notes:
   - some concepts describe an operation that directly transforms a grid
