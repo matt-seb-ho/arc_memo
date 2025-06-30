@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Concept:
     name: str  # Name of the concept
-    description: str  # Description of the concept
-    detection: str | None = None  # Detection method for the concept, if applicable
+    description: str | None = None  # Description of the concept
+    relevance_cues: str | None = None  # Detection method for the concept, if applicable
 
     # puzzle_id -> use case description
     use_cases: dict[str, str | None] = field(default_factory=dict)
@@ -30,7 +30,7 @@ class Concept:
 
     def to_string(
         self,
-        include_detection: bool = True,
+        include_cues: bool = True,
         include_notes: bool = True,
         include_case_info: bool = False,
         include_helpers: bool = False,
@@ -40,8 +40,8 @@ class Concept:
             f"- concept: {self.name}",
             f"  description: {self.description or '—'}",
         ]
-        if include_detection and self.detection:
-            lines.append(f"  detection: {self.detection}")
+        if include_cues and self.relevance_cues:
+            lines.append(f"  relevance cues: {self.relevance_cues}")
         if include_helpers and self.helper_routines:
             lines.append("  helper routines:")
             for r in self.helper_routines:
@@ -77,32 +77,34 @@ class ConceptMemory:
         else:
             entry = Concept(name=name)
             self.concepts[name] = entry
-        try:
-            entry.description = concept.get("description", entry.description)
-        except KeyError:
-            logger.warning(
-                f"Missing 'description' for concept {name} in puzzle {puzzle_id}."
-            )
-            entry.description = "No description provided."
 
-        entry.detection = concept.get("detection", None)
+        new_description = concept.get("description", None).strip()
+        if new_description:
+            entry.description = new_description
+        new_relevance_cues = concept.get("relevance_cues", None)
+        if new_relevance_cues:
+            entry.relevance_cues = new_relevance_cues.strip()
 
-        entry.helpers = concept.get("helper_routines", [])
         entry.use_cases[puzzle_id] = concept.get("use_case", None)
         entry.notes[puzzle_id] = concept.get("notes", [])
+        entry.helpers = concept.get("helper_routines", [])
 
     def to_string(
         self,
+        include_cues: bool = True,
         include_notes: bool = True,
         include_case_info: bool = False,
+        include_helpers: bool = False,
     ) -> str:
         # TODO: figure out how to include pseudocode solutions
         components = []
         for concept in self.concepts.values():
             components.append(
                 concept.to_string(
+                    include_cues=include_cues,
                     include_notes=include_notes,
                     include_case_info=include_case_info,
+                    include_helpers=include_helpers,
                 )
             )
         return "\n".join(components)

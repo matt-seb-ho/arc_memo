@@ -25,7 +25,7 @@ from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.types import Problem
 from concept_mem.utils import (
     extract_yaml_block,
-    get_arc_problem_by_uid,
+    get_arc_problem_by_id,
     load_arc_data,
     read_json,
     run_llm_job,
@@ -244,7 +244,7 @@ def format_lesson_examples(
     use_thought_process = thought_processes is not None
     components = []
     for i, (puzzle_id, example) in enumerate(examples.items(), start=1):
-        problem, _ = get_arc_problem_by_uid(puzzle_id)
+        problem, _ = get_arc_problem_by_id(puzzle_id)
         if problem is None:
             continue
         formatted_puzzle = format_puzzle_for_prompt(
@@ -306,7 +306,7 @@ async def async_main(cfg: DictConfig) -> None:
         }
     else:
         problem_solutions = read_json(problem_solutions)
-    problems = {uid: get_arc_problem_by_uid(uid)[0] for uid in problem_solutions.keys()}
+    problems = {uid: get_arc_problem_by_id(uid)[0] for uid in problem_solutions.keys()}
 
     # load thought processes and examples
     if cfg.abstraction.thought_processes:
