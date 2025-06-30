@@ -8,17 +8,24 @@ import yaml
 from llmplus import GenerationConfig, LLMClient
 from omegaconf import DictConfig
 
-from concept_mem.concept_memory import Concept, ConceptMemory
+from concept_mem.concept_memory import ConceptMemory
 from concept_mem.constants import DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.types import Problem
-from concept_mem.utils import load_arc_data, read_yaml, run_llm_job, write_json
+from concept_mem.utils import (
+    load_arc_data,
+    read_yaml,
+    run_llm_job,
+    write_json,
+    read_json,
+    get_arc_problem_by_id,
+)
 
 logger = logging.getLogger(__name__)
 
 annotation_instruction_path = (
-    REPO_ROOT / "data/abstract_anno/annotation_instruction_v6.yaml"
+    REPO_ROOT / "data/abstract_anno/annotation_instruction_v7.yaml"
 )
-hand_annotation_path = REPO_ROOT / "data/abstract_anno/icl_anno_v6.yaml"
+hand_annotation_path = REPO_ROOT / "data/abstract_anno/icl_anno_v8.yaml"
 
 ANNOTATE_TEMPLATE = """\
 # Introduction
@@ -120,12 +127,14 @@ def remove_barc_concepts_from_solution(solution: str) -> str:
 
 async def run_annotation(
     target_puzzles: dict[str, Problem],
+    instruction_block: str,
     examples: str,
     concept_mem: ConceptMemory,
     llm_client: LLMClient,
     model: str,
     gen_cfg: GenerationConfig,
-    output_dir: str | None = None,
+    output_dir: Path | None = None,
+    dry_run: bool = False,
 ) -> None:
     puzzle_ids = []
     prompts = []
@@ -139,6 +148,15 @@ async def run_annotation(
             examples=examples,
             solution=processed_solution,
         )
+        if dry_run:
+            if output_dir:
+                output_dir.mkdir(parents=True, exist_ok=True)
+                dry_run_prompt_file = output_dir / f"dr_{puzzle_id}_prompt.yaml"
+                dry_run_prompt_file.write_text(prompt)
+                logger.info(f"wrote example prompt to {dry_run_prompt_file}")
+            else:
+                logger.info(f"prompt: {prompt}")
+            return
         prompts.append(prompt)
 
         try:
@@ -157,19 +175,22 @@ async def run_annotation(
         concept_mem.update_from_model_output(puzzle_id=puzzle_id, output=completion)
 
     if output_dir:
-        output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         # write prompts and model outputs
         write_json(puzzle_ids, output_dir / "metadata.json")
         write_json(prompts, output_dir / "prompts.json")
         write_json(model_outputs, output_dir / "model_outputs.json")
 
+        # save token usage
+        token_usage = llm_client.get_token_usage_dict()
+        write_json(token_usage, output_dir / "token_usage.json")
+
         # save the concept memory state
         concept_mem.save_to_file(output_dir / "concept_memory.yaml")
         logger.info(f"wrote to {output_dir}")
 
 
-async def async_main():
+async def batch_annotate():
     instr_yaml_block = annotation_instruction_path.read_text()
     hand_annotations = read_yaml(hand_annotation_path)
 
@@ -226,6 +247,60 @@ async def async_main():
     concept_mem.save_to_file(output_dir / "concept_memory.yaml")
 
 
+async def async_main(cfg: DictConfig) -> None:
+    # output directory setup
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    logger.info(f"Output directory: {output_dir}")
+
+    # load instructions and ICL demos
+    barc_seeds = load_arc_data("barc_seeds")
+    if cfg.annotate.instruction_block_file:
+        annotation_instruction_path = Path(cfg.annotate.instruction_block_file)
+    instr_yaml_block = annotation_instruction_path.read_text()
+    if cfg.annotate.hand_annotations_file:
+        hand_annotation_path = Path(cfg.annotate.hand_annotations_file)
+    hand_annotations = read_yaml(hand_annotation_path)
+    examples = format_annotation_examples(
+        puzzles=barc_seeds,
+        example_annotations=hand_annotations,
+        transform_solution=remove_barc_concepts_from_solution,
+    )
+
+    # set up target puzzles
+    if cfg.annotate.problem_ids is None:
+        target_puzzles = {
+            pzid: barc_seeds[pzid]
+            for pzid in barc_seeds
+            if pzid not in hand_annotations
+        }
+    else:
+        pzids = read_json(cfg.annotate.problem_ids)
+        target_puzzles = {pzid: get_arc_problem_by_id(pzid) for pzid in pzids}
+
+    # memory setup
+    concept_mem = ConceptMemory()
+    concept_mem.initialize_from_annotations(hand_annotations)
+
+    # model related setup
+    llm_client = LLMClient(
+        cache_dir=str(REPO_ROOT / "cache"),
+        dotenv_path=DOTENV_PATH,
+    )
+    gen_cfg = hydra.utils.instantiate(cfg.annotate.generation)
+
+    await run_annotation(
+        target_puzzles=target_puzzles,
+        instruction_block=instr_yaml_block,
+        examples=examples,
+        concept_mem=concept_mem,
+        llm_client=llm_client,
+        model=cfg.annotate.model.name,
+        gen_cfg=gen_cfg,
+        output_dir=output_dir,
+        dry_run=cfg.dry_run,
+    )
+
+
 @hydra.main(
     version_base=None,
     config_path=HYRDA_CONFIG_PATH,
@@ -236,3 +311,7 @@ def main(cfg: DictConfig) -> None:
     Main function to run the annotation process.
     """
     asyncio.run(async_main(cfg))
+
+
+if __name__ == "__main__":
+    main()

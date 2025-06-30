@@ -11,7 +11,7 @@ from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.types import Problem
 from concept_mem.utils import (
     extract_barc_seed_comment_sections,
-    get_arc_problem_by_uid,
+    get_arc_problem_by_id,
     load_arc_data,
     read_json,
     run_llm_job,
@@ -104,7 +104,7 @@ def prepare_prompts(
             concepts, description = extract_barc_seed_comment_sections(problem.code)
             solution = f"```python\n# concepts:\n{concepts}\n\n# description:\n{description}\n```"
         else:
-            problem, _ = get_arc_problem_by_uid(uid)
+            problem, _ = get_arc_problem_by_id(uid)
             if problem is None:
                 logger.warning(f"Problem with UID {uid} not found in the dataset.")
                 continue

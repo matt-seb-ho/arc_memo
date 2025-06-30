@@ -139,15 +139,15 @@ def load_arc_data(split: str = "train") -> dict[str, Problem]:
     return {problem.uid: problem for problem in problem_list}
 
 
-def get_arc_problem_by_uid(uid: str) -> tuple[Problem | None, str | None]:
+def get_arc_problem_by_id(puzzle_id: str) -> tuple[Problem | None, str | None]:
     """
     Get an ARC problem by its UID.
     Returns None if the problem does not exist.
     """
     for split in ["train", "validation"]:
         problems = load_arc_data(split)
-        if uid in problems:
-            return problems[uid], split
+        if puzzle_id in problems:
+            return problems[puzzle_id], split
     return None, None
 
 

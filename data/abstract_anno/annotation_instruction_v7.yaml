@@ -13,7 +13,7 @@ general: condense the solution/pseudocode into a one-liner description of the tr
 concepts:
 - concept: each list entry is a dict representing a concept-- an idea used in the transform
   description: a short description of the concept
-  relevance_cues: what cues to look for in the reference input-output grid pairs indicate that this concept is relevant
+  relevance_cues: what cues to look for in the reference input-output grid pairs indicate that this concept is relevant. This field is optional because for some concepts, it is hard to identify cues that would suggest the concept is relevant.
   use_case: a string describing how this concept is used in this puzzle
   notes:
   - use this section to record any helpful pointers or takeaways on this concept from this solution
