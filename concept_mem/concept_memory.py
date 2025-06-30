@@ -5,6 +5,8 @@ from pathlib import Path
 import orjson
 import yaml
 
+import textwrap
+
 from concept_mem.utils import extract_yaml_block, read_json, read_yaml
 from concept_mem.constants import REPO_ROOT
 
@@ -15,16 +17,17 @@ logger = logging.getLogger(__name__)
 # new format:
 @dataclass
 class Concept:
-    name: str                       # Name of the concept
-    description: str                # Description of the concept
-    detection: str | None = None    # Detection method for the concept, if applicable
+    name: str  # Name of the concept
+    description: str  # Description of the concept
+    detection: str | None = None  # Detection method for the concept, if applicable
 
     # puzzle_id -> use case description
     use_cases: dict[str, str | None] = field(default_factory=dict)
     notes: dict[str, str] = field(default_factory=dict)
 
-
-    helper_routines: list[str] = field(default_factory=list)  # Python helper functions that operationalise the concept
+    helper_routines: list[str] = field(
+        default_factory=list
+    )  # Python helper functions that operationalise the concept
 
     def to_string(
         self,
@@ -39,77 +42,50 @@ class Concept:
         Parameters
         ----------
         style : {"selection", "puzzle"}
-            * ``selection``: only contain name, desc, detection.
-            * ``puzzle``: verbose form suitable for prompt-building.
-        include_notes, include_case_info, include_helpers : bool
-            Flags affecting *puzzle* style only; ignored for *selection*.
+            * ``selection``: only name/desc/detection.
+            * ``puzzle``: verbose form for prompt-building.
         """
         style = style.lower()
-        indent = " " * indentation
 
         if style.startswith("sel"):
-            return (
-                f"{indent}- concept: {self.name}\n"
-                f"{indent}  description: {self.description or '—'}\n"
-                f"{indent}  detection: {self.detection or '—'}"
-            )
+            lines: list[str] = [
+                f"- concept: {self.name}",
+                f"  description: {self.description or '—'}",
+                f"  detection: {self.detection or '—'}",
+            ]
         else:
             lines: list[str] = [
-                f"{indent}- concept: {self.name}",
-                f"{indent}  description: {self.description or '—'}",
+                f"- concept: {self.name}",
+                f"  description: {self.description or '—'}",
             ]
             if self.detection:
-                lines.append(f"{indent}  detection: {self.detection}")
+                lines.append("  detection: " + self.detection)
+
             if include_helpers and self.helper_routines:
-                lines.append(f"{indent}  helper_routines:")
+                lines.append("  helper_routines:")
                 for r in self.helper_routines:
-                    lines.append(f"{indent}  - {r.splitlines()[0][:72]}…")
+                    lines.append("  - " + r.splitlines()[0][:72] + "…")
+
+            # de-duplicate notes 
             if include_notes and self.notes:
-                lines.append(f"{indent}  notes:")
+                seen: dict[str, None] = {}
                 for note_list in self.notes.values():
                     for note in note_list or []:
-                        lines.append(f"{indent}  - {note.strip()}")
-            if include_case_info and self.use_cases:
-                lines.append(f"{indent}  use_cases:")
-                for pid, uc in self.use_cases.items():
-                    lines.append(f"{indent}  - {pid}: {uc}")
-            return "\n".join(lines)
+                        seen.setdefault(note.strip(), None)
+                if seen:                           
+                    lines.append("  notes:")
+                    for n in seen.keys():
+                        lines.append("  - " + n)
 
-    # def to_string(
-    #     self,
-    #     include_notes: bool = True,
-    #     include_case_info: bool = False,
-    #     indentation: int = 0,
-    # ) -> str:
-    #     components = [f"- concept: {self.name}"]
-    #     if include_notes and self.notes:
-    #         note_set = set()
-    #         for note_list in self.notes.values():
-    #             if note_list is None:
-    #                 continue
-    #             for note in note_list:
-    #                 if isinstance(note, dict):
-    #                     for k, v in note.items():
-    #                         note_set.add(f"{k}: {v.strip}")
-    #                 elif isinstance(note, str):
-    #                     note_set.add(note.strip())
-    #                 else:
-    #                     logger.warning(
-    #                         f"Unexpected note type: {type(note)} for concept {self.name}. Note: {note}"
-    #                     )
-    #         if note_set:
-    #             components.append("  notes:")
-    #             for note in note_set:
-    #                 components.append(f"  - {note}")
-    #     if include_case_info and self.use_cases:
-    #         components.append("  concept usages:")
-    #         for puzzle_id, use_case in self.use_cases.items():
-    #             components.append(f"  - {puzzle_id}: {use_case}")
-    #     if indentation:
-    #         indent = " " * indentation
-    #         components = [f"{indent}{line}" for line in components]
-    #     text = "\n".join(components)
-    #     return text
+            if include_case_info and self.use_cases:
+                lines.append("  use_cases:")
+                for pid, uc in self.use_cases.items():
+                    lines.append(f"  - {pid}: {uc}")
+
+        result = "\n".join(lines)
+        if indentation:
+            result = textwrap.indent(result, " " * indentation)
+        return result
 
 
 class ConceptMemory:
@@ -126,10 +102,12 @@ class ConceptMemory:
         try:
             entry.description = concept.get("description", entry.description)
         except KeyError:
-            logger.warning(f"Missing 'description' for concept {name} in puzzle {puzzle_id}.")
+            logger.warning(
+                f"Missing 'description' for concept {name} in puzzle {puzzle_id}."
+            )
             entry.description = "No description provided."
-        
-        entry.detection  = concept.get("detection",  None)
+
+        entry.detection = concept.get("detection", None)
 
         entry.helpers = concept.get("helper_routines", [])
         entry.use_cases[puzzle_id] = concept.get("use_case", None)
