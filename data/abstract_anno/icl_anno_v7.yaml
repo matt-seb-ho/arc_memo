@@ -1,0 +1,593 @@
+0d3d703e:
+  pseudocode:
+  - recolor objects:
+      which: all
+      color scheme: fixed substitution cipher
+  general: substitution cipher based recoloring
+  concepts:
+  - concept: recoloring
+    description: changing the color of object(s) without altering shape or position
+    detection: identify identical pixel masks whose color indices differ between input and output
+    helper_routines: []
+  - concept: color subsitution cipher
+    description: recoloring follows fixed 1-to-1 color map
+    notes:
+    - a specific case of recoloring
+    - look for objects being in the same position, shape, size
+    detection: detect a global mapping dict between every input color and a unique output color with identical object masks
+    helper_routines: []
+cf98881b:
+  pseudocode:
+  - split input grid at dividers
+  - layer split regions:
+      top down layer order: regions left to right
+  general: split input grid along dividers and stack regions
+  concepts:
+  - concept: region dividers
+    description: line that separates guide/working regions
+    use_case: splits input grid into regions to be combined
+    notes:
+    - the split regions may need to be combined in some way
+    - a divider can also specify a guide object
+    detection: detect a full-length horizontal or vertical line of a unique color whose removal partitions the grid into rectangular sub-regions
+    helper_routines: []
+  - concept: z-axis layers
+    description: regions are layered on top of each other with a rule for resolving overlapping pixels
+    use_case: layer regions from left to right, top-down (leftmost region has highest priority)
+    notes:
+    - look for split regions of the same size
+    - where you need to understand the layering scheme (what pixel to output given the corresponding pixel from several layers)
+    - sometimes the layering scheme is just some layers always have priority, other times it's color-based, other times still it's some operation comparing pixels
+    detection: try to fill up a certain pure-color object with another color and see if this change-of-color makes a perfect object (square/rectangle/etc.) together with nearby objects -- indicating the two objects are on different layers and has occlusion relationship.
+    helper_routines: []
+228f6490:
+  pseudocode:
+  - move objects:
+      which: objects that whose shape matches cavity of another object
+      destination: inside the cavity
+  general: move colored objects into matching holes
+  concepts:
+  - concept: object movement
+    description: shifting an object to a new position by a fixed offset
+    detection: find an object whose pixel mask is unchanged except for a pure translation by the specified vector
+    helper_routines: []
+  - concept: holes
+    description: object with background cavity
+    notes:
+    - holes can be used as target destinations for moving objects
+    - holes might also be a countable quantity
+    detection: detect any connected component whose bounding box encloses background-color pixels entirely surrounded by the component's border color
+    helper_routines: []
+  - concept: hole matching criteria
+    description: object fits exactly into cavity
+    notes:
+    - whether a object cleanly fits inside or against another object
+    - hole matching specifically determined if an object's shape is equivalent to the hole shape
+    detection: confirm object and cavity share identical shape masks after translation so every object pixel aligns with a background pixel in the hole and no overflow occurs
+    helper_routines: []
+d2abd087:
+  pseudocode:
+  - recolor objects:
+      which: all
+      color scheme: red if size is 6 else blue
+  general: size based object recoloring
+  concepts:
+  - concept: recoloring
+    description: changing the color of object(s) without altering shape or position
+    use_case: conditional recoloring (new color depends on some condition)
+    detection: identify identical pixel masks whose color indices differ between input and output
+    helper_routines: []
+  - concept: size criteria
+    description: where object size is conditioned on
+    use_case: objects having size over a threshold
+    detection: compute pixel counts for each object and flag those that match the specified size condition (e.g., exactly 6 pixels) for downstream logic
+    helper_routines: []
+4093f84a:
+  pseudocode:
+  - slide with collision:
+      direction: inwards towards central rectangle (if rectangle spans grid height,
+        pixels left of the rectangle slide right, etc.)
+  - recolor objects:
+      which: pixels that were moved
+      color scheme: same color as central rectangle
+  general: slide pixels towards central rectangle with collision and recolor moved
+    pixels
+  concepts:
+  - concept: sliding with collision
+    description: object movement but instead of fixing a destination, you keep moving until you hit another object or the grid edge
+    use_case: slide pixels towards a central object with direction given by central object orientation
+    notes:
+    - keep moving target object one pixel over until another object is blocking (i.e. moving the target object again would override another object's pixel)
+    - sliding direction can either be fixed across all examples, but if it changes it is usually indicated by a guide object's orientation or position.
+    detection: identify pixels whose path to the central rectangle is a straight line filled with background cells in the input; final positions are adjacent to the rectangle with original ordering preserved (no overlaps en route)
+    helper_routines: []
+1bfc4729:
+  pseudocode:
+  - output fixed shape:
+      color scheme: two pixels in input grid indicate top half and bottom half color
+  general: output a fixed shape with colors determined by input grid
+  concepts:
+  - concept: guide indicated color scheme
+    description: guide object's colors dictate recoloring
+    use_case: input grids contain exactly two non-background pixels, use their colors (top, bottom) as the color scheme.
+    detection: detect exactly two distinct single-cell objects in the input; treat the one with lower row-index as “top color” and the other as “bottom color”
+    helper_routines: []
+  - concept: fixed shape output
+    description: consistently output a shape with a fixed size and structure
+    notes:
+    - where the output shape is fixed across the examples but minor aspects such as color or size vary based on the input grids
+    detection: verify that, after normalising colors to a single placeholder, the output grid equals a predefined binary shape template (position and dimensions constant across all training examples)
+    helper_routines: []
+5168d44c:
+  pseudocode:
+  - move objects:
+      which: red square
+      direction: rightwards if dotted line is horizontal, downwards if vertical
+      amount: two pixels
+  general: move object along a path
+  concepts:
+  - concept: object movement
+    description: shifting an object to a new position by a fixed offset
+    use_case: null
+    notes: null
+    detection: find an object whose pixel mask is unchanged except for a pure translation by the specified vector
+    helper_routines: []
+  - concept: guide object indicated direction
+    description: guide object's orientation or aspect sets movement vector
+    use_case: horizontal dotted line indicates horizontal direction, etc.
+    notes:
+    - guide objects can indicate direction via their orientation, shape, or position
+    - 'orientation example: if there was a guide object in the shape of an arrow pointing in a cardinal direction'
+    - 'position example: if there was a guide object at the one of the 4 edges of the grid'
+    detection: classify the guide object (e.g., dotted line) as horizontal → move →, or vertical → move ↓
+    helper_routines: []
+bd4472b8:
+  pseudocode:
+  - separate input grid with divider
+  - define guide:
+      where: row of pixels above divider
+  - create repeating pattern:
+      pattern: horizontal rows
+      where: beneath the divider
+      color scheme: top to bottom should match guide left to right order
+  general: recolor rows using a guide
+  concepts:
+  - concept: region divider
+    description: line that separates guide/working regions
+    use_case: separates guide object from canvas to modify
+    detection: detect a full-length horizontal or vertical line of a unique color whose removal partitions the grid into rectangular sub-regions
+    helper_routines: []
+  - concept: guide indicated color scheme
+    description: colors in the guide row determine recoloring scheme
+    use_case: guide selected from colored region separated by divider
+    detection: read the non-background pixel colors in the guide row (left→right) to form an ordered list that maps to output row colors (top canvas row uses first color, etc.)
+    helper_routines: []
+  - concept: recoloring
+    description: changing the color of object(s) without altering shape or position
+    detection: identify identical pixel masks whose color indices differ between input and output
+    helper_routines: []
+776ffc46:
+  pseudocode:
+  - define guide:
+      where: inside an empty 4-sided rectangle
+  - recolor objects:
+      which: objects matching guide shape
+      color scheme: guide object color
+  general: recolor objects according to a guide
+  concepts:
+  - concept: recoloring
+    description: changing the color of object(s) without altering shape or position
+    detection: identify identical pixel masks whose color indices differ between input and output
+    helper_routines: []
+  - concept: containment criteria
+    description: object(s) are selected for recoloring based on being fully contained inside another object
+    use_case: guide object is contained inside a box, and distractors are partially contained
+    detection: select candidate objects whose bounding boxes lie strictly within the bounding box of the surrounding rectangle (no pixel touches or crosses the rectangle border)
+    helper_routines: []
+  - concept: guide shape matching criteria
+    description: operation is conditioned on an object's shape matching a guide object
+    use_case: selected by being contained on 4 sides by a box
+    detection: for each contained object, translate the guide object's pixel mask; if it matches exactly (size & shape) the object qualifies
+    helper_routines: []
+  - concept: guide shape indicated color
+    description: the color of the guide object determines the recoloring target
+    detection: read the guide object's color index and apply it to every object that passes the containment + shape-match tests
+    helper_routines: []
+9f236235:
+  pseudocode:
+  - convert meta grid to pixel grid:
+      conversion rule: meta cells only contain a single color, use that color for
+        the corresponding pixel
+  - reflect:
+      orientation: left to right
+  general: parse meta grid and reflect left to right
+  concepts:
+  - concept: meta grid
+    description: grid partitioned into equal-sized cells by divider lines
+    use_case: uniform row and column size with 1 pixel, uniform color dividers
+    detection: detect equal-dimension rectangular blocks separated by 1-pixel straight lines of a unique divider color; each block interior is uniformly colored
+    helper_routines: []
+  - concept: meta grid cell to single pixel conversion
+    use_case: meta grid cells contain a single color, map the meta grid to a smaller
+      grid where each meta grid cell is represented by a single pixel
+    notes:
+    - where you abstract the meta grid cell to a single pixel and remove the dividers
+      if there are any
+    - need to determine the rule for how to convert a meta grid cell to a single pixel
+    description: shrink meta grid to pixel grid
+    detection: look for meta-grid cells that are uniformly a single colour; treat each such cell as one output pixel of that same colour.
+    helper_routines: []
+  - concept: reflection
+    description: create a left-right mirror image of a grid
+    detection: verify output[r][c] == input[r][W-1-c] for every pixel position, confirming horizontal reflection
+    helper_routines: []
+09629e4f:
+  pseudocode:
+  - select meta grid cell:
+      criteria: does not contain cyan pixels
+  - create meta grid:
+      cell size: 3x3
+      dividers: 1 pixel thick, grey
+      cell content: full color with corresponding pixel in selected 3x3
+  general: select a meta grid cell and expand it to a meta grid
+  concepts:
+  - concept: meta grid
+    description: grid partitioned into equal-sized cells by divider lines
+    use_case: expecting meta grid input and output
+    notes:
+    - horizontal and vertical lines dividing overall grid into meta cells
+    - meta grid cells can be uniform size
+    - meta grid cells can be proper grids (i.e. uniform row/column cell count)
+    detection: detect equal-dimension rectangular blocks separated by 1-pixel straight lines of a unique divider color; each block interior is uniformly colored
+    helper_routines: []
+  - concept: color exclusion criteria
+    description: selecting cell(s) by absence of a specific color
+    use_case: each cell contains mostly the same color, select the cell to be expanded if it excludes teal
+    detection: iterate over meta cells and choose the one whose interior pixels contain no cyan color index
+    helper_routines: []
+e21d9049:
+  pseudocode:
+  - replicate pattern:
+      pattern: horizontal line
+      direction: horizontal
+      limit: grid edges
+      gap: none
+      color scheme: initial segment
+  - replicate pattern:
+      pattern: vertical line
+      direction: vertical
+      limit: grid edges
+      gap: none
+      color scheme: copy initial segment
+  general: expand cross shaped pattern to grid edge
+  concepts:
+  - concept: pattern replication
+    description: copying a pattern from the input grid potentially multiple times
+    notes:
+    - output grid may contain multiple copies of the same pattern
+    - the copied pattern may be rotated or reflected as well
+    - often need to repeat a pattern in a certain direction until the grid edges are reached
+    detection: look for an original pattern (of objects/pixels) and exact copies of it placed outward in the specified direction(s), keeping orientation and spacing consistent.
+    helper_routines: []
+1e32b0e9:
+  pseudocode:
+  - define guide:
+      where: inside top left meta grid cell
+  - draw in meta grid cells:
+      which: all
+      what: guide shape (without overwriting existing non-background cells)
+      color: meta grid cell border
+  general: copy top left meta grid cell shape to other cells
+  concepts:
+  - concept: meta grid
+    description: grid partitioned into equal-sized cells by divider lines
+    detection: detect 1-pixel-thick horizontal/vertical divider lines of a unique border color that form a lattice of equal-dimension cells
+    helper_routines: []
+  - concept: guide object indicated shape
+    description: the shape of a guide object specifies what to draw elsewhere
+    use_case: selected by being in a fixed meta grid position (top left corner)
+    detection: locate the connected component fully contained in the top-left meta cell; record its pixel mask relative to that cell
+    helper_routines: []
+  - concept: pattern completion
+    description: replicate the guide shape without overwriting existing pixels
+    use_case: complete pattern defined by a guide object using a fixed color without overriding the existing pattern pixels
+    detection: look for missing symmetric or repetitive segments whose absence prevents full rotational/reflective symmetry, indicating where identical copies should appear. Or look for similar-but-different objects and discern if they are the same object but contaminated in different ways.
+    helper_routines: []
+025d127b:
+  pseudocode:
+  - move pixels:
+      which: object pixels if there exists colored pixels to bottom right of it
+      direction: right
+      amount: 1
+  general: shift portion of objects
+  concepts:
+  - concept: sub-object movement
+    description: moving pixels within an object
+    use_case: move all pixels of the object except for it there is a colored pixel in the bottom right direction
+    detection: within each object, translate rightward by 1 any pixel whose bottom-right neighbour (row+1, col+1) lies inside the grid and is non-background; the object's remaining pixels stay in place
+    helper_routines: []
+  - concept: directional scan criteria
+    description: pixel/object selected if scanning in certain direction(s) finds something
+    use_case: the entire region that is right and down of the current pixel was scanned
+    detection: for a given pixel, examine all cells strictly below and to the right (forming its south-east quadrant); if any contain a non-background color, the pixel qualifies for the operation
+    helper_routines: []
+8d5021e8:
+  pseudocode:
+  - expand grid via reflection:
+      region: full grid
+      direction: leftwards
+  - expand grid via reflection:
+      region: full grid
+      direction: upwards
+  - expand grid via reflection:
+      region: bottom 2 rows
+      direction: downwards
+  general: augment original pattern by reflecting it
+  concepts:
+  - concept: reflection expansion
+    description: expand a grid by reflecting it in a specified direction and concatenating the reflected copy to the original grid
+    detection: confirm the output consists of the input grid plus its mirror image along the stated axis (leftwards → concatenate reflected copy to the left, upwards → above, downwards → below a row-restricted region), preserving colors and relative ordering
+    helper_routines: []
+ff28f65a:
+  pseudocode:
+  - count objects:
+      which: red 2x2 squares
+  - create a repeating pattern:
+      pattern: blue pixel checkerboard
+      start: top left corner
+      direction: left to right in a row, top down
+      limit: use blue pixels equal to count
+  general: count shape in input grid and display count in output grid
+  concepts:
+  - concept: counting
+    description: tallying the number of objects or pixels of a specified type and using the count in a later step
+    use_case: count is used for how many pixels to draw of a new pattern
+    notes:
+    - count could be used for output object size
+    detection: identify object in the input, count them, and return that integer for downstream logic
+    helper_routines: []
+  - concept: repeating pattern
+    description: generate an output by tiling a small motif (e.g., checkerboard) across a region, possibly truncated by a limit
+    use_case: create checkerboard pattern on a fixed-size output with a variable number of pixels
+    detection: look for a motif that reappears at regular, gap-free intervals in the stated direction until just before the grid edge.
+    helper_routines: []
+1b60fb0c:
+  pseudocode:
+  - extract rotationally repeated unit
+  - add rotated unit to missing side using red pixels
+  general: complete a symmetric/repeating pattern
+  concepts:
+  - concept: pattern completion
+    description: replicate the guide shape without overwriting existing pixels
+    use_case: fill in the missing arm so the overall shape becomes rotationally symmetric
+    notes:
+    - completing a pattern may involve matching a guide, or making the result rotationally
+      or reflectively symmetric
+    detection: look for missing symmetric or repetitive segments whose absence prevents full rotational/reflective symmetry, indicating where identical copies should appear. Or look for similar-but-different objects and discern if they are the same object but contaminated in different ways.
+    helper_routines: []
+6e19193c:
+  pseudocode:
+  - define guides:
+    - which: all input grid objects
+  - draw lines: null
+    for each: guide
+    color: match guide object
+    start: guide defines a position
+    direction: guide defines a direction (diagonal direction between arms of
+      the L-shaped guide)
+  general: draw diagonal lines according to guide objects
+  concepts:
+  - concept: line drawing
+    description: extend a straight pixel line from a start point in a fixed direction until the grid edge or a blocker
+    use_case: diagonally starting from one pixel away from a guide
+    detection: find if the output grid contains a horizontal or vertical line of pixels of the same color than the input grid, if so, we detect a line-drawing operation
+    helper_routines: []
+  - concept: guide indicated direction
+    description: a guide's geometry/orientation encodes the direction for the operation
+    use_case: guide indicates which of 4 diagonal directions to start towards and keep going in
+    detection: analyse the two arms of the L-shaped guide; the bisector between them specifies one of four diagonals (↘︎, ↙︎, ↗︎, ↖︎) used for the subsequent line draw
+    helper_routines: []
+  - concept: guide indicated color
+    description: the color of the guide object determines the color of the pixels to draw
+    detection: read the guide object's color index and apply that color to every pixel generated by the line-drawing step
+    helper_routines: []
+  - concept: guide indicated position
+    description: the spatial placement of the guide determines the exact line start cell
+    use_case: guide objects are rotationally congruent, the indicated position is what would preserve the symmetry
+    detection: choose the cell adjacent to the guide in the selected diagonal direction (one pixel away) as the starting point for the line so rotational symmetry is maintained
+    helper_routines: []
+3e980e27:
+  pseudocode:
+  - define guide:
+      where: object with a single pixel of another shape
+  - define anchor points:
+      where: all free floating pixels in the input grid not part of a guide
+  - replicate pattern:
+      for each: anchor point
+      color: match guide object
+      position: start at anchor point
+      pattern: guide object
+  - reflect objects:
+      for each: anchor point
+      which: if anchor pixel is red
+      axis: about anchor pixel
+  general: copy guide objects to anchors points, reflecting based on color
+  concepts:
+  - concept: anchor
+    description: a guide-like single pixel whose position marks where another pattern should be placed
+    use_case: anchor point color determines which of 2 guides to follow
+    notes:
+    - similar to guide objects but used solely to indicate a position
+    - serves as a position indicator for where to replicate a shape or start a pattern
+    detection: locate every free-floating single-pixel component not part of any larger guide; treat its coordinates as the insertion point for the replicated (and possibly reflected) guide pattern
+    helper_routines: []
+  - concept: guide indicated color
+    description: the color of the guide object determines the color of the pixels to draw
+    detection: read the guide object's color index and apply that color to every pixel generated by the replication step
+    helper_routines: []
+  - concept: pattern replication
+    description: copying a pattern from the input grid potentially multiple times
+    notes:
+    - output grid may contain multiple copies of the same pattern
+    - the copied pattern may be rotated or reflected as well
+    - often need to repeat a pattern in a certain direction until the grid edges are reached
+    detection: locate the initial pattern, then copy its pixel mask (with color already adjusted) at each anchor position, respecting any specified orientation or reflection
+    helper_routines: []
+  - concept: reflection
+    description: create a left–right, up–down, or diagonal mirror image of a pattern around a given axis
+    detection: verify that the reflected copy satisfies output[r][c] == input[r_ref][c_ref] where (r_ref, c_ref) is the mirror of (r, c) about the specified axis
+    helper_routines: []
+  - concept: color criteria
+    description: performing an operation only when a pixel or object is of a specified color
+    use_case: anchor color decides whether to reflect a pattern
+    detection: for each anchor pixel, test its color index; if it matches the trigger color (e.g., red) enable the reflection step, otherwise replicate without reflection
+    helper_routines: []
+aba27056:
+  pseudocode:
+  - fill object:
+      for each: cup objects
+      color: yellow
+  - draw line:
+      for each: cup object, for each pixel in opening
+      direction: cup opening direction
+      color: yellow
+  - draw lines:
+      for each: 2 outermost cup opening pixels
+      direction: diagonal away from cup opening
+      color: yellow
+  general: fill cup object and draw lines out of the opening
+  concepts:
+  - concept: cup
+    description: a container‐like shape that is closed on three sides but has a one-pixel-wide opening
+    use_case: cup filling and lines out the opening
+    notes:
+    - a cup is nearly a container, but has one opening
+    detection: find connected components whose boundary encloses background pixels except for a single contiguous one-pixel opening; recognise the opening's orientation (↑, ↓, ←, →) from the gap location
+    helper_routines: []
+  - concept: filling
+    description: coloring every background pixel inside a cavity or container shape
+    use_case: cup cavity is filled
+    notes:
+    - holes can be filled with a certain color
+    - it may or may not be a flood fill (i.e. if a cavity has an opening, it may not fill outside the cavity)
+    detection: look for previously hollow cavities now uniformly coloured, indicating the interior of the container has been filled.
+    helper_routines: []
+  - concept: line drawing
+    description: extend a straight pixel line from a start point in a fixed direction until the grid edge or a blocker
+    detection: find if the output grid contains a horizontal or vertical line of pixels of the same color than the input grid, if so, we detect a line-drawing operation
+    helper_routines: []
+48d8fb45:
+  pseudocode:
+  - define guide:
+      which: single grey pixel
+  - crop object:
+      which: object touching the guide
+  general: crop the marked object
+  concepts:
+  - concept: guide object adjacency criteria
+    description: selecting objects based on direct adjacency (edge-touching) to a marker guide object
+    use_case: grey pixel acting as a marker guide object
+    notes:
+    - guide object could serve as a marker that selects adjacent construct(s)
+    detection: find every non-background object that shares at least one 4-connected edge pixel with the guide pixel; flag those objects for subsequent operations
+    helper_routines: []
+  - concept: cropping
+    description: output a smaller grid by removing all rows and columns that do not contain the selected object(s)
+    use_case: crop the object touching the guide object
+    notes:
+    - cropping removes all the rows and columns that do not contain the guide object
+    detection: compute the bounding box of the selected object(s) (inclusive); output the sub-grid defined by that box, preserving original pixel colors
+    helper_routines: []
+469497ad:
+  pseudocode:
+  - count unique colors:
+      which: all
+  - scale:
+      target: full input grid
+      factor: unique color count
+  - define guide:
+      which: rectangle object
+  - draw lines:
+      for each: corner of guide
+      direction: diagonal away from the corner
+      color: red
+      limit: grid edges and other objects
+  general: scale input grid according to unique color count
+  concepts:
+  - concept: counting
+    description: tallying the number of objects or pixels of a specified type and using the count in a later step
+    use_case: count unique colors in the input grid
+    notes:
+    - in addition to counting concrete objects, you can also count abstract properties such as unique colors
+    - the count can be used for sorting, a scaling factor, or corresponding to a color
+    detection: collect all non-background color indices present in the input and return their cardinality
+    helper_routines: []
+  - concept: scaling
+    description: increasing or decreasing a grid or object's size by an integer factor
+    use_case: scale factor determined by counting result
+    notes:
+    - need to determine target (could be individual objects or full grids)
+    - need to determine scaling factor
+    detection: look for an output where each input pixel is replaced by an identical s × s square block of the same colour, with s equal to a previously computed integer factor.
+    helper_routines: []
+  - concept: guide indicated direction
+    description: a guide's geometry/orientation encodes the direction for the operation
+    use_case: diagonally outward from guide object corners
+    detection: analyse the guide's shape (rectangle) and select the diagonal (↘︎, ↙︎, ↗︎, ↖︎) that points away from each chosen corner
+    helper_routines: []
+  - concept: guide indicated position
+    description: the spatial placement of the guide determines the exact start cell
+    use_case: guide object corner as starting point
+    detection: take each corner coordinate of the guide rectangle as the starting point for the line-drawing step
+    helper_routines: []
+6cdd2623:
+  pseudocode:
+  - new empty grid:
+      dimensions: same as input grid
+  - define guides:
+      which: pairs of pixels on on opposite edges of the grid if they are aligned
+  - draw connecting object:
+      for each: guide pair
+      start: guide pair first pixel
+      end: guide pair second pixel
+      color: match guide
+  general: connect aligned pixels on grid edge with lines
+  concepts:
+  - concept: aligned criteria
+    description: selecting object pairs that share a common row or column index
+    use_case: pairs of aligned pixels on opposite edges of the grid
+    notes:
+    - objects are aligned if they are on the same row(s) or column(s)
+    - alignment criteria often is used in tandem with connection or line drawing concepts
+    detection: iterate over every pair of candidate edge pixels; flag the pair if their row indices match (horizontal alignment) or their column indices match (vertical alignment)
+    helper_routines: []
+  - concept: line drawing
+    description: extend a straight pixel line from a start point in a fixed direction until the grid edge or a blocker
+    detection: find if the output grid contains a horizontal or vertical line of pixels of the same color than the input grid, if so, we detect a line-drawing operation
+    helper_routines: []
+  - concept: connection
+    description: joining two or more objects by drawing a line or shape between them
+    use_case: connect aligned pixels with a line
+    notes:
+    - connect objects by drawing a line or a shape between them
+    detection: for each aligned pair of objects, find if they are connected by a horizontal/vertical/diagonal line of pixels
+    helper_routines: []
+d6ad076f:
+  pseudocode:
+  - define guides:
+      which: two rectangles to connect
+  - draw shape:
+      shape: rectangle
+      color: teal
+      where: connecting guides
+      size: match the smaller guide but one pixel shorter on each side (in the direction
+        perpedicular to the connection)
+  general: connect rectangles with a rectangle
+  concepts:
+  - concept: connection
+    description: joining two or more objects by drawing a line or shape between them
+    use_case: connect two rectangles with a rectangle
+    notes:
+    - connect objects by drawing a line or a shape between them
+    detection: for each aligned pair of objects, find if they are connected by a horizontal/vertical/diagonal line of pixels
+    helper_routines: []
