@@ -189,7 +189,7 @@ async def run_annotation(
         write_json(token_usage, output_dir / "token_usage.json")
 
         # save the concept memory state
-        concept_mem.save_to_file(output_dir / "concept_memory.yaml")
+        concept_mem.save_to_file(output_dir / "concept_memory.json")
         logger.info(f"wrote to {output_dir}")
 
 
