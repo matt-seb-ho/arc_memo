@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 # new format:
 @dataclass
 class Concept:
-    name: str  # Name of the concept
-    description: str | None = None  # Description of the concept
-    relevance_cues: str | None = None  # Detection method for the concept, if applicable
-
+    name: str
+    description: str | None = None
     # puzzle_id -> use case description
     use_cases: dict[str, str | None] = field(default_factory=dict)
+    # relevance_cues: str | None = None
+    relevance_cues: dict[str, str | None] = field(default_factory=dict)
     notes: dict[str, list[str]] = field(default_factory=dict)
 
     # python helper functions that operationalise the concept
@@ -41,29 +41,52 @@ class Concept:
             f"  description: {self.description or '—'}",
         ]
         if include_cues and self.relevance_cues:
-            lines.append(f"  relevance cues: {self.relevance_cues}")
+            formatted_cues = self._format_per_puzzle_field(
+                "relevance_cues", "relevance cues", indent=2
+            )
+            lines.append(formatted_cues)
         if include_helpers and self.helper_routines:
             lines.append("  helper routines:")
             for r in self.helper_routines:
                 lines.append(f"  - `{r.splitlines()[0][:72]}`...")
         if include_notes and self.notes:
-            deduplicated_notes = set()
-            for note_list in self.notes.values():
-                for note in note_list or []:
-                    deduplicated_notes.add(note.strip())
-            if deduplicated_notes:
-                lines.append("  notes:")
-                for note in deduplicated_notes:
-                    lines.append(f"  - {note}")
+            lines.append(self._format_per_puzzle_field("notes", indent=2))
         if include_case_info and self.use_cases:
             lines.append("  use_cases:")
             for puzzle_id, uc in self.use_cases.items():
                 lines.append(f"  - {puzzle_id}: {uc}")
 
-        result = "\n".join(lines)
+        result = "\n".join([line for line in lines if line is not None])
         if indentation:
             result = textwrap.indent(result, " " * indentation)
         return result
+
+    def _format_per_puzzle_field(
+        self,
+        field_name: str,
+        display_name: str | None,
+        indent: int = 2,
+    ) -> str | None:
+        seen = set()
+        val = getattr(self, field_name, {})
+        for _, values in val.items():
+            if not values:
+                continue
+            for value in values:
+                try:
+                    seen.add(str(value).strip())
+                except Exception as e:
+                    logger.error(
+                        f"Error processing {field_name} for concept {self.name}: value={value}, error={e}"
+                    )
+                    continue
+        if not seen:
+            return None
+        lines = [f"{display_name or field_name}:"]
+        for item in seen:
+            lines.append(f"- {item}")
+        result = "\n".join(lines)
+        return textwrap.indent(result, " " * indent)
 
 
 class ConceptMemory:

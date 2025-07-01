@@ -270,15 +270,18 @@ async def async_main(cfg: DictConfig) -> None:
     )
 
     # set up target puzzles
+    target_puzzles = {}
+    puzzle_limit = cfg.annotate.limit_problems
     if cfg.annotate.problem_ids is None:
-        target_puzzles = {
-            pzid: barc_seeds[pzid]
-            for pzid in barc_seeds
-            if pzid not in hand_annotations
-        }
+        pzids = list(barc_seeds.keys())
     else:
         pzids = read_json(cfg.annotate.problem_ids)
-        target_puzzles = {pzid: get_arc_problem_by_id(pzid) for pzid in pzids}
+    for pzid in pzids:
+        if pzid in hand_annotations:
+            continue
+        target_puzzles[pzid] = get_arc_problem_by_id(pzid)
+        if puzzle_limit and len(target_puzzles) >= puzzle_limit:
+            break
 
     # memory setup
     concept_mem = ConceptMemory()
