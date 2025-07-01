@@ -19,6 +19,7 @@ concepts:
   - use this section to record any helpful pointers or takeaways on this concept from this solution
   - we want these annotations to be helpful for solving future puzzles
   - do not repeat notes already in the repository (listed as indented bullets under the concept)
+  - notes must be a list of strings it cannot have further indentation/nesting
 - concept: new concepts vs. reusing existing
   description: a guideline for when to introduce new concepts versus reusing existing ones
   use_case: we want to build a rich yet concise concept repository

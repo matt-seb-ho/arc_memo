@@ -23,7 +23,7 @@ class Concept:
 
     # puzzle_id -> use case description
     use_cases: dict[str, str | None] = field(default_factory=dict)
-    notes: dict[str, str] = field(default_factory=dict)
+    notes: dict[str, list[str]] = field(default_factory=dict)
 
     # python helper functions that operationalise the concept
     helper_routines: list[str] = field(default_factory=list)
@@ -53,7 +53,7 @@ class Concept:
                     deduplicated_notes.add(note.strip())
             if deduplicated_notes:
                 lines.append("  notes:")
-                for note in deduplicated_notes.keys():
+                for note in deduplicated_notes:
                     lines.append(f"  - {note}")
         if include_case_info and self.use_cases:
             lines.append("  use_cases:")
@@ -78,15 +78,25 @@ class ConceptMemory:
             entry = Concept(name=name)
             self.concepts[name] = entry
 
-        new_description = concept.get("description", None).strip()
-        if new_description:
-            entry.description = new_description
-        new_relevance_cues = concept.get("relevance_cues", None)
-        if new_relevance_cues:
-            entry.relevance_cues = new_relevance_cues.strip()
+        new_description = concept.get("description", None)
+        if new_description and new_description.strip():
+            entry.description = new_description.strip()
+        new_cues = concept.get("relevance_cues", None)
+        if new_cues and new_cues.strip():
+            entry.relevance_cues = new_cues.strip()
 
         entry.use_cases[puzzle_id] = concept.get("use_case", None)
-        entry.notes[puzzle_id] = concept.get("notes", [])
+        # entry.notes[puzzle_id] = concept.get("notes", [])
+        new_notes = []
+        model_notes = concept.get("notes", [])
+        for note in model_notes:
+            try:
+                processed_note = str(note).strip()
+                new_notes.append(processed_note)
+            except Exception as e:
+                logger.error(f"Error processing note {note} for concept {name}: {e}")
+                continue
+        entry.notes[puzzle_id] = new_notes
         entry.helpers = concept.get("helper_routines", [])
 
     def to_string(

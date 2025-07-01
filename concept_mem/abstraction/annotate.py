@@ -7,17 +7,18 @@ import hydra
 import yaml
 from llmplus import GenerationConfig, LLMClient
 from omegaconf import DictConfig
+from tqdm import tqdm
 
 from concept_mem.concept_memory import ConceptMemory
 from concept_mem.constants import DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.types import Problem
 from concept_mem.utils import (
+    get_arc_problem_by_id,
     load_arc_data,
+    read_json,
     read_yaml,
     run_llm_job,
     write_json,
-    read_json,
-    get_arc_problem_by_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def format_annotation_example(
     return ANNOTATION_EXAMPLE_TEMPLATE.format(
         header=header,
         solution=solution,
-        annotation=annotation_str,
+        annotation=annotation_str.strip(),
     )
 
 
@@ -139,11 +140,11 @@ async def run_annotation(
     puzzle_ids = []
     prompts = []
     model_outputs = []
-    for puzzle_id, puzzle in target_puzzles:
+    for puzzle_id, puzzle in tqdm(target_puzzles.items(), total=len(target_puzzles)):
         puzzle_ids.append(puzzle_id)
         processed_solution = remove_barc_concepts_from_solution(puzzle.code)
         prompt = ANNOTATE_TEMPLATE.format(
-            annotation_instruction_block=annotation_instruction_path.read_text(),
+            annotation_instruction_block=instruction_block,
             concept_list=concept_mem.to_string(),
             examples=examples,
             solution=processed_solution,
@@ -163,7 +164,7 @@ async def run_annotation(
             completions = await llm_client.async_generate(
                 prompt=prompt,
                 model=model,
-                generation_config=gen_cfg,
+                gen_cfg=gen_cfg,
             )
             model_outputs.append(completions)
             completion = completions[0]
@@ -172,7 +173,9 @@ async def run_annotation(
             continue
 
         # update the memory with the new annotation
-        concept_mem.update_from_model_output(puzzle_id=puzzle_id, output=completion)
+        concept_mem.update_from_model_output(
+            puzzle_id=puzzle_id, model_output=completion
+        )
 
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -256,7 +259,7 @@ async def async_main(cfg: DictConfig) -> None:
     barc_seeds = load_arc_data("barc_seeds")
     if cfg.annotate.instruction_block_file:
         annotation_instruction_path = Path(cfg.annotate.instruction_block_file)
-    instr_yaml_block = annotation_instruction_path.read_text()
+    instr_yaml_block = annotation_instruction_path.read_text().strip()
     if cfg.annotate.hand_annotations_file:
         hand_annotation_path = Path(cfg.annotate.hand_annotations_file)
     hand_annotations = read_yaml(hand_annotation_path)
