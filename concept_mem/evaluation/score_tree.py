@@ -178,6 +178,36 @@ def _official_per_pair(group: pd.DataFrame, attempts_allowed: int | None) -> boo
     return group["correct"].any()
 
 
+def official_score_per_puzzle(
+    df: pd.DataFrame,
+    attempts_allowed: int | None = None,
+    step_selection: Literal["all", "last"] = "all",
+) -> pd.DataFrame:
+    """Compute the *official* score
+
+    \sum_puzzles \frac{1}{N_p} \sum_{i=1}^{N_p} s_i
+
+    where N_p is the number of IO‑pairs in puzzle p, and s_i is the score for the ith puzzle
+    (mean fraction of correctly solved test IO‑pairs per puzzle, then summed across puzzles).
+    """
+
+    if df.empty:
+        return 0.0
+    if step_selection == "last":
+        df = _keep_last_step(df)
+
+    test_df = df[~df["is_train"]]
+    solved_per_pair = (
+        test_df.groupby(["puzzle_id", "pair_idx"], sort=False)
+        .apply(lambda g: _official_per_pair(g, attempts_allowed), include_groups=False)
+        .reset_index(name="solved")
+    )
+
+    # fraction of solved pairs per puzzle
+    per_puzzle = solved_per_pair.groupby("puzzle_id", sort=False)["solved"].mean()
+    return per_puzzle
+
+
 def official_score(
     df: pd.DataFrame,
     attempts_allowed: int | None = None,

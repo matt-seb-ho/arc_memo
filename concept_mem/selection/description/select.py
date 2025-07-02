@@ -157,6 +157,32 @@ We will provide you with a numbered list of lessons and a previous attempt at so
 {completion} 
 """
 
+RESELECT_PROMPT_WITH_DESC = """\
+### Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule.
+
+We have a list of puzzle solving "lessons" or "rules" that provide a suggestion of how to solve the puzzle given a certain situation.
+
+### Instructions
+We will provide you with a numbered list of lessons, a visual description of the puzzle, and a previous attempt at solving the puzzle.
+- Your task is to identify the most relevant {top_k} lessons for the given puzzle.
+- Please output your final selection as a list of lesson numbers in a markdown yaml block, e.g.
+```yaml
+- 18
+- 77
+- 19
+```
+
+### Lessons
+{concept_list}
+
+### Puzzle Description
+{description}
+
+### Previous Attempt
+{completion} 
+"""
+
 
 CONCAT_DESC_INTRO = "Here are the descriptions of the puzzles from different sources:"
 DEFAULT_SCORE_THRESHOLD = 0.5
@@ -180,6 +206,7 @@ def prepare_concept_list(
 
 async def reselect_concepts(
     puzzles: list[str],
+    descriptions: dict[str, str] | None,
     completions: dict[str, str],
     lessons: dict[str, list[dict]],
     llm_client: LLMClient,
@@ -198,11 +225,19 @@ async def reselect_concepts(
     prompts = []
     for uid in puzzles:
         uids.append(uid)
-        prompt = RESELECT_PROMPT.format(
-            top_k=top_k,
-            concept_list=formatted_concept_list,
-            completion=completions[uid],
-        )
+        if descriptions is None:
+            prompt = RESELECT_PROMPT.format(
+                top_k=top_k,
+                concept_list=formatted_concept_list,
+                completion=completions[uid],
+            )
+        else:
+            prompt = RESELECT_PROMPT_WITH_DESC.format(
+                top_k=top_k,
+                concept_list=formatted_concept_list,
+                description=descriptions[uid],
+                completion=completions[uid],
+            )
         prompts.append(prompt)
 
     # gather completions
@@ -632,7 +667,6 @@ async def async_main(cfg: DictConfig) -> None:
         top_k=cfg.selection.top_k,
         output_dir=output_dir,
         use_hint_v2=cfg.selection.use_hint_v2,
-        dry_run=cfg.dry_run,
     )
 
 

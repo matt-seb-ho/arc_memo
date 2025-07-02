@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import random
-from collections import namedtuple
-from dataclasses import dataclass
+from collections import defaultdict, namedtuple
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import hydra
@@ -94,13 +94,15 @@ class ContinualEvaluationRunner:
             self.abs_ex = None
         if cfg.abstract.example_thought_processes:
             self.etp = read_json(cfg.abstract.example_thought_processes)
+        elif cfg.abstract.thought_processes:
+            self.etp = read_json(cfg.abstract.thought_processes)
 
         self.select_gen_cfg = hydra.utils.instantiate(cfg.select.generation)
         self.abstract_gen_cfg = hydra.utils.instantiate(cfg.abstract.generation)
 
     async def run(self, problems: dict[str, Problem]) -> None:
-        for i in range(1, self.retry.max_passes + 1):
-            logger.info(f"running iteration {i} of {self.retry.max_passes}")
+        for i in range(1, self.retry_policy.max_passes + 1):
+            logger.info(f"running iteration {i} of {self.retry_policy.max_passes}")
             await self.run_iteration(problems, iteration=i)
 
     async def run_iteration(
@@ -225,19 +227,22 @@ class ContinualEvaluationRunner:
                 thread_id = str(idx)
                 thread = branch.get_or_create_thread(thread_id)
                 step = SolutionStep(
-                    step_id=0,
+                    step_idx=0,
                     thread_id=thread_id,
                     branch_id=branch_id,
                     puzzle_id=puzzle_id,
                     completion=completion,
                 )
-                score_problem_attempt(problem=puzzle, step=step)
+                score_problem_attempt(problem=puzzle, attempt=step)
                 thread.steps.append(step)
                 if step.is_strictly_correct():
                     problem_solutions[puzzle_id] = completion
 
         # update memory
-        await self.update_memory(problem_batch, problem_solutions)
+        logger.info(f"Solved {len(problem_solutions)} problems in batch.")
+        await self.update_memory(
+            problem_batch, problem_solutions, output_dir=output_dir
+        )
         mem_save_file = output_dir / "concept_memory.json"
         self.concept_memory.save_to_file(mem_save_file)
 
@@ -259,32 +264,41 @@ class ContinualEvaluationRunner:
 
         # generate new lesson concepts
         lesson_dir = output_dir / "lesson_concepts"
-        problem_dict = {p.uid: p for p in problems}
+        problem_dict = {p.uid: p for p in problems if p.uid in problem_solutions}
         new_lessons, _ = await extract_lessons(
             problems=problem_dict,
             solutions=problem_solutions,
             thought_processes=thought_processes,
             example_thought_processes=self.etp,
             fixed_examples=self.abs_ex,
+            retrieved_examples=None,
             llm_client=self.llm_client,
             model=self.cfg.abstract.model.name,
             gen_cfg=self.abstract_gen_cfg,
             output_dir=lesson_dir,
         )
-        for puzzle_id, lesson_dicts in new_lessons.items():
-            for lesson_dict in lesson_dicts:
-                situation = lesson_dict.get("situation", "")
-                suggestion = lesson_dict.get("suggestion", "")
-                if situation and suggestion:
-                    self.concept_memory.add_lesson(
-                        situation=situation,
-                        suggestion=suggestion,
-                        source=puzzle_id,
-                    )
-                else:
-                    logger.warning(
-                        f"Skipping lesson for {puzzle_id} due to missing fields: {lesson_dict}"
-                    )
+        try:
+            total_new_lessons = sum(len(v) for v in new_lessons.values())
+            logger.info(
+                f"Extracted {total_new_lessons} new lessons from {len(new_lessons)} puzzles."
+            )
+            # add new lessons to the concept memory
+            for puzzle_id, lesson_dicts in new_lessons.items():
+                for lesson_dict in lesson_dicts:
+                    situation = lesson_dict.get("situation", "")
+                    suggestion = lesson_dict.get("suggestion", "")
+                    if situation and suggestion:
+                        self.concept_memory.add_lesson(
+                            situation=situation,
+                            suggestion=suggestion,
+                            source=puzzle_id,
+                        )
+                    else:
+                        logger.warning(
+                            f"Skipping lesson for {puzzle_id} due to missing fields: {lesson_dict}"
+                        )
+        except Exception as e:
+            logger.error(f"Error while extracting lessons: {e}")
 
     async def retry_solving_step(
         self,
@@ -300,7 +314,7 @@ class ContinualEvaluationRunner:
                     if len(thread.steps) == 0:
                         continue
                     step = thread.steps[-1]
-                    if not self.retry.needs_retry(step):
+                    if not self.retry_policy.needs_retry(step):
                         continue
                     puzzles_to_retry.append(
                         AttemptTag(
@@ -339,7 +353,7 @@ class ContinualEvaluationRunner:
         # prepare prompts
         batch_prompts: list[str] = []
         # - reselect concepts
-        if self.retry.reselect_concepts:
+        if self.retry_policy.reselect_concepts:
             pzids = []
             prev_completions = {}
             for puzzle_id, branch_id, thread_id, step_idx in attempt_tags:
@@ -354,22 +368,43 @@ class ContinualEvaluationRunner:
                     prev_completions[puzzle_id] = step.completion
             reselect_output_dir = output_dir / "reselect_concepts"
             reselect_output_dir.mkdir(parents=True, exist_ok=True)
-            new_concepts, _ = await reselect_concepts(
-                puzzles=pzids,
-                completions=prev_completions,
-                lessons=self.lessons,
-                llm_client=self.llm,
-                model=self.retry.reselect_model,
-                gen_cfg=self.retry.reselect_gen_cfg,
-                top_k=self.retry.reselect_k,
-                output_dir=reselect_output_dir,
-            )
+            # TODO: refactor reselect_concepts to match the updated mem fmt
+            resel_all_lessons = defaultdict(list)
+            for lesson in self.concept_memory.lessons:
+                resel_all_lessons[lesson.source].append(asdict(lesson))
+            if self.retry_policy.reselect_with_description:
+                reselect_descriptions = self.descriptions
+            else:
+                reselect_descriptions = None
+            if self.retry_policy.reselect_with_prev_attempt:
+                new_concepts, _ = await reselect_concepts(
+                    puzzles=pzids,
+                    descriptions=reselect_descriptions,
+                    completions=prev_completions,
+                    lessons=resel_all_lessons,
+                    llm_client=self.llm_client,
+                    model=self.retry_policy.reselect_model,
+                    gen_cfg=self.retry_policy.reselect_gen_cfg,
+                    top_k=self.retry_policy.reselect_k,
+                    output_dir=reselect_output_dir,
+                )
+            else:
+                desc_list = [self.descriptions[pzid] for pzid in pzids]
+                new_concepts = await self.concept_memory.select_concepts(
+                    puzzles=problem_batch,
+                    descriptions=desc_list,
+                    top_k=self.cfg.select.top_k,
+                    llm_client=self.llm_client,
+                    model=self.cfg.select.model.name,
+                    gen_cfg=self.select_gen_cfg,
+                    output_dir=reselect_output_dir,
+                )
         else:
             new_concepts = {}
         # - form the prompts
         for puzzle_id, branch_id, thread_id, step_idx in attempt_tags:
             thread = self.trees[puzzle_id].prompt_branches[branch_id].threads[thread_id]
-            base_prompt = self.initial_prompts[(puzzle_id, branch_id)]
+            base_prompt = self.initial_prompts[puzzle_id]
             retry_prompt = make_retry_prompt(
                 initial_prompt=base_prompt,
                 solution_thread=thread,

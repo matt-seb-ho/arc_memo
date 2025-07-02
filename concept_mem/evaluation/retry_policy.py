@@ -40,6 +40,8 @@ class RetryPolicy:
 
     # reselect options
     reselect_concepts: bool = False
+    reselect_with_description: bool = True
+    reselect_with_prev_attempt: bool = True
     lesson_file: Path | None = None
     reselect_model: str = "gpt-4.1-2025-04-14"
     reselect_gen_cfg: GenerationConfig = field(default_factory=GenerationConfig)

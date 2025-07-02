@@ -95,7 +95,7 @@ class LessonConceptMemory:
         )
 
         selected_idxs: dict[str, list[int]] = {}
-        selected_concepts: dict[str, str] = []
+        selected_concepts: dict[str, str] = {}
         parsing_error_count = 0
         for puzzle_id, completions in zip(metadata, model_output):
             completion = completions[0]
@@ -150,7 +150,7 @@ class LessonConceptMemory:
         abstraction_output: dict,
     ) -> None:
         for puzzle_id, puzzle_lessons in abstraction_output.items():
-            for lesson in enumerate(puzzle_lessons):
+            for lesson in puzzle_lessons:
                 self.lessons.append(
                     LessonConcept(
                         situation=lesson["situation"],
