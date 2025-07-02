@@ -4,6 +4,7 @@ temperature: 0.3
 max_tokens: 1024
 top_p: 1
 batch_size: 16
+seed: 88
 ignore_cache: false
 # whether or not each request for n completions needs to be expanded into n requests
 # - using `true` forces it to expand regardless if the API supports n > 1 in a single request

@@ -55,7 +55,7 @@ async def extract_lessons(
     output_dir: Path = REPO_ROOT / "data/lessons",
     use_barc_solution: bool = True,
     dry_run: bool = False,
-) -> tuple[dict[str, Any], dict]:
+) -> tuple[dict[str, list[dict]], dict]:
     """Return lesssons and token usage"""
     problem_ids = []
     prompts = []

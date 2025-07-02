@@ -43,6 +43,16 @@ class SolutionStep:
     train_results: list[IOPairExecutionResult] = field(default_factory=list)
     test_results: list[IOPairExecutionResult] = field(default_factory=list)
 
+    def is_strictly_correct(self) -> bool:
+        if not self.validated:
+            return False
+        if self.parsing_error:
+            return False
+        for result in self.train_results + self.test_results:
+            if not result.correct:
+                return False
+        return True
+
 
 @dataclass
 class SolutionThread:

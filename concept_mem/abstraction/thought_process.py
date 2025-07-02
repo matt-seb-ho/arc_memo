@@ -124,8 +124,8 @@ def prepare_prompts(
 
 async def thought_process(
     problem_solutions: dict[str, str] | None,
-    model: str,
     llm_client: LLMClient,
+    model: str,
     output_dir: Path | None = REPO_ROOT / "data/thought_process",
     example_files: list[Path] = DEFAULT_THOUGHT_PROCESS_EXAMPLE_FILES,
     gen_cfg: GenerationConfig = DEFAULT_THOUGHT_PROCESS_GEN_CFG,
@@ -175,8 +175,8 @@ async def async_main(cfg: DictConfig) -> None:
 
     thought_procs, _ = await thought_process(
         problem_solutions=problem_solutions,
-        model=model,
         llm_client=llm_client,
+        model=model,
         output_dir=output_dir,
         gen_cfg=gen_cfg,
         dry_run=cfg.dry_run,

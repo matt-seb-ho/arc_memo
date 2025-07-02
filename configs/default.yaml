@@ -7,6 +7,9 @@ defaults:
   - selection: default
   - override hydra/job_logging: custom
 
+continual_batch_size: 10
+concept_mem_init_file: data/lessons/from_trace_fs/gpt41_lessons.json
+
 puzzle_retry:
   _target_: concept_mem.evaluation.retry_policy.RetryPolicy
   max_passes: 3 # includes the first try (i.e. 3 means you get 1 initial try + up to 2 retries)

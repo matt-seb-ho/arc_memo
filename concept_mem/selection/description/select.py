@@ -632,6 +632,7 @@ async def async_main(cfg: DictConfig) -> None:
         top_k=cfg.selection.top_k,
         output_dir=output_dir,
         use_hint_v2=cfg.selection.use_hint_v2,
+        dry_run=cfg.dry_run,
     )
 
 
