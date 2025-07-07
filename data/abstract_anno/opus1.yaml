@@ -1,0 +1,536 @@
+0d3d703e:
+  pseudocode:
+    - recolor objects:
+        color scheme: fixed color mapping
+  summary: recolor with fixed mapping
+  concepts:
+    - concept: fixed color mapping
+      parents: recoloring
+    - concept: recoloring
+      description: changing the color of object(s)
+      relevance_cues:
+        - corresponding objects in the input and output grids have different colors
+        - correspondence in this case usually means either same position or shape or both but other transformations (i.e. a shape change/object movement) could obscure this correspondence
+cf98881b:
+  pseudocode:
+    - split input grid:
+        splitting scheme: vertical dividing lines
+    - merge split regions:
+        merge scheme: prefer left region, then middle region, then right region
+  summary: split input along dividers and merge regions by layering one over the other
+  concepts:
+    - concept: split regions
+      description: grid separated into regions that are processed as distinct units
+      relevance_cues:
+        - region dividers-- horizontal or vertical lines that span the full width or height
+          of the grid, respectively. 
+        - region divider lines may have a unique color that distinguishes them from the rest of the grid.
+        - different regions of the grid using different color palettes
+    - concept: pixelwise region merging
+      description:
+        merge regions together according to a rule that determines the output pixel according to the corresponding pixel in the input regions
+      parents: split regions
+      relevance_cues:
+        - split regions of the same size
+        - split regions with size matching the output grid size
+228f6490:
+  pseudocode:
+    - define guide:
+        which: holes in objects
+    - move objects:
+        which: objects matching a guide hole's shape
+        destination: matching guide hole's position
+  summary: move objects into holes of matching shape
+  concepts:
+    - concept: holes as guide objects
+      description: treating cavities in objects as entities to consider
+      relevance_cues:
+        - background/non-object pixels that are fully enclosed by object pixels
+    - concept: object movement
+      description: shifting an object to a new position
+      relevance_cues:
+        - input object appearing in the output grid at a different position.
+    - concept: shape match indicated movement subject
+      description: an object is selected for movement if its shape matches some other shape
+      parents: shape match criteria
+    - concept: shape match criteria
+      description: operation on an object is conditioned on if its shape matches some other shape
+    - concept: guide indicated movement destination
+      description: a guide object's position is used to determine where an object should be moved
+      parents: guide indicated position
+    - concept: guide indicated position
+      description: a guide object's position is reused for a output grid construct
+d2abd087:
+  pseudocode:
+    - recolor objects:
+        color scheme: red if size is 6 else blue
+  summary: size based object recoloring
+  concepts:
+    - concept: recoloring
+    - concept: size threshold indicated color scheme
+      parents: size threshold criteria
+    - concept: size threshold criteria
+      description: conditioning on size meeting or clearing a threshold
+      parents: size criteria
+    - concept: size criteria
+      description: where object size is conditioned on
+4093f84a:
+  pseudocode:
+    - define guide:
+        which: grid-spanning rectangle
+    - slide with collision:
+        which: non-guide pixels
+        direction:
+          inwards towards guide (if guide spans grid height-- oriented vertically,
+          pixels left of the rectangle slide right, etc.)
+    - recolor objects:
+        which: non-guide pixels
+        color scheme: match guide (fixed at grey)
+  summary:
+    slide and recolor pixels towards central rectangle with collision
+  concepts:
+    - concept: magnetism
+      description: sliding objects towards a guide object
+      parents: sliding with collision, guide object relative position indicated direction
+    - concept: sliding with collision
+      description:
+        moving an object in a direction until hitting another object or the grid edge
+      parents: object movement, contact criteria
+      relevance_cues:
+        - object movement where objects are kept intact (no lost pixels) and they end up either adjacent to each other or the grid border in the movement direction
+    - concept: contact criteria
+      description: operation is conditioned on contact (adjacency) with another object or the grid edge
+    - concept: guide object relative position indicated direction
+      description: moving an object in the direction towards or away from a guide object
+      parents: guide indicated direction
+    - concept: guide indicated direction
+      description: a guide object's orientation or position determines the movement direction
+    - concept: recoloring
+1bfc4729:
+  pseudocode:
+    - output fixed shape:
+        color scheme: two pixels in input grid indicate top half and bottom half color
+  summary: output a fixed shape with colors determined by input grid
+  concepts:
+    - concept: fixed shape output
+      relevance_cues:
+        - output grids all have the same size
+        - output grids contain the same output barring color/scale differences
+    - concept: guide indicated color scheme
+      description: color scheme from a guide object is used to recolor other objects
+      relevance_cues:
+        - colors used in the output grid match objects in the input grid
+5168d44c:
+  pseudocode:
+    - define guide:
+        which: green dotted line
+    - move objects:
+        which: red square
+        direction: rightwards if guide line is horizontal, downwards if vertical
+        amount: 2 pixels
+  summary: move object along a dotted line
+  concepts:
+    - concept: dotted line as a guide object
+      relevance_cues:
+        - pixels along a row or column with regular gaps
+    - concept: object movement
+    - concept: guide object orientation indicated direction
+      parents: guide indicated direction
+    - concept: guide indicated direction
+      description: some aspect of the guide object determines the movement direction
+bd4472b8:
+  pseudocode:
+    - split input grid:
+        splitting scheme: divider line
+    - define guide:
+        where: row of pixels above divider
+    - recolor sequence:
+        which: rows beneath the divider, top to bottom
+        color scheme: cycling guide colors, left to right
+  summary: recolor rows using a guide
+  concepts:
+    - concept: split regions
+    - concept: guide object specified by region
+      parents: split regions
+    - concept: guide indicated color sequence
+      parents: guide indicated color scheme
+    - concept: guide indicated color scheme
+      description: color scheme from a guide object is used to recolor other objects
+    - concept: cycling color scheme
+      description: color sequence applied to an object sequence in a repeating manner
+      parents: recoloring
+      relevance_cues:
+        - object colors repeat along some axis
+776ffc46:
+  pseudocode:
+    - define guide:
+        where: inside container
+    - recolor objects:
+        which: objects matching guide shape
+        color scheme: guide object color
+  summary: recolor objects to match a guide inside a container according to a guide in a container
+  concepts:
+    - concept: guide object specified by containment
+      parents: containment criteria
+    - concept: containment criteria
+      description:
+        operations condition on a object being fully contained inside another object
+      parents: split regions
+      relevance_cues: 
+        - some objects are enclosed on all sides by another object
+        - containers, much like region divider lines can have a unique color
+      notes:
+        - need to differentiate between fully contained objects versus objects that are in a separate region but not enclosed on all sides by an object (i.e. whether the separate region can reach a grid edge or not)
+    - concept: shape match criteria
+    - concept: use guide color
+      parents: guide indicated color scheme
+9f236235:
+  pseudocode:
+    - reduce meta grid to pixel grid:
+        reduction rule:
+          meta cells only contain a single color, use that color for
+          the corresponding pixel
+    - reflect:
+        orientation: left to right
+  summary: reduce meta grid cells to pixels and reflect left to right
+  concepts:
+    - concept: meta grid
+      description: where split regions are arranged in a grid pattern themselves. Each region can be considered a meta grid cell.
+      parents: split regions
+      relevance_cues:
+        - horizontal and vertical lines dividing the grid into regions
+    - concept: meta grid reduction
+      description: create a new grid by mapping each meta grid cell to a single pixel through some rule
+      notes:
+        - may need to remove divider lines
+      parents: meta grid
+      relevance_cues:
+        - output grid is smaller than the input grid
+        - meta-grid dividers removed in output grid
+        - output grid dimensions matching input meta-grid dimensions
+    - concept: reflection
+      description: the grid or object(s) is reflected across some axis
+09629e4f:
+  pseudocode:
+    - split input grid:
+        splitting scheme: meta grid
+    - select region:
+        criteria: does not contain cyan pixels
+    - edit meta grid:
+        which cells: all
+        cell content: fill cell at meta[i][j] using color from selected[i][j]
+  summary: select a meta grid cell and expand it to a meta grid
+  concepts:
+    - concept: meta grid
+    - concept: regions as guide objects
+      description: selecting region(s) to serve as guide objects
+      parents: split regions
+    - concept: color exclusion criteria
+      description: selecting an entity by absence of a specific color
+      parents: color criteria
+    - concept: color criteria
+      relevance_cues:
+        - most candidates share a similar color scheme with a single or few exceptions
+    - concept: meta grid edit
+      parents: meta grid
+      relevance_cues:
+        - output grid is a meta grid
+        - input grid is a meta grid
+e21d9049:
+  pseudocode:
+    - define guide:
+        which: horizontal line, vertical line
+    - draw line:
+        start: pixel right of horizontal line guide
+        direction: right
+        color sequence: cycle horizontal line guide colors (left to right)
+    - draw line:
+        start: pixel left of horizontal line guide
+        direction: left
+        color sequence: cycle horizontal line guide colors (right to left)
+    - draw line:
+        start: pixel above vertical line guide
+        direction: up
+        color sequence: cycle vertical line guide colors (top to bottom)
+    - draw line:
+        start: pixel below vertical line guide
+        direction: down
+        color sequence: cycle vertical line guide colors (bottom to top)
+  summary: extend line segments to grid edges cycling through initial color sequence
+  concepts:
+    - concept: line drawing
+      relevance_cues: 
+        - output grid contains new lines or extends existing lines
+1e32b0e9:
+  pseudocode:
+    - split input grid:
+        splitting scheme: meta grid
+    - select region:
+        criteria: top left position
+    - define guide:
+        which: object in selected region
+    - replicate object:
+        which: guide
+        where: each meta grid cell, margin matching selected region
+        color: meta grid divider color
+        overwrite: false
+  summary: copy shape in top left region to other meta grid regions
+  concepts:
+    - concept: meta grid
+    - concept: position criteria
+      description: selecting entity based on its position in the grid
+    - concept: guide specified by region
+    - concept: object replication
+      description: copying an object shape potentially multiple times
+      relevance_cues:
+        - output grid contains multiple copies of the same object
+        - output grid contains a pattern that is repeated in a regular manner
+      parents: guide indicated shape
+    - concept: guide indicated shape
+      description: a guide object defines the shape to be used for output construct(s)
+    - concept: under writing
+      description: carrying out a drawing operation without overwriting existing non-background pixels
+      relevance_cues:
+        - all non-background input grid pixels are preserved in the output grid
+        - multi-color output objects matching shape with single color input objects
+8d5021e8:
+  pseudocode:
+    - reflect:
+        target: full grid
+        axis: x = 0, left pixel boundary
+    - concatenate:
+        inputs: reflected grid, original grid
+        orientation: left to right
+    - concatenate:
+        inputs: 3 copies of the concatenated grid
+        orientation: top to bottom
+  summary: concatenate input with its reflection and repeat the result vertically
+  concepts:
+    - concept: grid reflection
+      description: where a grid is reflected producing a new grid
+      parents: reflection
+    - concept: reflection
+      description: where an entity is reflected across a specified axis 
+      notes:
+        - axis can through a boundary between two pixel columns or through a pixel centerline
+    - concept: grid duplication
+      parents: grid concatenation
+      relevance_cues:
+        - output grid contains repeating pattern
+        - output grid dimensions are a multiple of the input grid dimensions
+    - concept: grid concatenation
+      description: combining multiple grids by placing them next to each other
+      relevance_cues:
+        - output grid is larger than the input grid
+ff28f65a:
+  pseudocode:
+    - count objects:
+        which: 2x2 square
+    - create a repeating pattern:
+        pattern: blue pixel checkerboard
+        start: top left corner
+        direction: left to right in a row, top down
+        limit: use blue pixels equal to count
+  summary: count 2x2 squares in input grid and display count in checkerboard pattern
+  concepts:
+    - concept: count display
+      description: create a patch with a extendable pattern with extension scale set by a counting result
+      parents: counting, extendable pattern
+    - concept: counting
+      description:
+        counting instances of a specific object or property in the input grid for later use
+      relevance_cues:
+        - output grids share an extendable/repeatable/scalable shape with varying size/count
+    - concept: extendable pattern
+      description: shape that can be repeated or extended in a regular manner
+      associated_concepts:
+        object replication: instead of duplicating a fixed unit, the regularity is extended
+      use_case:
+      relevance_cues:
+        - output grid contains regular pattern without gaps delineating discrete units
+1b60fb0c:
+  pseudocode:
+    - extract rotationally repeated unit
+    - add rotated unit to missing side using red pixels
+  summary: complete a repeating pattern to make it 4-way rotationally symmetric
+  concepts:
+    - concept: rotation symmetry completion
+      description: fill in the missing part of a rotationally symmetric pattern
+      relevance_cues:
+        - output grid contains rotationally symmetric pattern not present in the input grid
+      parents: pattern completion
+    - concept: pattern completion
+      description: fill in the missing part of a repeating/symmetryic pattern
+6e19193c:
+  pseudocode:
+    - define guides:
+        - which: all input grid objects
+    - draw lines:
+        for each: guide
+        color: match guide object
+        start: 
+          relative to guid object orientation and position
+          (for guide at [(0, 0), (0, 1), (1, 0)], then start at (2, 2))
+        direction: 
+          relative to guide object orientation 
+          (for guide at [(0, 0), (0, 1), (1, 0)], draw line [(2, 2), (3, 3), ...])
+  summary: draw diagonal lines according to guide objects
+  concepts:
+    - concept: line drawing
+    - concept: guide indicated relative position
+      description: use a position relative to a guide object as a starting point, potentially considering the guide's orientation
+      parents: guide indicated position
+    - concept: guide indicated direction
+      description: a guide's shape or orientation encodes a direction
+      relevance_cues:
+        - rotationally congruent guide objects could signal a direction encoding
+    - concept: use guide color
+3e980e27:
+  pseudocode:
+    - define guide:
+        where: objects excluding free floating pixels
+    - define anchor points:
+        where: all free floating pixels in the input grid not part of a guide
+    - replicate object:
+        for each: anchor point
+        which: guide object with matching anchor pixel color
+    - reflect objects:
+        for each: anchor point
+        which: if anchor pixel is red
+        axis: x = anchor pixel, pixel centerline
+  summary: copy guide objects to anchors points, reflecting based on anchor color
+  concepts:
+    - concept: guide object specified by size
+      description: exclude free floating pixels from the guide object selection
+    - concept: object replication
+    - concept: anchor
+      description:
+        a single pixel whose position marks where another pattern should be placed
+      parents: guide specified position
+      notes:
+        - similar to guide objects but used solely to indicate a position
+        - serves as a position indicator for where to replicate a shape or start a pattern
+    - concept: color indicated guide selection
+      description: some object's color is used to select among guide objects
+      parents: color criteria
+      relevance_cues:
+        - input grid contains multiple potential guide objects
+    - concept: reflection
+    - concept: color criteria
+aba27056:
+  pseudocode:
+    - fill object:
+        for each: partial container/cup object
+        color: yellow
+    - draw line:
+        for each: for each pixel in container opening
+        direction: cup opening direction
+        color: yellow
+    - draw lines:
+        for each: 2 outermost cup opening pixels
+        direction: diagonal away from cup opening
+        color: yellow
+  summary: fill cup object and draw lines out of the opening
+  concepts:
+    - concept: cup
+      description: a container with one opening
+      notes:
+        - despite not being a full container, it still defines an interior region
+    - concept: filling
+      description: coloring an interior region
+      parents: recoloring
+      notes:
+        - it may not be a flood fill (i.e. if a cavity has an opening, it may not
+          fill outside the cavity)
+      relevance_cues:
+        - previously hollow cavities colored differently
+    - concept: line drawing
+48d8fb45:
+  pseudocode:
+    - define guide:
+        which: single grey pixel
+    - crop object:
+        which: object touching the guide
+  summary: crop the marked object
+  concepts:
+    - concept: guide object contact criteria
+      parents: contact criteria
+      relevance_cues:
+        - the selected objects across output grids were all once adjacent to a specific object in their input grids
+    - concept: cropping
+      description:
+        output a smaller grid by removing all rows and columns that do not
+        contain the selected object(s)
+      relevance_cues:
+        - output grid is smaller than the input grid, and the output grid contains only the selected object(s)
+469497ad:
+  pseudocode:
+    - count unique colors:
+    - scale:
+        target: full input grid
+        factor: unique color count
+    - define guide:
+        which: rectangle object
+    - draw lines:
+        for each: corner of guide
+        direction: diagonal away from the corner
+        color: red
+        limit: grid edges and other objects
+  summary: scale input grid according to unique color count
+  concepts:
+    - concept: unique color count
+      parents: counting
+      relevance_cues:
+        - some other operation that depends on a numerical parameter differs across the input/output reference examples.
+    - concept: scaling
+      description: increasing or decreasing a grid or object's size by an integer factor
+      relevance_cues:
+        - output grid contains same objects as the input grid but at a different size
+        - output grid dimensions are a multiple of the input grid dimensions
+    - concept: guide indicated direction
+    - concept: guide indicated position
+    - concept: line drawing
+      notes:
+        - may need to stop drawing lines at when hitting another object
+6cdd2623:
+  pseudocode:
+    - new empty grid:
+        dimensions: match input grid
+    - define guides:
+        which: aligned, same color pixel pairs on opposite edges of the grid
+    - draw lines:
+        for each: guide pair
+        connecting: guide pairs
+        color: match guide
+  summary: connect aligned, same color pixels on grid edge with lines
+  concepts:
+    - concept: new empty grid
+      relevance_cues:
+        - input grid contain many free floating pixels ("noise") that is not present in the output grid
+        - input grid dimensions matching output grid may distinguish from cropping/selection operations
+    - concept: connection line
+      description: drawing a line connecting objects
+      parents: connection, line drawing
+    - concept: connection
+      description: connecting objects with a new object
+    - concept: aligned criteria
+      description: where action is taken depending if objects are aligned, sharing either one or all rows or columns
+      notes:
+        - may also require objects to have matching colors
+      associated_concepts:
+        - connection
+    - concept: use guide color
+d6ad076f:
+  pseudocode:
+    - define guides:
+        which: two rectangles to connect
+    - draw lines:
+        connecting: guide rectangles
+        for each: row/column shared between guide rectangles except first and last rows/columns
+        color: teal
+  summary: connect rectangles with lines in shared rows/columns
+  concepts:
+    - concept: connection line
+    - concept: aligned criteria
+      notes:
+        - may exclude certain aligned rows/columns according to specific rules
