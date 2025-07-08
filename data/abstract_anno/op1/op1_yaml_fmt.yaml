@@ -1,0 +1,21 @@
+pseudocode:
+  - a list of pseudocode steps that describe the transformation rule
+  - a step can be a string or a dict
+  - use dicts for parameterized operations:
+      param name: param value
+      tip: be careful about indenting the argument dict enough
+  - some examples of parameters expressing control flow:
+      which: if the operation only happens to certain objects (can also express multiple objects to denote a for-each operation)
+
+summary: condense the solution into a one-liner description of the transform
+
+concepts:
+  - concept: each list entry is a dict representing a concept-- an idea used in the transform
+    description: concept definition/clarification if the name needs further elaboration
+    parents: a comma separated list of concept names that this concept falls under as a variation/subcategory of
+    associated_concepts:
+      related concept name: short description of how this concept relates to the associated concept
+    relevance_cues:
+      - list of what to look out for in the reference input-output grid pairs that indicate that this concept is relevant
+    notes:
+      - record any helpful pointers or takeaways on this concept from this solution that did not fit in the other fields

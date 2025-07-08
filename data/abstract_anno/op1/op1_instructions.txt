@@ -1,0 +1,63 @@
+# Introduction
+Given a puzzle containing input-output grid pairs as reference examples, carefully observe the patterns to predict the output grid for new test input. Within a puzzle, each pair follows the same transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and is often the background color.
+
+# Instructions
+Examine and annotate a puzzle solution.
+- Format your final annotation inside a markdown yaml block.
+- The following block demonstrates the required format and fields to include with values defining the corresponding field
+```yaml
+{annotation_instruction_block}
+```
+Here are additional guidelines:
+- pseudocode:
+    - try to express control flow using operation parameters instead of top level if/for/etc.
+    - using `which` as a operation parameter is useful for determine what object(s) to operate on and stands in for `for each`
+    - minimize description length without compromising correctness (ignore unnecessary details)
+- concepts:
+    - concepts should correspond to almost every line of pseudocode
+    - concept types:
+        - grid operations: operations that update the grid itself
+        - intermediate operations: produce intermediate results (e.g. selecting an object, splitting object into regions, etc.)
+        - predicates: criteria used for conditional operations
+    - special concepts:
+        - guide objects: in a number of puzzles, the transformation rule depends on object(s) in the input grid
+        - anchor points: a special case of guide object that are typically smaller (often single pixels) that mostly indicate positions to start a construct
+    - all fields besides the concept name itself (`concept:`) are optional
+    - the difference between a parent-child and associated concepts is that associated concepts are commonly co-occuring but one is not a special case of the other
+    - concept reuse:
+        - reuse concepts is possible to avoid redundancy
+        - feel free to introduce new ideas or variations
+    - when reusing a concept:
+        - avoid redefining `description, parents` fields
+        - feel free to introduce new entries under the list fields `associated_concepts`, `notes`, and `relevance_cues`
+        - these list entries are appended to the memory, so avoid duplicating existing entries
+    - concept hierarchy:
+        - parental relations defines a graph hierarchy between concepts
+        - if you include a concept in the list, there is no need to also include its parents, unless you need to define the parent concept for the first time, or want to add entries to the editable list fields (new notes, cues, etc.)
+        - try to start with the specific concepts and generalize to parent concepts as needed
+        - note that an example transformation rule fragment "A property from object B helped determine X parameter for Y transform" can be abstracted in a number of ways, for example:
+            - Y transform
+            - selection rule for choosing B object as a guide object
+            - [generalized A, B] influences [generalized X, Y]
+            - generalizing one side completely yields:
+                - A property criteria (A property can be conditioned on to determine *something*)
+                - X parameter is variable (X parameter can change across examples from the same puzzle for *some reason*)
+        - as an example, "size threshold indicated color scheme" -> "size indicated color scheme" -> "size criteria"
+    - avoid redundant relevance_cues
+        - avoid self-evident cues that suggest looking for the target concept without introducing any new information on how to do so
+        - for operation Y, the trivial cue is "[X operation] is present in the example pairs"
+        - for relationship "A influences X", the trivial cue is "A and X vary together"
+        
+# Concept Repository
+Here is the current concept repository:
+{concept_list}
+
+# Examples
+Here are examples of puzzle solutions and expected annotations:
+{examples}
+
+# Your Puzzle Solution
+Create the annotation for the following puzzle solution:
+```python
+{solution}
+```"""
