@@ -23,3 +23,5 @@ NO_CODE_BLOCK_MESSAGE = "No code block found in the response."
 MAX_LINE_WIDTH = 120
 
 O4M_ID = "o4-mini-2025-04-16"
+
+URL_TEMPLATE = "https://arcprize.org/play?task={puzzle_id}"

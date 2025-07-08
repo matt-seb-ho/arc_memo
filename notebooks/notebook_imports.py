@@ -25,6 +25,7 @@ from llmplus import GenerationConfig, LLMClient, Provider
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, REPO_ROOT
 from concept_mem.types import Problem
 from concept_mem.utils import (
+    get_puzzle_url,
     load_arc_data,
     read_json,
     read_yaml,

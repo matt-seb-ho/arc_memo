@@ -13,6 +13,7 @@ from concept_mem.constants import (
     DEFAULT_CODE,
     EXCLUDED_CONCEPTS,
     REPO_ROOT,
+    URL_TEMPLATE,
 )
 from concept_mem.types import IOPair, Problem
 from concept_mem.utils.common import read_json
@@ -262,3 +263,10 @@ def extract_barc_seed_comment_sections(solution: str) -> dict[str, str]:
         for key, lines in sections.items()
         if lines  # only include non‑empty sections
     }
+
+
+def get_puzzle_url(puzzle_id: str, verbose: bool = True, v: bool = True) -> str:
+    url = URL_TEMPLATE.format(puzzle_id=puzzle_id)
+    if not (verbose and v):
+        print(url)
+    return url
