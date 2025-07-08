@@ -28,7 +28,7 @@ Here are additional guidelines:
         - reuse concepts is possible to avoid redundancy
         - feel free to introduce new ideas or variations
     - when reusing a concept:
-        - avoid redefining `description, parents` fields
+        - avoid redefining `description, parents` fields (prefer introducing a new child concept for substantial variations)
         - feel free to introduce new entries under the list fields `associated_concepts`, `notes`, and `relevance_cues`
         - these list entries are appended to the memory, so avoid duplicating existing entries
     - concept hierarchy:
