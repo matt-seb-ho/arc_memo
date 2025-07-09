@@ -518,7 +518,7 @@ aba27056:
       notes:
         - may also require objects to have matching colors
       associated_concepts:
-        - connection
+        connection: checking for alignment is commonly associated with drawing connections between aligned objects
     - concept: use guide color
 d6ad076f:
   pseudocode:

@@ -23,7 +23,7 @@ class Concept:
     relevance_cues: list[str] = field(default_factory=list)
 
     # miscellaneous annotations
-    notes: list[str] = field(default_factory=dict)
+    notes: list[str] = field(default_factory=list)
 
     # tracking problem instances (IDs) where this concept is used
     usage: list[str] = field(default_factory=list)
@@ -60,8 +60,9 @@ class Concept:
 
         # can add a description iff it is not already set
         if "description" in annotation:
-            if self.description is None:
-                self.description = annotation["description"].strip()
+            annotation_description = annotation.get("description", None)
+            if self.description is None and annotation_description:
+                self.description = annotation_description.strip()
             else:
                 logger.info(
                     f"Description already set for {self.name}, skipping update."
@@ -128,8 +129,10 @@ class Concept:
     def _update_list_field(
         self,
         field_name: str,
-        new_items: list[str],
+        new_items: list[str] | str,
     ) -> None:
+        if isinstance(new_items, str):
+            new_items = [new_items]
         if not isinstance(new_items, list):
             logger.error(f"Expected list for {field_name}, got {type(new_items)}")
             return

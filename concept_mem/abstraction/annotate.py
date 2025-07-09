@@ -5,12 +5,12 @@ from typing import Callable
 
 import hydra
 import yaml
-from llmplus import GenerationConfig, LLMClient
+from llmplus import GenerationConfig, LLMClient, Provider
 from omegaconf import DictConfig
 from tqdm import tqdm
 
 from concept_mem.concept_memory import ConceptMemory
-from concept_mem.constants import DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
+from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.types import Problem
 from concept_mem.utils import (
     get_arc_problem_by_id,
@@ -23,36 +23,13 @@ from concept_mem.utils import (
 
 logger = logging.getLogger(__name__)
 
-annotation_instruction_path = (
-    REPO_ROOT / "data/abstract_anno/annotation_instruction_v7.yaml"
-)
-hand_annotation_path = REPO_ROOT / "data/abstract_anno/icl_anno_v8.yaml"
+anno_fmt_block_path = DATA_DIR / "abstract_anno/op1/op1_yaml_fmt.yaml"
+anno_instr_template_path = DATA_DIR / "abstract_anno/op1/op1_instructions.txt"
+anno_fmt_block = anno_fmt_block_path.read_text().strip()
+anno_instr_template = anno_instr_template_path.read_text().strip()
+hand_anno_path = DATA_DIR / "abstract_anno/op1/opus1.yaml"
+hand_anno = read_yaml(hand_anno_path)
 
-ANNOTATE_TEMPLATE = """\
-# Introduction
-Given a puzzle containing input-output grid pairs as reference examples, carefully observe the patterns to predict the output grid for new test input. Within a puzzle, each pair follows the same transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and is often the background color.
-
-# Instructions
-Examine and annotate a puzzle solution.
-- Format your final annotation inside a markdown yaml block.
-- The following block demonstrates this yaml format and fields to include with values describing instructions and guidelines you should follow for the corresponding fields.
-```yaml
-{annotation_instruction_block}
-```
-
-# Concept Repository
-Here is the current concept repository:
-{concept_list}
-
-# Examples
-Here are examples of puzzle solutions and expected annotation:
-{examples}
-
-# Your Puzzle Solution
-Create the annotation for the following puzzle solution:
-```python
-{solution}
-```"""
 
 ANNOTATION_EXAMPLE_TEMPLATE = """\
 {header}
@@ -78,7 +55,7 @@ def format_annotation_example(
         solution = transform_solution(solution)
 
     # want the following order: pseudocode, specific, general, concepts
-    key_order = ["pseudocode", "general", "concepts"]
+    key_order = ["pseudocode", "summary", "concepts"]
     reordered = {key: annotation[key] for key in key_order}
     annotation_str = yaml.dump(reordered, sort_keys=False)
     return ANNOTATION_EXAMPLE_TEMPLATE.format(
@@ -128,7 +105,8 @@ def remove_barc_concepts_from_solution(solution: str) -> str:
 
 async def run_annotation(
     target_puzzles: dict[str, Problem],
-    instruction_block: str,
+    solutions: dict[str, str] | None,
+    format_block: str,
     examples: str,
     concept_mem: ConceptMemory,
     llm_client: LLMClient,
@@ -142,12 +120,14 @@ async def run_annotation(
     model_outputs = []
     for puzzle_id, puzzle in tqdm(target_puzzles.items(), total=len(target_puzzles)):
         puzzle_ids.append(puzzle_id)
-        processed_solution = remove_barc_concepts_from_solution(puzzle.code)
-        prompt = ANNOTATE_TEMPLATE.format(
-            annotation_instruction_block=instruction_block,
+        # create the prompt
+        # processed_solution = remove_barc_concepts_from_solution(puzzle.code)
+        problem_solution = solutions[puzzle_id]
+        prompt = anno_instr_template.format(
+            yaml_format_block=format_block,
             concept_list=concept_mem.to_string(),
             examples=examples,
-            solution=processed_solution,
+            solution=problem_solution,
         )
         if dry_run:
             if output_dir:
@@ -160,6 +140,7 @@ async def run_annotation(
             return
         prompts.append(prompt)
 
+        # send request
         try:
             completions = await llm_client.async_generate(
                 prompt=prompt,
@@ -174,7 +155,9 @@ async def run_annotation(
 
         # update the memory with the new annotation
         concept_mem.update_from_model_output(
-            puzzle_id=puzzle_id, model_output=completion
+            puzzle_id=puzzle_id,
+            solve_output=problem_solution,
+            abstract_output=completion,
         )
 
     if output_dir:
@@ -194,8 +177,10 @@ async def run_annotation(
 
 
 async def batch_annotate():
-    instr_yaml_block = annotation_instruction_path.read_text()
-    hand_annotations = read_yaml(hand_annotation_path)
+    # instr_yaml_block = annotation_instruction_path.read_text()
+    # hand_annotations = read_yaml(hand_annotation_path)
+    instr_yaml_block = anno_fmt_block
+    hand_annotations = hand_anno
 
     concept_mem = ConceptMemory()
     concept_mem.initialize_from_annotations(hand_annotations)
@@ -216,8 +201,8 @@ async def batch_annotate():
     for seed_id in target_seeds:
         puzzle = barc_seeds[seed_id]
         processed_solution = remove_barc_concepts_from_solution(puzzle.code)
-        prompt = ANNOTATE_TEMPLATE.format(
-            annotation_instruction_block=instr_yaml_block,
+        prompt = anno_instr_template.format(
+            yaml_format_block=instr_yaml_block,
             concept_list=concept_mem.to_string(),
             examples=examples,
             solution=processed_solution,
@@ -269,16 +254,35 @@ async def async_main(cfg: DictConfig) -> None:
         transform_solution=remove_barc_concepts_from_solution,
     )
 
-    # set up target puzzles
+    # set up target puzzles and solutions
     if cfg.annotate.problem_ids is None:
-        target_puzzles = {
-            pzid: barc_seeds[pzid]
-            for pzid in barc_seeds
-            if pzid not in hand_annotations
-        }
+        target_puzzles = {}
+        all_solutions = (
+            read_json(cfg.annotate.solutions) if cfg.annotate.solutions else {}
+        )
+        solutions = {}
+        for i, pzid in enumerate(barc_seeds):
+            if pzid in hand_annotations:
+                continue
+            seed_puzzle = barc_seeds[pzid]
+            target_puzzles[pzid] = seed_puzzle
+            if pzid not in all_solutions:
+                solutions[pzid] = remove_barc_concepts_from_solution(seed_puzzle.code)
+            else:
+                solutions[pzid] = all_solutions[pzid]
+            if cfg.annotate.limit_problems and i >= cfg.annotate.limit_problems:
+                break
     else:
         pzids = read_json(cfg.annotate.problem_ids)
-        target_puzzles = {pzid: get_arc_problem_by_id(pzid) for pzid in pzids}
+        # target_puzzles = {pzid: get_arc_problem_by_id(pzid)[0] for pzid in pzids}
+        all_solutions = read_json(cfg.annotate.solutions)
+        target_puzzles = {}
+        solutions = {}
+        for i, pzid in enumerate(pzids):
+            target_puzzles[pzid] = get_arc_problem_by_id(pzid)[0]
+            solutions[pzid] = all_solutions[pzid]
+            if cfg.annotate.limit_problems and i >= cfg.annotate.limit_problems:
+                break
 
     # memory setup
     concept_mem = ConceptMemory()
@@ -286,6 +290,7 @@ async def async_main(cfg: DictConfig) -> None:
 
     # model related setup
     llm_client = LLMClient(
+        provider=Provider(cfg.annotate.model.provider),
         cache_dir=str(REPO_ROOT / "cache"),
         dotenv_path=DOTENV_PATH,
     )
@@ -293,7 +298,8 @@ async def async_main(cfg: DictConfig) -> None:
 
     await run_annotation(
         target_puzzles=target_puzzles,
-        instruction_block=instr_yaml_block,
+        solutions=solutions,
+        format_block=instr_yaml_block,
         examples=examples,
         concept_mem=concept_mem,
         llm_client=llm_client,

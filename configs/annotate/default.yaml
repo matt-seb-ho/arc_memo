@@ -1,0 +1,20 @@
+defaults:
+- /model: gpt41
+- /generation: gen_default
+
+# instruction_block_file: data/abstract_anno/annotation_instruction_v7.yaml
+instruction_block_file: data/abstract_anno/op1/op1_yaml_fmt.yaml
+# hand_annotations_file: data/abstract_anno/icl_anno_v8.yaml
+hand_annotations_file: data/abstract_anno/op1/opus1.yaml
+
+# null for barc_seeds
+problem_ids: null
+solutions: null
+limit_problems: null
+
+# anno_fmt_block_path = DATA_DIR / "abstract_anno/op1/op1_yaml_fmt.yaml"
+# anno_instr_template_path = DATA_DIR / "abstract_anno/op1/op1_instructions.txt"
+# anno_fmt_block = anno_fmt_block_path.read_text().strip()
+# anno_instr_template = anno_instr_template_path.read_text().strip()
+# hand_anno_path = DATA_DIR / "abstract_anno/op1/opus1.yaml"
+# hand_anno = read_yaml(hand_anno_path)
