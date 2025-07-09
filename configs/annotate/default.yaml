@@ -10,7 +10,8 @@ hand_annotations_file: data/abstract_anno/op1/opus1.yaml
 # null for barc_seeds
 problem_ids: null
 solutions: null
-limit_problems: null
+# limit_problems: null
+limit_problems: 10 
 
 # anno_fmt_block_path = DATA_DIR / "abstract_anno/op1/op1_yaml_fmt.yaml"
 # anno_instr_template_path = DATA_DIR / "abstract_anno/op1/op1_instructions.txt"

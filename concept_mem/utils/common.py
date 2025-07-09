@@ -95,6 +95,14 @@ extract_python_block = partial(
     extract_code_block_contents, first_pattern=python_block_pattern
 )
 
+# --- utilities for parsing angle bracket tags ---------------------------
+
+
+def parse_markup_tag(s: str, tag: str) -> list[str]:
+    pattern = re.compile(rf"<{tag}>(.*?)</{tag}>", re.DOTALL)
+    matches = pattern.findall(s)
+    return [match.strip() for match in matches if match.strip()]
+
 
 # --- misc utilities -----------------------------------------------------
 

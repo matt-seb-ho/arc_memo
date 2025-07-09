@@ -4,6 +4,7 @@ from .common import (
     extract_python_block,
     extract_yaml_block,
     get_hf_access_token,
+    parse_markup_tag,
     prepend_repo_root,
     read_json,
     read_json_lines,
@@ -32,6 +33,7 @@ from .visualization import (
 )
 
 __all__ = [
+    "parse_markup_tag",
     "prepend_repo_root",
     "read_json",
     "write_json",
