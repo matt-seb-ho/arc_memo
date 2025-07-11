@@ -30,7 +30,9 @@ async def generate_image_captions(
     gen_cfg: GenerationConfig,
     output_dir: Path,
     concept_list: str | None = None,
+    skip_concept_list: bool = False,
     include_puzzle_text: bool = False,
+    observation_only: bool = False,
     dry_run: bool = False,
 ) -> dict[str, str]:
     """
@@ -45,6 +47,7 @@ async def generate_image_captions(
             build_image_caption_query_messages(
                 problem,
                 concept_list=concept_list,
+                skip_concept_list=skip_concept_list,
                 include_puzzle_text=include_puzzle_text,
             )
         )
@@ -65,7 +68,9 @@ async def generate_image_captions(
         response = completion_list[0]
         parsed_output = parse_obs_spec_output(response)
         results[uid] = parsed_output
-        descriptions[uid] = reformat_description(parsed_output)
+        descriptions[uid] = reformat_description(
+            parsed_output, observation_only=observation_only
+        )
     write_json(results, output_dir / "caption_data.json")
     write_json(descriptions, output_dir / "descriptions.json")
     return results
@@ -76,11 +81,15 @@ async def async_main(cfg: DictConfig) -> None:
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
     logger.info(f"Output directory: {output_dir}")
 
+    dry_run = cfg.dry_run
+    cfg = cfg.description
+
     # data and prompt preparation
     problems = _load_problems(
         dataset=cfg.data.dataset,
         split=cfg.data.split,
-        num_problems=cfg.data.num_problems,
+        # num_problems=cfg.data.num_problems,
+        num_problems=None,
         problem_ids=cfg.data.problem_ids,
     )
 
@@ -93,13 +102,13 @@ async def async_main(cfg: DictConfig) -> None:
     gen_cfg = hydra.utils.instantiate(cfg.generation)
 
     # prepare concept list
-    if isinstance(cfg.module.concept_list, (str, Path)):
-        concept_list = read_json(cfg.module.concept_list)
+    if isinstance(cfg.concept_list, (str, Path)):
+        concept_list = Path(cfg.concept_list).read_text()
     else:
-        concept_list = cfg.module.concept_list
+        concept_list = cfg.concept_list
 
     # generate image captions
-    if cfg.module.mode == "image_caption":
+    if cfg.mode == "image_caption":
         await generate_image_captions(
             problems=problems,
             llm_client=llm_client,
@@ -107,19 +116,16 @@ async def async_main(cfg: DictConfig) -> None:
             gen_cfg=gen_cfg,
             output_dir=output_dir,
             concept_list=concept_list,
-            include_puzzle_text=cfg.module.include_puzzle_text,
-            dry_run=cfg.dry_run,
+            skip_concept_list=cfg.skip_concept_list,
+            include_puzzle_text=cfg.include_puzzle_text,
+            dry_run=dry_run,
         )
     else:
         raise NotImplementedError(
             f"Mode {cfg.mode} is not implemented. Please choose 'image_caption'."
         )
 
-    # save token usage
-    write_json(
-        llm_client.get_token_usage_dict(),
-        output_dir / "token_usage.json",
-    )
+    logger.info(f"Wrote to output directory: {output_dir}")
 
 
 @hydra.main(version_base=None, config_path=HYRDA_CONFIG_PATH, config_name="default")

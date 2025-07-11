@@ -3,7 +3,12 @@ defaults:
   - /model: gpt41
   - /data: val100
   - /generation: gen_default
-  - override /hydra/job_logging: custom
 
 mode: image_caption # options: image_caption; TODO: text, text_object
-concept_list: 
+skip_concept_list: false # whether to remove concept list from description prompt entirey
+
+# concept_list:
+# - null for STATIC CONCEPT LIST from hypothesis search
+# - path to a file containing the list
+concept_list: null 
+include_puzzle_text: false

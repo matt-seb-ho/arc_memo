@@ -2,12 +2,12 @@ from pathlib import Path
 from typing import Optional
 
 from concept_mem.constants import REPO_ROOT
+from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.selection.description.image_helpers import (
     DEFAULT_IMAGE_DIR,
     create_barc_seed_img,
     encode_image,
 )
-from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.types import Problem
 
 ARC_AGI_INTRO = """\
@@ -29,8 +29,7 @@ OBS_SPEC_PROMPT = f"""\
 {ARC_AGI_INTRO}
 The transformation rule may involve counting or sorting objects (e.g. sorting by size), comparing numbers (e.g. which shape or symbol appears the most? Which is the largest object? Which objects are the same size?), or repeating a pattern for a fixed number of time.
 
-Here is a (non-exhaustive) list of possibly relevant concepts:
-{{concept_list}}
+{{concept_list_section}}
 
 # Instructions
 Your task is to analyze a provided puzzle {{input_format}} (containing reference example input-output grid pairs) and write a description of the puzzles' grids to help someone solve the puzzle. Feel free to think aloud before writing your responses. Try not to be too committal in your description. The logic involved in ARC puzzles may sometimes be involved, but the actual changes done to the grids are often simple. When possible, use phrasing consistent with the concepts listed above.
@@ -48,13 +47,17 @@ Please separate your description into 2 sections.
 - Also comment on what details about the rule need to be hashed out for this idea (e.g. even if you determine the rule might be about sliding objects idea, for example, you still need to hash out details like which objects/what direction/how far). Wrap these extra details inside <details> and </details> tags.
 """
 
-IMG_OBS_SPEC_PROMPT = OBS_SPEC_PROMPT.format(
-    input_format="image",
-    concept_list="{concept_list}",
-)
+CONCEPT_SECTION_TEMPLATE = """\
+Here is a (non-exhaustive) list of possibly relevant concepts:
+{concept_list}"""
+
+# IMG_OBS_SPEC_PROMPT = OBS_SPEC_PROMPT.format(
+#     input_format="image",
+#     concept_list="{concept_list}",
+# )
 
 TXT_OBS_SPEC_PROMPT = f"""\
-{OBS_SPEC_PROMPT.format(input_format="grid pairs", concept_list="{concept_list}")}
+{OBS_SPEC_PROMPT.format(input_format="grid pairs", concept_list_section=CONCEPT_SECTION_TEMPLATE)}
 
 # Puzzle
 {{puzzle_input}}
@@ -68,6 +71,7 @@ def build_image_caption_query_messages(
     image_file_type: Optional[str] = "png",
     exclude_file_type: bool = False,
     concept_list: str | None = None,
+    skip_concept_list: bool = False,
     include_puzzle_text: bool = False,
 ) -> list[dict]:
     # image processing
@@ -86,9 +90,20 @@ def build_image_caption_query_messages(
     # prompt formatting
     # - add an optionally dynamic concept list
     input_format = "image and text representations" if include_puzzle_text else "image"
+    if skip_concept_list:
+        concept_list_section = ""
+    elif concept_list is None:
+        concept_list_section = CONCEPT_SECTION_TEMPLATE.format(
+            concept_list=STATIC_CONCEPT_LIST
+        )
+    else:
+        concept_list_section = CONCEPT_SECTION_TEMPLATE.format(
+            concept_list=concept_list
+        )
+
     prompt = prompt_template.format(
         input_format=input_format,
-        concept_list=(concept_list or STATIC_CONCEPT_LIST),
+        concept_list_section=concept_list_section,
     )
     # - optionally add the puzzle's text representation
     if include_puzzle_text:
@@ -115,6 +130,7 @@ def build_text_caption_query_messages(
     prompt: str = TXT_OBS_SPEC_PROMPT,
     grid_representation: str = "standard",
 ) -> list[dict]:
+    # TODO: this doesn't inject concept list section
     if grid_representation == "standard":
         puzzle_input = format_puzzle_for_prompt(problem, include_dim=True)
     elif grid_representation == "objects":

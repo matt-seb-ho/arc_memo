@@ -41,7 +41,9 @@ Speculation:
 {speculation}"""
 
 
-def reformat_description(parsed: dict[str, str | None]) -> str:
+def reformat_description(
+    parsed: dict[str, str | None], observation_only: bool = False
+) -> str:
     """
     Target Format for Description:
 
@@ -57,6 +59,10 @@ def reformat_description(parsed: dict[str, str | None]) -> str:
             "No summary found in the parsed output. Falling back to full observation section"
         )
         summary = parsed.get("observations", "") or ""
+
+    if observation_only:
+        return summary.strip()
+
     full_speculation = parsed.get("speculation", "") or ""
     if full_speculation == "":
         logger.info("No speculation found in the parsed output.")
