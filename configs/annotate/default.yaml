@@ -13,6 +13,13 @@ solutions: null
 # limit_problems: null
 limit_problems: 10 
 
+
+# for phase 2: concept gen
+# pseudocode: outputs/2025-07-08/22-08-41/phase1.json
+pseudocode: outputs/2025-07-09/16-46-48/initial_analysis.json
+# batching for mem updates
+batch_size: 10
+
 # anno_fmt_block_path = DATA_DIR / "abstract_anno/op1/op1_yaml_fmt.yaml"
 # anno_instr_template_path = DATA_DIR / "abstract_anno/op1/op1_instructions.txt"
 # anno_fmt_block = anno_fmt_block_path.read_text().strip()

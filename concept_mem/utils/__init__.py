@@ -21,6 +21,7 @@ from .puzzle_utils import (
     get_puzzle_url,
     load_arc_data,
     load_barc_seeds,  # legacy function (keeping to recall seed puzzle order)
+    remove_barc_concepts_from_solution,
 )
 from .visualization import (
     display_img_file,
@@ -51,6 +52,7 @@ __all__ = [
     "get_puzzle_url",
     "load_arc_data",
     "load_barc_seeds",  # legacy function
+    "remove_barc_concepts_from_solution",
     "get_arc_problem_by_id",
     "display_img_file",
     "draw_io_grids",

@@ -1,4 +1,3 @@
-from collections import defaultdict
 import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -18,14 +17,12 @@ class ProblemSolution:
     problem_id: str
     solution: str | None = None
     summary: str | None = None
-    pseudocode: str | None = None
+    pseudocode: list[str | dict[str, str]] = field(default_factory=list)
 
 
 class ConceptMemory:
     def __init__(self):
-        # self.concepts: dict[str, Concept] = {}
         self.concepts: dict[str, Concept] = {}
-        self.categories: dict[str, list[str]] = defaultdict(list)
         self.solutions: dict[str, ProblemSolution] = {}
 
     def write_concept(self, puzzle_id: str, annotation: dict) -> None:
@@ -40,25 +37,13 @@ class ConceptMemory:
         concept_name = annotation["concept"]
         if concept_name in self.concepts:
             entry = self.concepts[concept_name]
-            entry.update(problem_id=puzzle_id, annotation=annotation)
         else:
             # new entry
-            # - update category buckets
-            try:
-                entry_type = annotation["kind"]
-                entry = Concept(
-                    name=concept_name,
-                    kind=annotation["kind"],
-                    description=annotation.get("description", None),
-                    for_param=annotation.get("for_param", None),
-                )
-                entry.update(problem_id=puzzle_id, annotation=annotation)
-                self.concepts[concept_name] = entry
-                self.categories[entry_type].append(concept_name)
-            except KeyError as e:
-                logger.info(f"Missing field for new concept '{concept_name}': {e}")
-            except Exception as e:
-                logger.info(f"Error creating concept entry for {concept_name}: {e}")
+            entry = Concept(name=concept_name)
+            self.concepts[concept_name] = entry
+
+        # update the entry with the annotation
+        entry.update(problem_id=puzzle_id, annotation=annotation)
 
     def write_solution(
         self,
@@ -67,7 +52,7 @@ class ConceptMemory:
         annotation: dict,
     ) -> None:
         summary = annotation.get("summary", None)
-        pseudocode = annotation.get("pseudocode", None)
+        pseudocode = annotation.get("pseudocode", [])
         self.solutions[puzzle_id] = ProblemSolution(
             problem_id=puzzle_id,
             solution=solution,
@@ -77,62 +62,37 @@ class ConceptMemory:
 
     def to_string(
         self,
-        categories: list[str] | None = None,
         include_description: bool = True,
-        parameter_format: str = "none",
-        include_usage: bool = False,
+        include_parents: bool = True,
+        include_associates: bool = True,
+        include_cues: bool = True,
+        include_notes: bool = True,
         indentation: int = 0,
     ) -> str:
         # TODO: figure out how to include pseudocode solutions
         components: list[str] = []
-        if include_usage:
-            problem_usage_info = {
-                problem_id: problem_solution.summary
-                for problem_id, problem_solution in self.solutions.items()
-            }
-        else:
-            problem_usage_info = None
-        if categories is None:
-            categories = [
-                "term definition",
-                "grid manipulation",
-                "intermediate operation",
-                "parameter selection",
-            ]
-        for category in categories:
-            concept_names = self.categories.get(category, [])
-            if not concept_names:
-                continue
-            components.append(f"## {category} concepts")
-            if category == "parameter selection":
-                components.append(
-                    self._format_selection_concepts(
-                        include_description=include_description,
-                        parameter_format=parameter_format,
-                        problem_usage_info=problem_usage_info,
-                        indentation=indentation,
-                    )
+        problem_usage_info: dict[str, str] = {
+            problem_id: problem_solution.summary
+            for problem_id, problem_solution in self.solutions.items()
+        }
+        for concept in self.concepts.values():
+            components.append(
+                concept.to_string(
+                    include_description=include_description,
+                    include_parents=include_parents,
+                    include_associates=include_associates,
+                    include_cues=include_cues,
+                    include_notes=include_notes,
+                    problem_usage_info=problem_usage_info,
+                    indentation=indentation,
                 )
-                continue
-            for concept_name in concept_names:
-                concept = self.concepts[concept_name]
-                components.append(
-                    concept.to_string(
-                        include_description=include_description,
-                        parameter_format=parameter_format,
-                        problem_usage_info=problem_usage_info,
-                        indentation=indentation,
-                    )
-                )
-            # spacer line
-            components.append("")
-
-        concept_mem_string = "\n".join(components)
-        return concept_mem_string
+            )
+        return "\n".join(components)
 
     def update_from_model_output(
         self,
         puzzle_id: str,
+        solve_output: str,
         abstract_output: str,
     ) -> None:
         # extract from triple backticks markdown block
@@ -142,20 +102,14 @@ class ConceptMemory:
         try:
             parsed_output = yaml.safe_load(yaml_string)
             # update solution records
-            # self.write_solution(
-            #     puzzle_id,
-            #     solve_output,
-            #     parsed_output,
-            # )
+            self.write_solution(
+                puzzle_id,
+                solve_output,
+                parsed_output,
+            )
             # update concept records
-            # concepts = parsed_output.get("concepts", [])
-            if not isinstance(parsed_output, list):
-                logger.info(
-                    f"Expected a list of concepts for puzzle {puzzle_id}, "
-                    f"got {type(parsed_output)}. Skipping update."
-                )
-                return
-            for concept in parsed_output:
+            concepts = parsed_output.get("concepts", [])
+            for concept in concepts:
                 self.write_concept(puzzle_id, concept)
         except yaml.YAMLError as e:
             logger.error(f"Error parsing YAML (puzzle: {puzzle_id}): {e}")
@@ -163,19 +117,6 @@ class ConceptMemory:
         except KeyError as e:
             logger.info(f"KeyError: {e}, {puzzle_id} - {abstract_output}")
             return
-
-    def initialize_solutions(
-        self,
-        solutions: dict[str, dict],
-    ) -> None:
-        for puzzle_id, annotation in solutions.items():
-            problem_solution = ProblemSolution(
-                problem_id=puzzle_id,
-                solution=annotation.get("solution", None),
-                summary=annotation.get("summary", None),
-                pseudocode=annotation.get("pseudocode", None),
-            )
-            self.solutions[puzzle_id] = problem_solution
 
     def initialize_from_annotations(
         self,
@@ -226,37 +167,6 @@ class ConceptMemory:
             problem_id: ProblemSolution(**data)
             for problem_id, data in mem_data["solutions"].items()
         }
-        for concept_name, concept in self.concepts.items():
-            self.categories[concept.kind].append(concept_name)
-
-    def _format_selection_concepts(
-        self,
-        include_description: bool = True,
-        parameter_format: str = "none",
-        problem_usage_info: dict[str, str] | None = None,
-        indentation: int = 0,
-    ) -> str:
-        ps_concepts = [
-            self.concepts[name]
-            for name in self.categories.get("parameter selection", [])
-        ]
-        for_param_groups = defaultdict(list)
-        for concept in ps_concepts:
-            for_param_groups[concept.for_param].append(concept)
-        components = []
-        for param, concepts in for_param_groups.items():
-            components.append(f"for parameter `{param}`:")
-            for concept in concepts:
-                components.append(
-                    concept.to_string(
-                        include_description=include_description,
-                        include_for_param=False,
-                        parameter_format=parameter_format,
-                        problem_usage_info=problem_usage_info,
-                        indentation=indentation,
-                    )
-                )
-        return "\n".join(components)
 
 
 # def merge_hand_and_machine_annotations(

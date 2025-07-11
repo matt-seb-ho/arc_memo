@@ -1,7 +1,7 @@
 import logging
 import textwrap
 from dataclasses import dataclass, field
-from typing import ClassVar, Literal
+from typing import ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -11,60 +11,45 @@ logger = logging.getLogger(__name__)
 class Concept:
     # main identifier and most concise representation
     name: str
-    # concept sub-types:
-    # - grid manipulation
-    # - intermediate operation
-    # - parameter selection
-    # - term definition
-    kind: str
     # optional elaboration
     description: str | None = None
-    # parameters this operation/routine depends on
-    uses_params: dict[str, str] = field(default_factory=dict)
-    # parameter this operation helps to select
-    for_param: str | None = None
 
-    # TODO: (removed from op1, consider adding back)
+    # list of parent concept names
+    parents: list[str] = field(default_factory=list)
+    # map of associated concept name -> relationship description
+    associated_concepts: dict[str, str] = field(default_factory=dict)
+
     # cues to look out for to identify the concept in problems
-    # relevance_cues: list[str] = field(default_factory=list)
-    # miscellaneous annotations
-    # notes: list[str] = field(default_factory=list)
+    relevance_cues: list[str] = field(default_factory=list)
 
-    # TODO:
-    # python helper functions that operationalise the concept
-    # helper_routines: list[str] = field(default_factory=list)
+    # miscellaneous annotations
+    notes: list[str] = field(default_factory=list)
 
     # tracking problem instances (IDs) where this concept is used
     usage: list[str] = field(default_factory=list)
 
     LIST_FIELDS: ClassVar[list[str]] = [
-        # "relevance_cues",
-        # "notes",
-        # "parents",
+        "relevance_cues",
+        "notes",
+        "parents",
+    ]
+    DICT_FIELDS: ClassVar[list[str]] = [
+        "associated_concepts",
+    ]
+    NON_EDITABLE_FIELDS: ClassVar[list[str]] = [
+        "name",
+        "description",
     ]
 
-    # DICT_FIELDS: ClassVar[list[str]] = [
-    #     "associated_concepts",
-    # ]
+    # TODO:
+    # python helper functions that operationalise the concept
+    # helper_routines: list[str] = field(default_factory=list)
 
-    # NON_EDITABLE_FIELDS: ClassVar[list[str]] = [
-    #     "name",
-    #     "description",
-    # ]
-
-    # def __post_init__(self):
-    #     for field_name in self.LIST_FIELDS:
-    #         seen_set_field_name = f"_seen_set_{field_name}"
-    #         if not hasattr(self, seen_set_field_name):
-    #             setattr(self, seen_set_field_name, set())
     def __post_init__(self):
-        if self.kind == "parameter selection" and not self.for_param:
-            message = (
-                f"Concept '{self.name}' is marked as 'parameter selection'"
-                " but has no 'for_param' set."
-            )
-            logger.error(message)
-            raise ValueError(message)
+        for field_name in self.LIST_FIELDS:
+            seen_set_field_name = f"_seen_set_{field_name}"
+            if not hasattr(self, seen_set_field_name):
+                setattr(self, seen_set_field_name, set())
 
     def update(self, problem_id: str, annotation: dict) -> None:
         """
@@ -79,48 +64,42 @@ class Concept:
             if self.description is None and annotation_description:
                 self.description = annotation_description.strip()
             else:
-                logger.debug(
+                logger.info(
                     f"Description already set for {self.name}, skipping update."
                 )
 
-        uses_params = annotation.get("uses_params", None)
-        if uses_params:
-            self._update_dict_field("uses_params", uses_params)
+        for field_name in self.LIST_FIELDS:
+            if field_name not in annotation:
+                continue
+            self._update_list_field(field_name, annotation[field_name])
+        for field_name in self.DICT_FIELDS:
+            if field_name not in annotation:
+                continue
+            self._update_dict_field(field_name, annotation[field_name])
 
     def to_string(
         self,
-        include_kind: bool = False,
         include_description: bool = True,
-        include_for_param: bool = True,
-        parameter_format: Literal["none", "names", "full"] = "none",
-        # include_cues: bool = True,
-        # include_notes: bool = True,
+        include_parents: bool = True,
+        include_associates: bool = True,
+        include_cues: bool = True,
+        include_notes: bool = True,
         problem_usage_info: dict[str, str] | None = None,
         indentation: int = 0,
     ) -> str:
         components: list[str] = [f"- concept: {self.name}"]
-        if include_kind:
-            components.append(f"  kind: {self.kind}")
-        if include_for_param and self.for_param:
-            components.append(f"  for parameter: {self.for_param}")
         if include_description and self.description:
             components.append(f"  description: {self.description}")
-        if parameter_format != "none" and self.uses_params:
-            if parameter_format == "names":
-                parameter_names = ", ".join(self.uses_params.keys())
-                components.append(f"  uses parameters: {parameter_names}")
-            else:
-                components.append("  uses parameters:")
-                for param, description in self.uses_params.items():
-                    components.append(f"  - {param}: {description}")
-        # if include_associates and self.associated_concepts:
-        #     components.append("  associated concepts:")
-        #     for concept, description in self.associated_concepts.items():
-        #         components.append(f"  - {concept}: {description}")
-        # if include_cues:
-        #     components.append(self._format_list_field("relevance_cues"))
-        # if include_notes:
-        #     components.append(self._format_list_field("notes"))
+        if include_parents and self.parents:
+            components.append(f"  parents: {self.parents}")
+        if include_associates and self.associated_concepts:
+            components.append("  associated concepts:")
+            for concept, description in self.associated_concepts.items():
+                components.append(f"  - {concept}: {description}")
+        if include_cues:
+            components.append(self._format_list_field("relevance_cues"))
+        if include_notes:
+            components.append(self._format_list_field("notes"))
         if problem_usage_info:
             usage_components = []
             for problem_id in self.usage:

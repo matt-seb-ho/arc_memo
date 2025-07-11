@@ -270,3 +270,19 @@ def get_puzzle_url(puzzle_id: str, verbose: bool = True, v: bool = True) -> str:
     if not (verbose and v):
         print(url)
     return url
+
+
+def remove_barc_concepts_from_solution(solution: str) -> str:
+    # we want to remove the "# concepts:" line and the line after it
+    lines = solution.split("\n")
+    new_lines = []
+    skip_next = False
+    for line in lines:
+        if skip_next:
+            skip_next = False
+            continue
+        if line.startswith("# concepts:"):
+            skip_next = True
+            continue
+        new_lines.append(line)
+    return "\n".join(new_lines)

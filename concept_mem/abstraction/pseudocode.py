@@ -14,6 +14,7 @@ from concept_mem.utils import (
     parse_markup_tag,
     read_json,
     read_yaml,
+    remove_barc_concepts_from_solution,
     run_llm_job,
     write_json,
 )
@@ -92,10 +93,10 @@ def parse_model_output(
     return pseudocode, summary
 
 
-async def get_pseudocode(
+async def generate_pseudocode(
     problems: list[str],
     solutions: dict[str, str],
-    examples: dict[str, str],
+    examples: dict[str, dict],
     llm_client: LLMClient,
     model: str,
     gen_cfg: GenerationConfig,
@@ -144,6 +145,7 @@ async def get_pseudocode(
             results[puzzle_id] = {
                 "pseudocode": pseudocode,
                 "summary": summary,
+                "solution": solutions[puzzle_id],
             }
         except Exception as e:
             logger.error(f"Error parsing output for puzzle {puzzle_id}: {e}")
@@ -151,25 +153,9 @@ async def get_pseudocode(
 
     # save to output directory if specified
     if output_dir:
-        output_file = output_dir / "phase1.json"
+        output_file = output_dir / "initial_analysis.json"
         write_json(results, output_file, indent=True)
     return results
-
-
-def remove_barc_concepts_from_solution(solution: str) -> str:
-    # we want to remove the "# concepts:" line and the line after it
-    lines = solution.split("\n")
-    new_lines = []
-    skip_next = False
-    for line in lines:
-        if skip_next:
-            skip_next = False
-            continue
-        if line.startswith("# concepts:"):
-            skip_next = True
-            continue
-        new_lines.append(line)
-    return "\n".join(new_lines)
 
 
 async def async_main(cfg: DictConfig) -> None:
@@ -217,7 +203,7 @@ async def async_main(cfg: DictConfig) -> None:
     gen_cfg = hydra.utils.instantiate(cfg.annotate.generation)
 
     # run pseudocode generation
-    await get_pseudocode(
+    await generate_pseudocode(
         problems=target_puzzles,
         solutions=solutions,
         examples=hand_annotations,
