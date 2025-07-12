@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Literal
 
 from concept_mem.constants import REPO_ROOT
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.prompts import make_prompt, make_retry_prompt
-from concept_mem.evaluation.solution_tree import SolutionThread
 from concept_mem.evaluation.retry_policy import RetryPolicy
-from concept_mem.types import Problem
+from concept_mem.evaluation.solution_tree import SolutionThread
 from concept_mem.utils import read_json
 
 logger = logging.getLogger(__name__)

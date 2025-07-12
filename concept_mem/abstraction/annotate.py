@@ -11,13 +11,13 @@ from tqdm import tqdm
 
 from concept_mem.concept_memory import ConceptMemory
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
-from concept_mem.types import Problem
+from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.data.barc_seed_processing import (
+    remove_concepts_from_barc_seed_solution,
+)
 from concept_mem.utils import (
-    get_arc_problem_by_id,
-    load_arc_data,
     read_json,
     read_yaml,
-    remove_barc_concepts_from_solution,
     run_llm_job,
     write_json,
 )
@@ -51,7 +51,7 @@ def format_annotation_example(
     transform_solution: Callable[[str], str] | None = None,
 ) -> str:
     # get solution by loading
-    solution = puzzle.code
+    solution = puzzle.code or "# no provided solution"
     if transform_solution:
         solution = transform_solution(solution)
 
@@ -106,7 +106,6 @@ async def run_annotation(
     for puzzle_id, puzzle in tqdm(target_puzzles.items(), total=len(target_puzzles)):
         puzzle_ids.append(puzzle_id)
         # create the prompt
-        # processed_solution = remove_barc_concepts_from_solution(puzzle.code)
         problem_solution = solutions[puzzle_id]
         prompt = anno_instr_template.format(
             yaml_format_block=format_block,
@@ -180,12 +179,14 @@ async def batch_annotate():
         puzzles=barc_seeds,
         example_annotations=hand_annotations,
         skip_puzzles=target_seeds,
-        transform_solution=remove_barc_concepts_from_solution,
+        transform_solution=remove_concepts_from_barc_seed_solution,
     )
     prompts = []
     for seed_id in target_seeds:
         puzzle = barc_seeds[seed_id]
-        processed_solution = remove_barc_concepts_from_solution(puzzle.code)
+        processed_solution = remove_concepts_from_barc_seed_solution(
+            puzzle.code or "# no provided solution"
+        )
         prompt = anno_instr_template.format(
             yaml_format_block=instr_yaml_block,
             concept_list=concept_mem.to_string(),
@@ -236,7 +237,7 @@ async def async_main(cfg: DictConfig) -> None:
     examples = format_annotation_examples(
         puzzles=barc_seeds,
         example_annotations=hand_annotations,
-        transform_solution=remove_barc_concepts_from_solution,
+        transform_solution=remove_concepts_from_barc_seed_solution,
     )
 
     # set up target puzzles and solutions
@@ -252,19 +253,20 @@ async def async_main(cfg: DictConfig) -> None:
             seed_puzzle = barc_seeds[pzid]
             target_puzzles[pzid] = seed_puzzle
             if pzid not in all_solutions:
-                solutions[pzid] = remove_barc_concepts_from_solution(seed_puzzle.code)
+                solutions[pzid] = remove_concepts_from_barc_seed_solution(
+                    seed_puzzle.code or "# no provided solution"
+                )
             else:
                 solutions[pzid] = all_solutions[pzid]
             if cfg.annotate.limit_problems and i >= cfg.annotate.limit_problems:
                 break
     else:
         pzids = read_json(cfg.annotate.problem_ids)
-        # target_puzzles = {pzid: get_arc_problem_by_id(pzid)[0] for pzid in pzids}
         all_solutions = read_json(cfg.annotate.solutions)
         target_puzzles = {}
         solutions = {}
         for i, pzid in enumerate(pzids):
-            target_puzzles[pzid] = get_arc_problem_by_id(pzid)[0]
+            target_puzzles[pzid] = Problem.from_puzzle_id(pzid)
             solutions[pzid] = all_solutions[pzid]
             if cfg.annotate.limit_problems and i >= cfg.annotate.limit_problems:
                 break

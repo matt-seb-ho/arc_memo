@@ -6,6 +6,7 @@ DATA_DIR = REPO_ROOT / "data"
 DOTENV_PATH = REPO_ROOT / ".env"
 COMMON_LIB_PATH = REPO_ROOT / "data/common_lib.txt"
 HYRDA_CONFIG_PATH = str(REPO_ROOT / "configs")
+
 BARC_SEED_UIDS_PATH = REPO_ROOT / "data/barc_seed_uids.json"
 BARC_SEEDS_PATH = REPO_ROOT / "data/barc_seeds"
 

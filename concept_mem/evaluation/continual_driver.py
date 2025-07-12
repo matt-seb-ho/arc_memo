@@ -16,6 +16,7 @@ from concept_mem.constants import (
     HYRDA_CONFIG_PATH,
     REPO_ROOT,
 )
+from concept_mem.data.arc_agi import Problem, load_arc_data
 from concept_mem.evaluation.prompt_builder import PromptOptions
 from concept_mem.evaluation.prompts import (
     SYSTEM_PROMPTS,
@@ -35,8 +36,7 @@ from concept_mem.evaluation.solution_tree import (
 )
 from concept_mem.lesson_memory import LessonConceptMemory
 from concept_mem.selection.description.select import reselect_concepts
-from concept_mem.types import Problem
-from concept_mem.utils import load_arc_data, read_json, run_llm_job, write_json
+from concept_mem.utils import read_json, run_llm_job, write_json
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 from .common import (
-    Singleton,
     extract_code_block_contents,
     extract_python_block,
     extract_yaml_block,
     get_hf_access_token,
+    get_puzzle_url,
     parse_markup_tag,
     prepend_repo_root,
     read_json,
@@ -14,21 +14,9 @@ from .common import (
     write_yaml,
 )
 from .llm_job import run_llm_job
-from .puzzle_utils import (
-    extract_barc_concepts,
-    extract_barc_seed_comment_sections,
-    get_arc_problem_by_id,
-    get_puzzle_url,
-    load_arc_data,
-    load_barc_seeds,  # legacy function (keeping to recall seed puzzle order)
-    remove_barc_concepts_from_solution,
-)
 from .visualization import (
     display_img_file,
     draw_io_grids,
-    example_repr,
-    grid_repr,
-    task_repr,
     visualize_barc_problem,
     visualize_problem,
 )
@@ -45,21 +33,11 @@ __all__ = [
     "extract_code_block_contents",
     "extract_yaml_block",
     "extract_python_block",
-    "Singleton",
     "get_hf_access_token",
-    "extract_barc_concepts",
-    "extract_barc_seed_comment_sections",
     "get_puzzle_url",
-    "load_arc_data",
-    "load_barc_seeds",  # legacy function
-    "remove_barc_concepts_from_solution",
-    "get_arc_problem_by_id",
     "display_img_file",
     "draw_io_grids",
     "display_img_file",
-    "grid_repr",
-    "example_repr",
-    "task_repr",
     "visualize_barc_problem",
     "visualize_problem",
     "run_llm_job",

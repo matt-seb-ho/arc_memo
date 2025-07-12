@@ -13,10 +13,10 @@ from concept_mem.constants import (
     HYRDA_CONFIG_PATH,
     REPO_ROOT,
 )
-from concept_mem.evaluation.runner import EvaluationRunner
+from concept_mem.data.arc_agi import Problem, load_arc_data
 from concept_mem.evaluation.prompts import SYSTEM_PROMPTS
-from concept_mem.types import Problem
-from concept_mem.utils import load_arc_data, read_json
+from concept_mem.evaluation.runner import EvaluationRunner
+from concept_mem.utils import read_json
 
 logger = logging.getLogger(__name__)
 

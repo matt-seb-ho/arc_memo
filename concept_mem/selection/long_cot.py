@@ -6,8 +6,8 @@ import yaml
 from llmplus import GenerationConfig, LLMClient
 
 from concept_mem.concept_memory import ConceptMemory
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.prompts import ARC_INTRO, format_puzzle_for_prompt
-from concept_mem.types import Problem
 from concept_mem.utils import run_llm_job, write_json
 
 logger = logging.getLogger(__name__)

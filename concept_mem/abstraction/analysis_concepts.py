@@ -21,12 +21,10 @@ from concept_mem.abstraction.analysis_concept_prompts import (
 # from detective.abstraction.retriever import ProblemRetriever
 from concept_mem.abstraction.thought_process import get_soluton_summary
 from concept_mem.constants import HYRDA_CONFIG_PATH, REPO_ROOT
+from concept_mem.data.arc_agi import Problem, load_arc_data
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
-from concept_mem.types import Problem
 from concept_mem.utils import (
     extract_yaml_block,
-    get_arc_problem_by_id,
-    load_arc_data,
     read_json,
     run_llm_job,
     write_json,
@@ -239,12 +237,13 @@ def format_lesson_as_yaml_block(lessons: list[dict]) -> str:
 
 def format_lesson_examples(
     examples: dict[str, list[dict]],
+    example_solutions: dict[str, str] | None = None,
     thought_processes: dict[str, str] | None = None,
 ) -> str:
     use_thought_process = thought_processes is not None
     components = []
     for i, (puzzle_id, example) in enumerate(examples.items(), start=1):
-        problem, _ = get_arc_problem_by_id(puzzle_id)
+        problem = Problem.from_puzzle_id(puzzle_id)
         if problem is None:
             continue
         formatted_puzzle = format_puzzle_for_prompt(
@@ -252,7 +251,12 @@ def format_lesson_examples(
             include_dim=True,
             include_test=False,
         )
-        solution = get_soluton_summary(problem)
+        solution = _get_puzzle_solution(
+            puzzle_id=puzzle_id,
+            problems=examples,
+            solutions=example_solutions or {},
+            use_barc_solution=True,
+        )
         lessons = format_lesson_as_yaml_block(example)
         if use_thought_process:
             lesson = LESSON_FROM_TRACE_EXAMPLE_TEMPLATE.format(
@@ -306,7 +310,7 @@ async def async_main(cfg: DictConfig) -> None:
         }
     else:
         problem_solutions = read_json(problem_solutions)
-    problems = {uid: get_arc_problem_by_id(uid)[0] for uid in problem_solutions.keys()}
+    problems = {uid: Problem.from_puzzle_id(uid) for uid in problem_solutions.keys()}
 
     # load thought processes and examples
     if cfg.abstraction.thought_processes:

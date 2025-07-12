@@ -7,8 +7,7 @@ import orjson
 import yaml
 from dotenv import load_dotenv
 
-from concept_mem.constants import REPO_ROOT
-
+from concept_mem.constants import REPO_ROOT, URL_TEMPLATE
 
 # --- file I/O utilities ---------------------------------------------
 
@@ -17,10 +16,10 @@ def prepend_repo_root(file_path: str | Path, repo_root: Path = REPO_ROOT) -> Pat
     """
     Prepend the repository root to a file path if it is not already absolute.
     """
-    file_path_string = str(file_path)
-    if file_path_string.startswith("/"):
-        return Path(file_path_string)
-    return repo_root / file_path_string
+    file_path = Path(file_path)
+    if file_path.is_absolute():
+        return file_path
+    return repo_root / file_path
 
 
 def read_json(file_path: str | Path) -> dict:
@@ -107,15 +106,13 @@ def parse_markup_tag(s: str, tag: str) -> list[str]:
 # --- misc utilities -----------------------------------------------------
 
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 def get_hf_access_token(env_file: str) -> str:
     load_dotenv(dotenv_path=env_file)
     return os.getenv("HF_ACCESS_TOKEN")
+
+
+def get_puzzle_url(puzzle_id: str, verbose: bool = True, v: bool = True) -> str:
+    url = URL_TEMPLATE.format(puzzle_id=puzzle_id)
+    if not (verbose and v):
+        print(url)
+    return url

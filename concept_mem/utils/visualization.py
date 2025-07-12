@@ -10,16 +10,31 @@ from IPython.display import display
 from PIL import Image
 
 from concept_mem.constants import MAX_LINE_WIDTH
-from concept_mem.types import Problem
-from concept_mem.utils.puzzle_utils import (
-    convert_problem_to_task,
+from concept_mem.data.arc_agi import IOPair, Problem
+from concept_mem.data.synthetic_barc import (
     get_problem_from_barc,
     load_barc,
 )
 
-
 # set up logging
 logger = logging.getLogger(__name__)
+
+
+# ------------------------------------------------------------------------------
+# IMAGE REPRESENTATIONS
+# ------------------------------------------------------------------------------
+
+
+def visualize_problem(problem: Problem, **kwargs):
+    task = convert_problem_to_task(problem, "custom", dataset="custom")
+    return arckit.vis.draw_task(task, include_test="all", **kwargs)
+
+
+def visualize_barc_problem(idx: int, dataset: Optional[Dataset] = None, **kwargs):
+    if dataset is None:
+        dataset = load_barc()
+    problem = get_problem_from_barc(dataset, idx)
+    visualize_problem(problem, **kwargs)
 
 
 def display_img_file(f):
@@ -58,6 +73,31 @@ def draw_io_grids(
     return combined
 
 
+def convert_problem_to_task(
+    p: Problem, id_: str, dataset: Optional[str] = None
+) -> arckit.data.Task:
+    # convert from list[IOPair] to list[dict]
+    train_pairs = [_io_pair_to_dict(pair) for pair in p.train_pairs]
+    test_pairs = [_io_pair_to_dict(pair) for pair in p.test_pairs]
+    task = arckit.data.Task(
+        id=id_,
+        train=train_pairs,
+        test=test_pairs,
+        dataset=dataset,
+    )
+    return task
+
+
+def _io_pair_to_dict(pair: IOPair) -> dict:
+    # convert to list[list[int]]
+    return {"input": pair.x.astype(int).tolist(), "output": pair.y.astype(int).tolist()}
+
+
+# ------------------------------------------------------------------------------
+# STRING REPRESENTATIONS
+# ------------------------------------------------------------------------------
+
+
 def grid_repr(grid: np.ndarray, show_size: bool = True) -> str:
     grid_string = np.array2string(
         grid,
@@ -93,15 +133,3 @@ def task_repr(task: arckit.data.Task, test: bool = True) -> str:
             lines.append(f"# Test Example Input {i}")
             lines.append(grid_repr(task.test[i][0]))
     return "\n".join(lines)
-
-
-def visualize_problem(problem: Problem, **kwargs):
-    task = convert_problem_to_task(problem, "custom", dataset="custom")
-    return arckit.vis.draw_task(task, include_test="all", **kwargs)
-
-
-def visualize_barc_problem(idx: int, dataset: Optional[Dataset] = None, **kwargs):
-    if dataset is None:
-        dataset = load_barc()
-    problem = get_problem_from_barc(dataset, idx)
-    visualize_problem(problem, **kwargs)

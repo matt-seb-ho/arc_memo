@@ -10,9 +10,9 @@ from tqdm import tqdm
 
 from concept_mem.concept_memory import ConceptMemory
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
+from concept_mem.data.arc_agi import load_arc_data
 from concept_mem.utils import (
     extract_yaml_block,
-    load_arc_data,
     read_json,
     read_yaml,
     run_llm_job,

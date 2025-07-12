@@ -1,14 +1,14 @@
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import orjson
 import yaml
 
+from concept_mem.concept import Concept
 from concept_mem.constants import REPO_ROOT
 from concept_mem.utils import extract_yaml_block
-from concept_mem.concept import Concept
 
 logger = logging.getLogger(__name__)
 

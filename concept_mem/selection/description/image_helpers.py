@@ -2,7 +2,7 @@ import base64
 from pathlib import Path
 
 from concept_mem.constants import REPO_ROOT
-from concept_mem.types import Problem
+from concept_mem.data.arc_agi import Problem
 from concept_mem.utils import visualize_problem
 
 DEFAULT_IMAGE_DIR = "data/vlm_inputs"

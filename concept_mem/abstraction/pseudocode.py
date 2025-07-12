@@ -9,14 +9,16 @@ from llmplus import GenerationConfig, LLMClient, Provider
 from omegaconf import DictConfig
 
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
+from concept_mem.data.arc_agi import load_arc_data
 from concept_mem.utils import (
-    load_arc_data,
     parse_markup_tag,
     read_json,
     read_yaml,
-    remove_barc_concepts_from_solution,
     run_llm_job,
     write_json,
+)
+from concept_mem.utils.barc_seed_processing import (
+    remove_concepts_from_barc_seed_solution,
 )
 
 logger = logging.getLogger(__name__)
@@ -182,7 +184,9 @@ async def async_main(cfg: DictConfig) -> None:
             if pzid in file_solutions:
                 solutions[pzid] = file_solutions[pzid]
             else:
-                solutions[pzid] = remove_barc_concepts_from_solution(seed_puzzle.code)
+                solutions[pzid] = remove_concepts_from_barc_seed_solution(
+                    seed_puzzle.code or "# no solution provided",
+                )
             if pzid in hand_annotations or (limit and len(target_puzzles) >= limit):
                 continue
             target_puzzles.append(pzid)

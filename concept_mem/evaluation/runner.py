@@ -6,6 +6,7 @@ from pathlib import Path
 from llmplus import GenerationConfig, LLMClient
 
 from concept_mem.concept_memory import ConceptMemory
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.prompt_builder import PromptBuilder, PromptOptions
 from concept_mem.evaluation.prompts import make_lcs_puzzle_solving_prompt
 from concept_mem.evaluation.retry_policy import RetryPolicy
@@ -16,7 +17,6 @@ from concept_mem.evaluation.solution_trace_types import (
 )
 from concept_mem.selection.description.select import reselect_concepts
 from concept_mem.selection.long_cot import select_concepts_using_long_cot
-from concept_mem.types import Problem
 from concept_mem.utils import read_json, write_json
 
 logger = logging.getLogger(__name__)

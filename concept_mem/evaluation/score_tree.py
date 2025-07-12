@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 
 from concept_mem.constants import NO_CODE_BLOCK_MESSAGE
+from concept_mem.data.arc_agi import IOPair, Problem
 from concept_mem.evaluation.solution_tree import (
     IOPairExecutionResult,
     SolutionStep,
     SolutionTree,
 )
-from concept_mem.types import IOPair, Problem
 from concept_mem.utils import extract_python_block
 from concept_mem.utils.code_execution.exec_transform import execute_transforms
 

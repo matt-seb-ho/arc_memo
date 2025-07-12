@@ -5,8 +5,8 @@ import yaml
 
 from concept_mem.concept_memory import Concept, ConceptMemory
 from concept_mem.constants import MAX_LINE_WIDTH
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.solution_tree import SolutionStep, SolutionThread
-from concept_mem.types import Problem
 
 # ------------------------------------------------------------------------------
 # prompt constants
@@ -234,7 +234,9 @@ def format_puzzle_for_prompt(
 
 
 def format_icl_demo_section(
-    problems: list[Problem], intro: str = ICL_SECTION_INTRO
+    problems: list[Problem],
+    solutions: dict[str, str] | None = None,
+    intro: str = ICL_SECTION_INTRO,
 ) -> str:
     formatted_examples_components = [intro]
     for i, problem in enumerate(problems, start=1):
@@ -247,7 +249,10 @@ def format_icl_demo_section(
             )
         )
         formatted_examples_components.append(f"### Example Puzzle {i} Solution")
-        formatted_examples_components.append(f"```python\n{problem.code}\n```")
+        solution = problem.code or "# no solution provided"
+        if solutions:
+            solution = solutions.get(problem.uid, solution)
+        formatted_examples_components.append(f"```python\n{solution}\n```")
     formatted_examples = "\n".join(formatted_examples_components)
     return formatted_examples
 

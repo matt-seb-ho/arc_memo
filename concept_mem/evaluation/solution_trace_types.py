@@ -2,11 +2,11 @@ from dataclasses import asdict, dataclass, field
 
 import numpy as np
 
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.score_completions import (
     parse_code_solution,
     score_transform_function,
 )
-from concept_mem.types import Problem
 
 
 @dataclass

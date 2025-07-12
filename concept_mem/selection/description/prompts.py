@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import Optional
 
 from concept_mem.constants import REPO_ROOT
+from concept_mem.data.arc_agi import Problem
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.selection.description.image_helpers import (
     DEFAULT_IMAGE_DIR,
     create_barc_seed_img,
     encode_image,
 )
-from concept_mem.types import Problem
 
 ARC_AGI_INTRO = """\
 Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the puzzle solver must predict the transformation rule.

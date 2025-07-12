@@ -11,11 +11,12 @@ from concept_mem.constants import (
     HYRDA_CONFIG_PATH,
     REPO_ROOT,
 )
+from concept_mem.data.arc_agi import Problem
+from concept_mem.evaluation.run import _load_problems
+from concept_mem.utils import read_json, run_llm_job, write_json
+
 from .parse import parse_obs_spec_output, reformat_description
 from .prompts import build_image_caption_query_messages
-from concept_mem.evaluation.run import _load_problems
-from concept_mem.types import Problem
-from concept_mem.utils import read_json, run_llm_job, write_json
 
 logger = logging.getLogger(__name__)
 
