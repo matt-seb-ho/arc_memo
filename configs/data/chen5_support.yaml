@@ -1,0 +1,26 @@
+dataset: custom
+split: chen_curriculum_5_support
+
+problem_ids:
+  97239e3d_s0: data/curriculum/97239e3d/helper3.json
+  97239e3d_s1: data/curriculum/97239e3d/helper2.json
+  97239e3d_s2: data/curriculum/97239e3d/helper4.json
+  97239e3d_s3: data/curriculum/97239e3d/helper1.json
+  0607ce86_s0: data/curriculum/0607ce86/helper3.json
+  0607ce86_s1: data/curriculum/0607ce86/helper2.json
+  0607ce86_s2: data/curriculum/0607ce86/helper4.json
+  0607ce86_s3: data/curriculum/0607ce86/helper1.json
+  69889d6e_s0: data/curriculum/69889d6e/helper3.json
+  69889d6e_s1: data/curriculum/69889d6e/helper2.json
+  69889d6e_s2: data/curriculum/69889d6e/helper4.json
+  69889d6e_s3: data/curriculum/69889d6e/helper1.json
+  351d6448_s0: data/curriculum/351d6448/helper3.json
+  351d6448_s1: data/curriculum/351d6448/helper2.json
+  351d6448_s2: data/curriculum/351d6448/helper1.json
+  1c0d0a4b_s0: data/curriculum/1c0d0a4b/helper3.json
+  1c0d0a4b_s1: data/curriculum/1c0d0a4b/helper2.json
+  1c0d0a4b_s2: data/curriculum/1c0d0a4b/helper5.json
+  1c0d0a4b_s3: data/curriculum/1c0d0a4b/helper4.json
+  1c0d0a4b_s4: data/curriculum/1c0d0a4b/helper1.json
+
+num_problems: null

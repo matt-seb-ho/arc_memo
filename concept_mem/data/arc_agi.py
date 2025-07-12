@@ -19,7 +19,7 @@ import numpy as np
 import orjson
 from arc import ArcIOPair, ArcProblem
 
-from concept_mem.constants import BARC_SEEDS_PATH, DEFAULT_CODE, REPO_ROOT
+from concept_mem.constants import BARC_SEEDS_PATH, REPO_ROOT
 
 from .barc_seed_processing import (
     extract_code_from_seed,
@@ -95,9 +95,16 @@ class Problem:
         return f"arc_puzzle # {self.uid} # {self.split}"
 
     @classmethod
-    def from_file(cls, file_path: Path | str, split: str | None = None) -> "Problem":
+    def from_file(
+        cls,
+        file_path: Path | str,
+        uid: str | None = None,
+        split: str | None = None,
+    ) -> "Problem":
         if isinstance(file_path, str):
             file_path = Path(file_path)
+        if not file_path.is_absolute():
+            file_path = REPO_ROOT / file_path
         assert file_path.exists(), f"File {file_path} does not exist"
 
         if file_path.suffix == ".json":
@@ -105,13 +112,13 @@ class Problem:
             with open(file_path, "rb") as f:
                 data = orjson.loads(f.read())
             # set uid, code
-            puzzle_id = data.get("uid", None)
+            puzzle_id = uid or data.get("uid", None)
             if puzzle_id is None:
                 puzzle_id = file_path.stem
             code = data.get("code", None)
             # initialize train/test pairs
-            train_pairs = cls._initialize_io_pair_list(data.get("train_pairs", []))
-            test_pairs = cls._initialize_io_pair_list(data.get("test_pairs", []))
+            train_pairs = cls._initialize_io_pair_list(data.get("train", []))
+            test_pairs = cls._initialize_io_pair_list(data.get("test", []))
             return cls(
                 uid=puzzle_id,
                 train_pairs=train_pairs,

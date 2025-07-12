@@ -1,3 +1,4 @@
 dataset: arc-agi
 split: validation
 problem_ids: data/testbeds/validation_n100_uids.json
+num_problems: null

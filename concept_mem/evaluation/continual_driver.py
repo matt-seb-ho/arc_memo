@@ -16,7 +16,8 @@ from concept_mem.constants import (
     HYRDA_CONFIG_PATH,
     REPO_ROOT,
 )
-from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.data.arc_agi import Problem
+from concept_mem.data.read_data_config import load_problems_from_config
 from concept_mem.evaluation.prompt_builder import PromptOptions
 from concept_mem.evaluation.prompts import (
     SYSTEM_PROMPTS,
@@ -459,26 +460,6 @@ class ContinualEvaluationRunner:
         self.concept_memory.save_to_file(mem_save_file)
 
 
-def _load_problems(
-    dataset: str,
-    split: str,
-    num_problems: int | None,
-    problem_ids: list | str | None,
-) -> dict[str, Problem]:
-    """Load ARC‑AGI problems and subset them according to the config."""
-    if dataset.lower() == "arc-agi":
-        data = load_arc_data(split)
-        if problem_ids is None:
-            problem_ids = list(data.keys())
-        elif isinstance(problem_ids, str):
-            problem_ids = read_json(REPO_ROOT / problem_ids)
-        elif num_problems and num_problems < len(problem_ids):
-            problem_ids = random.sample(problem_ids, num_problems)
-        return {pid: data[pid] for pid in problem_ids}
-    else:
-        raise ValueError(f"Unsupported dataset: {dataset}")
-
-
 @hydra.main(version_base=None, config_path=HYRDA_CONFIG_PATH, config_name="default")
 def main(cfg: DictConfig) -> None:
     asyncio.run(async_main(cfg))
@@ -490,7 +471,7 @@ async def async_main(cfg: DictConfig) -> None:
     logger.info(f"Output directory: {output_dir}")
 
     # data and prompt preparation
-    problems = _load_problems(
+    problems = load_problems_from_config(
         dataset=cfg.data.dataset,
         split=cfg.data.split,
         num_problems=cfg.data.num_problems,
