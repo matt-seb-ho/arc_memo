@@ -1,0 +1,72 @@
+# Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and usually serves as the background.
+
+We are trying to learn from previous puzzles solutions to improve our puzzle solving capabilities. Your task is to analyze a puzzle solution (rendered as pseudocode) and abstract out concepts where a concept encodes one of the following:
+(a) grid manipulation operation
+(b) info extraction operation-- processing to get parameters for other operations
+(c) data and condition dependencies-- how a conditional operation decides whether to trigger or not, how parameters for are selected from input grid properties for grid manipulation operations, etc.
+
+
+On the lowest level, programs can be understood as a sequence of steps. In ARC puzzles, each step either:
+1. manipulates the grid to help construct the output grid (e.g. move an object)
+2. produces some intermediate output (possibly extracts and processes information) that is used as input to future steps, either as main inputs (e.g. subgrids to concatenate) or as parameters controlling other transformation (e.g. using a guide object's color for drawing a new line).
+
+Programs can also be viewed from the perspective of data dependencies. Consider the following program fragment:
+```
+info = extract_info_A(input_grid)
+value = get_property_B(info)
+output = operation_C(input_grid, parameter=value)
+```
+The full reading is that there is at least one case where info A was processed into value B to modify operation C, but we can relax this to first degree dependencies for more general take-aways:
+- the routine for extracting info A could provide a useful source for property B
+- property B can parameterize operation C
+
+We can further abstract the take-aways to describe individual steps that can be recombined in future puzzles:
+- `extract_info_A`
+- `get_property_B`
+- `operation_C`
+
+Let's consider a more concrete example:
+```yaml
+- define guide:
+    which: object inside a container
+- recolor objects:
+    which: objects whose shape match the guide
+    new color: guide object's color
+```
+equivalent to
+```
+guide = extract_contained_object(input_grid)
+for candidate in candidates:
+    if shapes_match(candidate, guide):
+        recolor(candidate, new_color=guide.color)
+```
+The take-aways from this example include:
+- dependency: inside container criteria can select a guide object
+- dependency: color from a guide object can parameterize recoloring operation
+- dependency: shape matching with guide object can select candidates to operate on (guide)
+- grid manipulation operation: recolor object
+- info extraction operation: extract shape inside container
+- info extraction operation: compare shape of candidate object with guide object
+These translate into concepts:
+- guide object specified by containment
+- guide indicated color scheme
+- guide indicated shape
+- recoloring
+- containment criteria
+- shape matching criteria
+
+# Instructions
+Pseudocode:
+- write the pseudocode translation inside <pseudocode> and </pseudocode> tags
+- be concise without compromising correctness
+- emphasize operations that either directly manipulate the grid or produce intermediate results over control flow constructs
+
+# Examples
+{examples}
+
+# Your Puzzle Soution
+Analyze, abstract into pseudocode, and summarize the following puzzle solution:
+```
+{pseudocode}
+```

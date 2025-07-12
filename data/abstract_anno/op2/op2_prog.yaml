@@ -1,0 +1,341 @@
+776ffc46:
+  pseudocode:
+    - define guide:
+        where: inside container
+    - recolor objects:
+        which: objects matching guide shape
+        color scheme: guide object color
+  summary: recolor objects to match a guide inside a container according to a guide in a container
+  concepts:
+    - concept: recoloring
+      kind: grid manipulation
+      description: change object color
+      uses_params: 
+        color scheme: defining new color(s) to use
+    - concept: object selection
+      kind: intermediate operation
+      description: select objects from a collection to perform further actions on or with
+      uses_params:
+        selection criteria: predicate routines that yield boolean result on whether to proceed with current candidate
+    - concept: use guide color
+      kind: parameter selection
+      for_param: color scheme
+      description: uses color from single-color guide object
+    - concept: guide shape match object criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select candidate if its shape matches a guide object's shape
+    - concept: containment object criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select candidate if it is fully contained within another object
+0d3d703e:
+  pseudocode:
+    - recolor objects:
+        color scheme: fixed color mapping
+  summary: recolor with fixed mapping
+  concepts:
+    - concept: recoloring
+      kind: grid manipulation
+      description: change the color of objects in the grid
+      uses_params:
+        color scheme: defines how input colors are mapped to new colors
+    - concept: fixed color mapping
+      kind: parameter selection
+      for_param: color scheme
+      description: use a fixed, predetermined mapping from original colors to new colors
+cf98881b:
+  pseudocode:
+    - split input grid:
+        splitting scheme: vertical dividing lines
+    - merge split regions:
+        merge scheme: prefer left region, then middle region, then right region
+  summary: split input along dividers and merge regions by layering one over the other
+  concepts:
+    - concept: split regions
+      kind: grid manipulation
+      description: separate grid into multiple regions using dividing lines
+      uses_params:
+        splitting scheme: rule for dividing the grid (e.g., vertical/horizontal lines)
+    - concept: pixelwise region merging
+      kind: grid manipulation
+      description: merge multiple regions into a single grid by determining each output pixel based on the corresponding input regions
+      uses_params:
+        merge scheme: rule for determining the order or priority of pixels from input regions
+    - concept: divider lines splitting scheme
+      kind: parameter selection
+      for_param: splitting scheme
+      description: split grid along divider lines (usually a color not used elsewhere in the grid)
+    - concept: fixed priority merge scheme
+      kind: parameter selection
+      for_param: merge scheme
+      description: among a set of ordered regions, use a fixed ordering to determine which region's pixel to select for the output grid (e.g. left region > middle region > right region)
+228f6490:
+  pseudocode:
+    - define guide:
+        which: holes in objects
+    - move objects:
+        which: objects matching a guide hole's shape
+        destination: matching guide hole's position
+  summary: move objects into holes of matching shape
+  concepts:
+    - concept: hole
+      kind: term definition
+      description: connected component of background pixels fully enclosed by object pixels. They can be considered their own entity.
+    - concept: object movement
+      kind: grid manipulation
+      description: shift an object to a new position within the grid
+      uses_params:
+        target object: specifies which object(s) to move
+        destination: specifies where to move the selected object(s)
+    - concept: object selection
+    - concept: guide shape match object criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select candidate if its shape matches a guide object's shape
+    - concept: guide indicated position
+      kind: parameter selection
+      for_param: destination
+      description: use the position of a guide object as a target location
+4093f84a:
+  pseudocode:
+    - define guide:
+        which: grid-spanning rectangle
+    - slide with collision:
+        which: non-guide pixels
+        direction:
+          inwards towards guide (if guide spans grid height-- oriented vertically,
+          pixels left of the rectangle slide right, etc.)
+    - recolor objects:
+        which: non-guide pixels
+        color scheme: match guide (fixed at grey)
+  summary: slide and recolor pixels towards central rectangle with collision
+  concepts:
+    - concept: sliding with collision
+      kind: grid manipulation
+      description: move object(s) in a specified direction until they hit a barrier (e.g., another object or the edge of the grid)
+      use_params:
+        direction: which way to slide the object (could vary per object)
+    - concept: towards guide object direction
+      kind: parameter selection
+      for_param: direction
+      description: direction from target object towards the guide object
+    - concept: recoloring
+    - concept: use fixed color
+      kind: parameter selection
+      for_param: color scheme
+9f236235:
+  pseudocode:
+    - reduce meta grid to pixel grid:
+        reduction rule:
+          meta cells only contain a single color, use that color for
+          the corresponding pixel
+    - reflect:
+        orientation: left to right
+  summary: reduce meta grid cells to pixels and reflect left to right
+  concepts:
+    - concept: meta grid
+      kind: term definition
+      description: where split regions are arranged in a grid pattern themselves. Each region can be considered a meta grid cell.
+    - concept: meta grid reduction
+      kind: grid manipulation
+      description: create a new grid by mapping each meta grid cell to a single pixel through some rule
+      uses_params:
+        region to pixel rule: defines how to convert meta grid cells into pixels
+    - concept: grid reflection
+      kind: grid manipulation
+      description: flip the grid across a specified axis
+      uses_params:
+        orientation: which axis to reflect across (e.g., left to right, top to bottom)
+    - concept: single color region to pixel rule
+      kind: parameter selection
+      for_param: region to pixel rule
+      description: input region contains a single color, return that color as the pixel value
+09629e4f:
+  pseudocode:
+    - split input grid:
+        splitting scheme: meta grid
+    - select region:
+        criteria: does not contain cyan pixels
+    - edit meta grid:
+        cell content: fill cell at meta[i][j] using color from selected[i][j]
+  summary: select a meta grid cell and expand it to a meta grid
+  concepts:
+    - concept: meta grid
+    - concept: split regions
+    - concept: meta grid splitting scheme
+      kind: parameter selection
+      for_param: splitting scheme
+      description: split the grid into regions that are arranged in a grid pattern (meta grid)
+    - concept: region selection
+      kind: intermediate operation
+      description: select region(s) from a set of regions according to some criteria
+      uses_params:
+        selection criteria: predicate routines that yield boolean result on whether to proceed with current candidate
+    - concept: color exclusion criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select a entity if it does not contain pixels of a specific color
+      uses_params:
+        color: the color that should not be present in the selected region
+    - concept: meta grid edit
+      kind: grid manipulation
+      description: modify the content of a meta grid cell based on some criteria
+      uses_params:
+        region modifying rule: routine that describes how to deal with the content of a meta grid cell
+e21d9049:
+  pseudocode:
+    - define guide:
+        which: horizontal line, vertical line
+    - draw line:
+        start: pixel right of horizontal line guide
+        direction: right
+        color sequence: cycle horizontal line guide colors (left to right)
+    - draw line:
+        start: pixel left of horizontal line guide
+        direction: left
+        color sequence: cycle horizontal line guide colors (right to left)
+    - draw line:
+        start: pixel above vertical line guide
+        direction: up
+        color sequence: cycle vertical line guide colors (top to bottom)
+    - draw line:
+        start: pixel below vertical line guide
+        direction: down
+        color sequence: cycle vertical line guide colors (bottom to top)
+  summary: extend line segments to grid edges cycling through initial color sequence
+  concepts:
+    - concept: line drawing
+      kind: grid manipulation
+      description: creates a new line from a starting point, with a direction or optional end point using some color scheme
+      uses_params:
+        start: the starting pixel for the line
+        direction: the direction in which to extend the line
+        color scheme: defines how to color the pixels of the line (may be repeating)
+    - concept: guide indicated color sequence
+      kind: parameter selection
+      for_param: color scheme
+ff28f65a:
+  pseudocode:
+    - count objects:
+        which: 2x2 square
+    - create a regular pattern:
+        pattern: blue pixel checkerboard
+        start: top left corner
+        direction: left to right in a row, top down
+        limit: use blue pixels equal to count
+  summary: count 2x2 squares in input grid and display count in checkerboard pattern
+  concepts:
+    - concept: pattern extension
+      kind: grid manipulation
+      description: create a patch with a extendable pattern with specified extension scale
+      uses_params:
+        pattern: the repeating pattern to use for the output grid
+        scale: the amount the pattern should be repeated or extended
+    - concept: counting
+      kind: intermediate operation
+      description: count the number of instances of a class of objects
+      uses_params:
+        counting criteria: defines what constitutes an instance to be counted
+    - concept: shape counting criteria
+      kind: parameter selection
+      for_param: counting criteria
+      description: count instances of a specific shape (e.g., 2x2 square)
+1b60fb0c:
+  pseudocode:
+    - extract rotationally repeated unit
+    - add rotated unit to missing side using red pixels
+  summary: complete a repeating pattern to make it 4-way rotationally symmetric
+  concepts:
+    - concept: symmetry completion
+      kind: grid manipulation
+      description: fill in the missing part of a pattern to ensure some kind of symmetry
+      uses_params:
+        symmetry type: defines the type of symmetry to be applied (e.g., rotational, reflective, repeating pattern)
+    - concept: rotational symmetry
+      kind: parameter selection
+      for_param: symmetry type
+      description:
+3e980e27:
+  pseudocode:
+    - define guide:
+        where: objects excluding free floating pixels
+    - define anchor points:
+        where: all free floating pixels in the input grid not part of a guide
+    - replicate object:
+        for each: anchor point
+        which: guide object with matching anchor pixel color
+    - reflect objects:
+        for each: anchor point
+        which: if anchor pixel is red
+        axis: x = anchor pixel, pixel centerline
+  summary: copy guide objects to anchors points, reflecting based on anchor color
+  concepts:
+    - concept: object replication 
+      kind: grid manipulation
+      description: create copies of an object at specified locations
+      uses_params:
+        selection criteria: the object to replicate
+        destination: the location(s) where the object should be replicated
+    - concept: anchor
+      kind: term definition
+      description: a typically small guide object that serves supplies a position and/or color 
+    - concept: guide indicated position
+    - concept: guide object selection
+    - concept: object reflection
+      kind: grid manipulation
+      description: flip an object across a specified axis (axis line can be along a pixel border or through a pixel center line)
+      uses_params:
+        reflection axis: the axis across which to reflect the object
+    - concept: fixed color selection criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select an object if it is a certain fixed color
+48d8fb45:
+  pseudocode:
+    - define guide:
+        which: single grey pixel
+    - crop object:
+        which: object touching the guide
+  summary: crop the marked object
+  concepts:
+    - concept: cropping
+      kind: grid manipulation
+      description:
+        output a smaller grid by removing all rows and columns that do not
+        contain the selected object(s)
+    - concept: object selection
+    - concept: guide object contact criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select an object if it is touching a guide object
+6cdd2623:
+  pseudocode:
+    - new empty grid:
+        dimensions: match input grid
+    - define guides:
+        which: aligned, same color pixel pairs on opposite edges of the grid
+    - draw lines:
+        for each: guide pair
+        connecting: guide pairs
+        color: match guide
+  summary: connect aligned, same color pixels on grid edge with lines
+  concepts:
+    - concept: new empty grid
+      kind: grid manipulation
+      description: create a new grid with specified dimensions, typically filled with a default color (e.g., white or black)
+      uses_params:
+        grid dimensions: the size of the new grid
+    - concept: match input grid dimensions
+      kind: parameter selection
+      for_param: grid dimensions
+      description:
+    - concept: alignment criteria
+      kind: parameter selection
+      for_param: selection criteria
+      description: select pairs of objects if they are aligned, sharing either one or all rows or columns
+    - concept: line drawing
+      uses_params:
+        endpoint: the end point of the line to be drawn
+    - concept: use guide color
+      

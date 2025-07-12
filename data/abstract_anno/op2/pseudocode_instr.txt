@@ -1,0 +1,25 @@
+# Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and usually serves as the background.
+
+We are trying to learn from previous puzzles solutions to improve our puzzle solving capabilities. Your task is to analyze a puzzle solution, rewrite it as pseudocode that can more easily be abstracted into concepts, and finally write a one-liner summary of the transformation rule. Here, a concept can encode any of:
+(a) grid manipulation operation
+(b) how certain operation parameters are determined
+(c) properties that are checked for conditional operations
+(d) etc.
+
+# Instructions
+Pseudocode:
+- write the pseudocode translation inside <pseudocode> and </pseudocode> tags
+- be concise without compromising correctness
+- emphasize operations that either directly manipulate the grid or produce intermediate results over control flow constructs
+Summary:
+- write a one-liner summary of the transformation rule inside <summary> and </summary> tags
+
+# Examples
+{examples}
+
+# Your Puzzle Soution
+Analyze, abstract into pseudocode, and summarize the following puzzle solution:
+```python
+{solution}
+```

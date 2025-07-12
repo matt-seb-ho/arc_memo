@@ -1,0 +1,102 @@
+# Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and usually serves as the background.
+
+We are trying to learn from previous puzzles solutions to improve our puzzle solving capabilities. Your task is to analyze a puzzle solution (rendered as pseudocode) and abstract out reusable concepts. Here, a concept encodes one of the following:
+(a) grid manipulation operation-- mutates or creates a new grid
+(b) intermediate operation-- helps produce intermediate entities for grid mutation
+(c) parameter selection routine--  derives parameter values for other operations
+(d) term definition-- a new vocabulary term defining a recurring structure/phenomenon to reduce redundancy/make concise
+
+Programs can be viewed as a sequence of steps or as a graph of dependencies. In either case, to construct a solution (a program) we compose this sequence of steps and have to determine what parameters to use for each step's operation. 
+
+Consider the following program fragment:
+```python
+info = extract_info_A(input_grid)
+value = get_property_B(info)
+output = operation_C(input_grid, parameter_D=value)
+```
+The full reading is that there is at least one case where info A was processed into value B to modify operation C, but we can abstract this into the following take-aways:
+- operation_C is a potentially useful operation that depends on parameter_D
+- one way of determining parameter_D is through the routine `get_property_B`
+- one way of getting an entity to read property B from is with routine `extract_info_A`
+
+Let's consider a concrete example:
+```yaml
+- define guide:
+    which: object inside a container
+- recolor objects:
+    which: objects whose shape match the guide
+    new color: guide object's color
+```
+which equivalent to
+```python
+guide = extract_contained_object(input_grid)
+for candidate in candidates:
+    if shapes_match(candidate, guide):
+        recolor(candidate, color_scheme=guide.color)
+```
+
+The take-aways from this example include:
+- recoloring is an operation depending on a parameter `color_scheme`
+- selecting objects is an operation depending on a parameter `object selection criteria`
+- one way of getting a `color_scheme` is to copy the color of a guide object
+- one way of selecting an object (one criteria) is checking for match between a candidate's shape with a guide object 
+- one way to select a guide object is by checking for containment status
+
+The format we are requesting for corresponding concepts are:
+```yaml
+- concept: recoloring
+  kind: grid manipulation
+  description: change object color
+  uses_params: 
+    color scheme: defining new color(s) to use
+- concept: object selection
+  kind: intermediate operation
+  description: select objects from a collection to perform further actions on or with
+  uses_params:
+    object selection criteria: predicate routines that yield boolean result on whether to proceed with current candidate
+- concept: use guide object color
+  kind: parameter selection
+  for_param: color scheme
+  description: uses color from single-color guide object
+- concept: guide shape match object criteria
+  kind: parameter selection
+  for_param: object selection criteria
+  description: select candidate if its shape matches a guide object's shape
+- concept: containment object criteria
+  kind: parameter selection
+  for_param: object selection criteria
+  description: select candidate if it is fully contained within another object
+```
+
+# Instructions
+- Format your final concept list inside a fenced yaml markdown block (have first line = "```yaml" and last line = "```")
+- Feel free to think before writing your final response
+- Each concept entry can have the following fields
+    concept: operation name / routine name / new term
+    kind: grid manipulation | intermediate operation | parameter selection | term definition
+    description: (optional) elaborate on operation/routine name if not completely self evident or the term definition
+    uses_params: dictionary mapping parameter names to how they are used in this operation/routine
+    for_param: parameter this routine helps select (iff kind == parameter selection)
+- Reuse concepts and parameter names whenever possible
+    - e.g. "objection detection" is mostly redundant with the already existing "object selection" so you should prefer reusing the existing concept (or parameter name)
+    - check existing concepts/parameter names in the `Concept Repository` section below
+    - when reusing a concept, do not include `kind` and `description` fields
+    - when reusing a concept, you can choose to add new entries of `use_params` field if needed. 
+    - in other words, when reusing a concept without adding new parameters, only fill the `concept` field
+- Distinct concepts must have different names
+- Remember that you must abide by proper yaml formatting
+    - in particular, avoid using the colon character inside value strings to avoid parsing issues
+
+# Examples
+{examples}
+
+# Concept Repository
+Here is the current concept repository that you should check for reuse:
+{concept_list}
+
+# Your Puzzle Soution
+Abstract the following solution into a concept list:
+```
+{pseudocode}
+```
