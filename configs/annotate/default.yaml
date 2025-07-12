@@ -5,7 +5,8 @@ defaults:
 # instruction_block_file: data/abstract_anno/annotation_instruction_v7.yaml
 instruction_block_file: data/abstract_anno/op1/op1_yaml_fmt.yaml
 # hand_annotations_file: data/abstract_anno/icl_anno_v8.yaml
-hand_annotations_file: data/abstract_anno/op1/opus1.yaml
+# hand_annotations_file: data/abstract_anno/op1/opus1.yaml
+hand_annotations_file: data/abstract_anno/op2/op2_prog.yaml
 
 # null for barc_seeds
 problem_ids: null

@@ -24,6 +24,13 @@ from llmplus import GenerationConfig, LLMClient, Provider
 
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, REPO_ROOT
 from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.evaluation.score_tree import (
+    flatten_solution_trees,
+)
+from concept_mem.evaluation.solution_tree import (
+    SolutionTree,
+    create_solution_tree_from_serialized_dict,
+)
 from concept_mem.utils import (
     get_puzzle_url,
     read_json,
@@ -32,3 +39,36 @@ from concept_mem.utils import (
     write_json,
     write_yaml,
 )
+
+
+def result_dir_to_df(
+    res_dir: Path,
+) -> pd.DataFrame:
+    iter_dir = get_latest_iteration_dir(res_dir)
+    json_data = read_json(iter_dir / "solution_trees.json")
+    sln_trees = {
+        k: create_solution_tree_from_serialized_dict(v) for k, v in json_data.items()
+    }
+    df = flatten_solution_trees(sln_trees)
+    return df
+
+
+def get_latest_iteration_dir(parent_dir: Path) -> Path:
+    # first get highest iteration dir either "iteration_{i}" or "iter_{i}"
+    ls = os.listdir(parent_dir)
+    highest = -1
+    prefix = "iteration_"
+    for name in ls:
+        if name.startswith("iteration_") or name.startswith("iter_"):
+            try:
+                iteration_num = int(name.split("_")[1])
+                if iteration_num > highest:
+                    highest = iteration_num
+                    if name.startswith("iteration_"):
+                        prefix = "iteration_"
+                    else:
+                        prefix = "iter_"
+            except ValueError:
+                continue
+    assert highest != -1
+    return parent_dir / f"{prefix}{highest}"

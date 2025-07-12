@@ -10,6 +10,7 @@ from omegaconf import DictConfig
 
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.data.arc_agi import load_arc_data
+from concept_mem.data.read_data_config import load_problems_from_config
 from concept_mem.utils import (
     parse_markup_tag,
     read_json,

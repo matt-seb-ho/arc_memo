@@ -192,7 +192,7 @@ def official_score_per_puzzle(
     """
 
     if df.empty:
-        return 0.0
+        return pd.Series(dtype=float)
     if step_selection == "last":
         df = _keep_last_step(df)
 
@@ -221,37 +221,25 @@ def official_score(
     (mean fraction of correctly solved test IO‑pairs per puzzle, then summed across puzzles).
     """
 
-    if df.empty:
-        return 0.0
-    if step_selection == "last":
-        df = _keep_last_step(df)
-
-    test_df = df[~df["is_train"]]
-    solved_per_pair = (
-        test_df.groupby(["puzzle_id", "pair_idx"], sort=False)
-        .apply(lambda g: _official_per_pair(g, attempts_allowed), include_groups=False)
-        .reset_index(name="solved")
+    official_score_per_puzzle_series = official_score_per_puzzle(
+        df,
+        attempts_allowed=attempts_allowed,
+        step_selection=step_selection,
     )
+    if official_score_per_puzzle_series.empty:
+        return 0.0
+    # mean fraction of solved pairs per puzzle
+    return official_score_per_puzzle_series.sum()
 
-    # fraction of solved pairs per puzzle
-    per_puzzle = solved_per_pair.groupby("puzzle_id", sort=False)["solved"].mean()
-    return per_puzzle.sum()
 
-
-def strict_score(
+def strict_score_per_step(
     df: pd.DataFrame,
     *,
     include_train: bool = False,
-    step_selection: Literal["all", "last"] = "all",  # re‑use for consistency
-) -> int:
-    """Return the number of puzzles that are *strict‑correct* under the rules.
-
-    - a code solution is strictly correct if it passes all test IO-pairs
-    (and optionally all train IO-pairs).
-    """
-
+    step_selection: Literal["all", "last"] = "last",  # re‑use for consistency
+) -> pd.Series:
     if df.empty:
-        return 0
+        return pd.Series(dtype=int)
 
     if not include_train:
         df = df[~df["is_train"]]
@@ -266,5 +254,45 @@ def strict_score(
         "step_idx",
     ]
     step_correct = df.groupby(step_tags, sort=False)["correct"].all()
-    puzzle_strict_correct = step_correct.groupby("puzzle_id", sort=False).all()
-    return int(puzzle_strict_correct.sum())
+    return step_correct
+
+
+def strict_score_per_puzzle(
+    df: pd.DataFrame,
+    *,
+    include_train: bool = False,
+    step_selection: Literal["all", "last"] = "all",  # re‑use for consistency
+) -> pd.Series:
+    step_correct = strict_score_per_step(
+        df,
+        include_train=include_train,
+        step_selection=step_selection,
+    )
+    if step_correct.empty:
+        return pd.Series(dtype=int)
+    # if any step is strictly correct...
+    per_puzzle = step_correct.groupby("puzzle_id", sort=False).any()
+    return per_puzzle
+
+
+def strict_score(
+    df: pd.DataFrame,
+    *,
+    include_train: bool = False,
+    step_selection: Literal["all", "last"] = "all",  # re‑use for consistency
+) -> int:
+    """
+    Return the number of puzzles that are *strict‑correct* under the rules.
+
+    - a code solution is strictly correct if it passes all test IO-pairs
+    (and optionally all train IO-pairs).
+    """
+    strict_score_per_puzzle_series = strict_score_per_puzzle(
+        df,
+        include_train=include_train,
+        step_selection=step_selection,
+    )
+    if strict_score_per_puzzle_series.empty:
+        return 0
+    # count puzzles that are strictly correct
+    return strict_score_per_puzzle_series.sum()
