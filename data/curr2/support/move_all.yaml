@@ -1,0 +1,11 @@
+pseudocode:
+  - move objects:
+      direction: right
+      amount: 2 pixels
+concepts:
+  - concept: move objects
+    kind: grid manipulation
+    description: move objects in the grid
+    uses_params:
+      direction: the direction to move the objects
+      amount: how far to move the objects

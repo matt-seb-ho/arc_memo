@@ -1,0 +1,43 @@
+pseudocode:
+  - split regions:
+      splitting scheme: use divider line
+  - extract object:
+      selection criteria: above divider line
+      single color: true
+      connectivity: none
+  - recolor:
+      selection criteria: below divider and matches extracted 
+      color: red
+summary: extract an object above a divider line and recolor pixels below the divider line to red if they match the extracted object
+concepts:
+  - concept: split regions
+    kind: intermediate operation
+    description: split the grid into regions based on a scheme
+    uses_params:
+      splitting scheme: how to split the grid
+  - concept: divider line
+    kind: parameter selection
+    for_param: splitting scheme
+    description: a line that divides the grid into two regions
+    uses_params:
+      position: the position of the divider line in the grid
+      orientation: whether the line is horizontal or vertical
+  - concept: object extraction
+    kind: intermediate operation
+    description: extract an object from the grid
+    uses_params:
+      selection criteria: criteria to select which objects to extract
+      single color: whether the extracted object can have multiple colors
+      connectivity: how connected the object should be (e.g., none for non-connected objects)
+  - concept: recoloring
+    kind: grid manipulation
+    description: recolor objects in the grid
+    uses_params:
+      selection criteria: criteria to select which objects to recolor
+      color scheme: the color to apply to the selected objects
+  - concept: guide shape match criteria
+    kind: parameter selection
+    for_param: selection criteria
+    uses_params:
+      guide shape: the shape of the guide object to match against
+    description: select objects that match the shape of a guide object

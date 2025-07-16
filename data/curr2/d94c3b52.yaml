@@ -1,0 +1,36 @@
+pseudocode:
+  - extract objects:
+      single color: true
+      connectivity: none
+      organization: 3x3 patches in grid with 1 pixel gap
+  - recolor objects:
+      selection criteria: patch is between 2 color 8 patches (between along x or y axis)
+      color scheme: orange
+concepts:
+  - concept: meta grid
+    kind: term definition
+    description: where the pixel grid can be viewed as a grid of patches treating each patch as a cell
+  - concept: extract objects
+    kind: intermediate operation
+    description: extract objects from the grid
+    uses_params:
+      single color: whether to objects can have multiple colors
+      connectivity: 4-way, 8-way or none (none allows for non-connected objects)
+      organization: how objects are organized in the grid (this organization should be preserved in extracted form)
+  - concept: recolor
+    kind: grid manipulation
+    description: change color of some entity(s)
+    uses_params:
+      selection criteria: criteria to select which objects to recolor
+      color scheme: what colors to use
+  - concept: between guides criteria
+    kind: parameter selection
+    for_param: selection criteria
+    uses_params:
+      guides: several objects that define a region between them
+    description: select objects that are between two guides, i.e. are aligned with 2 guide objects and are between them
+support:
+  - structured_extraction.json
+  - meta_grid.json
+  - recolor.json
+  - between_guides_criteria.json

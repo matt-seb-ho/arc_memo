@@ -1,0 +1,29 @@
+pseudocode:
+  - count objects:
+      selection criteria: blue pixels
+  - create new output grid:
+      dimensions: 1 row, 5 columns
+  - draw line:
+      start: leftmost column
+      direction: right
+      size: counting result
+concepts:
+  - concept: counting
+    kind: intermediate operation
+    description: count some entity
+  - concept: new output grid
+    kind: grid manipulation
+    description: create a new grid to store results
+    uses_params:
+      dimensions: the size of the new grid
+  - concept: draw line
+    kind: grid manipulation
+    description: draw a line in the output grid
+    uses_params:
+      start: where to start drawing the line
+      direction: the direction to draw the line (e.g., right, down)
+      scale: line length
+  - concept: counting result scale
+    kind: parameter selection
+    for: scale
+    description: use a counting result to set the scale of some output pattern

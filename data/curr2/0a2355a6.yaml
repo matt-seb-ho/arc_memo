@@ -1,0 +1,29 @@
+pseudocode:
+  - extract objects:
+      single color: true
+      connectivity: 4 way
+  - count object holes:
+  - recolor:
+      color scheme: blue if object contains 1 hole, green if 2, red if 3
+concepts:
+  - concept: object extraction
+    kind: intermediate operation
+    description: extract a group of pixels to treat as a single object
+    uses_params:
+      single color: whether an object is a single color or contains several
+      connectivity: whether to use 4-way or 8-way connectivity, or allow for non-adjacent pixels to be bundled together
+  - concept: hole
+    kind: term definition
+    description: a hole is a region of background pixels that is completely surrounded by an object
+  - concept: counting
+    kind: intermediate operation
+    description: count some entity
+  - concept: recolor
+    kind: grid manipulation
+    description: change color of some entity(s)
+    uses_params:
+      color scheme: what colors to use
+support:
+  - counting.json
+  - hole.json
+  - recolor.json

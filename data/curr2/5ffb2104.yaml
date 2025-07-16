@@ -1,0 +1,17 @@
+pseudocode:
+  - move objects:
+      direction: right
+      collision: true
+summary: slide all objects right with collision with the right edge and between objects
+concepts:
+  - concept: move objects
+    kind: grid manipulation
+    description: move objects in the grid
+    uses_params:
+      direction: the direction to move the objects
+      collision: whether to handle collisions with edges and other objects
+    notes:
+      - when moving objects with collision, final positions depend on the position of other objects. As such, the moving object order matters-- objects furthest along the movement direction should be moved first.
+support:
+  - move_all.json
+  - collision.json

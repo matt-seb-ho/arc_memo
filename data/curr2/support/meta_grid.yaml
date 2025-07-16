@@ -1,0 +1,25 @@
+pseudocode:
+  - parse meta grid:
+  - flood fill:
+      which: meta grid cells with a non-background pixel
+      color: match non-background pixel color
+summary: fill meta grid cells containing non-background pixel with that pixel color
+concepts:
+  - concept: meta grid
+    kind: term definition
+    description: where the pixel grid can be viewed as a grid of patches treating each patch as a cell
+  - concept: parse meta grid
+    kind: intermediate operation
+    description: parse the pixel grid into a grid of cells
+  - concept: flood fill
+    kind: grid manipulation
+    description: fill a region with a color
+    uses_params:
+      selection criteria: criteria to select which cells to fill
+      color: the color to fill the selected cells with
+  - concept: contains object criteria
+    kind: parameter selection
+    for_param: selection criteria
+    description: select regions that contain a specific object
+    uses_params:
+      object: the object to look for in the cells

@@ -1,0 +1,36 @@
+pseudocode:
+  - extract objects:
+      single color: true, yellow
+      connectivity: none
+      patch: 3x3 
+  - extract object:
+      single color: true, red
+      connectivity: 8-way
+  - copy pattern:
+      pattern: red object
+      location: each guide (match orientation to red guide and its nearest yellow patch)
+summary: copy a pattern to other partial patterns matching their orientation
+concepts:
+  - concept: object extraction
+    kind: intermediate operation
+    description: extract objects from the grid
+    uses_params:
+      single color: whether to objects can have multiple colors
+      connectivity: 4-way, 8-way or none (none allows for non-connected objects)
+      patch: size of the patch to extract (used for non-connected objects)
+  - concept: object replication
+    kind: grid manipulation
+    description: copy an object to new location(s) in the output grid
+    uses_params:
+      object: the object to copy
+      locations: where to copy the pattern (e.g., each guide), may also specify orientation
+  - concept: partial match location
+    kind: parameter selection
+    for_param: locations
+    uses_params:
+      guide: object whose pattern is checked against from partial candidates
+    description: select a location if the location has a partial match with some orientation of the guide object
+support:
+  - non_contiguous_object2.json
+  - object_replication.json
+  - partial_match_location.json

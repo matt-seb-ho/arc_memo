@@ -1,0 +1,44 @@
+pseudocode:
+  - extract objects:
+      single color: true
+      connectivity: 4-way
+      organization: left edge ordering left to right
+  - count:
+      selection criteria: single color objects
+  - new output grid:
+      dimensions: 1 row, count result columns
+  - draw pixels:
+      organization: horizontal line
+      color scheme: color of single color objects from left to right
+concepts: 
+  - concept: extract objects
+    kind: intermediate operation
+    description: extract objects from the grid
+    uses_params:
+      single color: whether to objects can have multiple colors
+      connectivity: 4-way, 8-way or none (none allows for non-connected objects)
+      organization: how objects are organized in the grid (this organization should be preserved in extracted form)
+  - concept: object sequence organization
+    kind: parameter selection
+    for_param: organization
+    uses_params:
+      direction: the direction in which objects are ordered (e.g., left to right, top to bottom)
+    description: extract objects in a sequence based on their position in a direction
+  - concept: counting
+    kind: intermediate operation
+    description: count some entity
+    uses_params:
+      selection criteria: criteria to select which objects to count
+  - concept: new output grid
+    kind: grid manipulation
+    description: create a new grid to store results
+    uses_params:
+      dimensions: the size of the new grid
+  - concept: draw pixels
+    kind: grid manipulation
+    description: draw a line in the output grid
+    uses_params:
+      organization: how to organize the pixels in the output grid (e.g., horizontal line)
+      color scheme: what colors to use for the pixels
+
+    

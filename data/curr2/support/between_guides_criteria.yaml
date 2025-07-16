@@ -1,0 +1,18 @@
+pseudocode:
+  - recolor:
+      selection criteria: green pixels between guides
+      color: red
+concepts:
+  - concept: recoloring
+    kind: grid manipulation
+    uses_params:
+      selection criteria: criteria to select which objects to recolor
+      color scheme: the color to apply to the selected objects
+    description: recolor objects in the grid
+  - concept: between guides criteria
+    kind: parameter selection
+    for_param: selection criteria
+    uses_params:
+      guides: reference objects that define a region between them
+    description: select objects that are between two guides, i.e. are aligned with 2 guide objects and are between them
+    
