@@ -3,9 +3,15 @@ pseudocode:
       single color: true
       connectivity: none
       organization: 3x3 patches in grid with 1 pixel gap
+  - select guide:
+      selection criteria: 8 patch
+  - recolor objects:
+      selection criteria: shape match against guide
+      color scheme: light blue
   - recolor objects:
       selection criteria: patch is between 2 color 8 patches (between along x or y axis)
       color scheme: orange
+summary: read input as a grid of 3x3 sprites, and recolor all sprites that are between two cyan sprites.
 concepts:
   - concept: meta grid
     kind: term definition

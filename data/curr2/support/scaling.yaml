@@ -1,0 +1,10 @@
+pseudocode:
+  - scale:
+      factor: 2
+summary: scale up input grid by 2x
+concepts:
+  - concept: scaling
+    kind: grid manipulation
+    uses_params:
+      factor: how much to scale the grid by
+    description: scale up grid or objects by a factor

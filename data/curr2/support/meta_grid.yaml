@@ -8,9 +8,9 @@ concepts:
   - concept: meta grid
     kind: term definition
     description: where the pixel grid can be viewed as a grid of patches treating each patch as a cell
-  - concept: parse meta grid
+  - concept: meta grid parsing
     kind: intermediate operation
-    description: parse the pixel grid into a grid of cells
+    description: parse the input grid into a grid of cells
   - concept: flood fill
     kind: grid manipulation
     description: fill a region with a color

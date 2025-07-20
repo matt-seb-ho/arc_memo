@@ -4,7 +4,7 @@ pseudocode:
       collision: true
 summary: slide all objects right with collision with the right edge and between objects
 concepts:
-  - concept: move objects
+  - concept: object movement
     kind: grid manipulation
     description: move objects in the grid
     uses_params:

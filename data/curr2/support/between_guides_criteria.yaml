@@ -1,7 +1,8 @@
 pseudocode:
   - recolor:
-      selection criteria: green pixels between guides
+      selection criteria: green pixels aligned with and between guides
       color: red
+summary: recolor all green pixels that are between two blue pixels (horizontally or vertically) to red
 concepts:
   - concept: recoloring
     kind: grid manipulation
@@ -14,5 +15,6 @@ concepts:
     for_param: selection criteria
     uses_params:
       guides: reference objects that define a region between them
-    description: select objects that are between two guides, i.e. are aligned with 2 guide objects and are between them
+      strict alignment: whether candidate must be strictly aligned with the guides
+    description: select objects that are between two guides, are aligned with 2 guide objects and are between them
     

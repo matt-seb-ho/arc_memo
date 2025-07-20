@@ -1,0 +1,21 @@
+pseudocode:
+  - replicate object:
+      object: single object from input grid
+      location: above input object with 1 pixel gap
+      rotation: 90 degrees clockwise
+summary: replicate the input object above itself with a 1 pixel gap and rotated 90 degrees clockwise.
+concepts:
+  - concept: object replication
+    kind: grid manipulation
+    uses_params:
+      object: the object to replicate
+      location: where to place the replicated object
+      rotation: how much to rotate the replicated object
+    description: copy an object to a specified location in the grid with an optional rotation
+  - concept: rotation
+    kind: grid manipulation
+    uses_params:
+      rotation: the angle to rotate the object
+    description: rotate an object by a specified angle
+
+      

@@ -12,29 +12,29 @@ summary: extract an object above a divider line and recolor pixels below the div
 concepts:
   - concept: split regions
     kind: intermediate operation
-    description: split the grid into regions based on a scheme
     uses_params:
       splitting scheme: how to split the grid
+    description: split the grid into regions based on a scheme
   - concept: divider line
     kind: parameter selection
     for_param: splitting scheme
-    description: a line that divides the grid into two regions
     uses_params:
       position: the position of the divider line in the grid
       orientation: whether the line is horizontal or vertical
+    description: a line that divides the grid into two regions
   - concept: object extraction
     kind: intermediate operation
-    description: extract an object from the grid
     uses_params:
       selection criteria: criteria to select which objects to extract
       single color: whether the extracted object can have multiple colors
       connectivity: how connected the object should be (e.g., none for non-connected objects)
+    description: extract an object from the grid
   - concept: recoloring
     kind: grid manipulation
-    description: recolor objects in the grid
     uses_params:
       selection criteria: criteria to select which objects to recolor
       color scheme: the color to apply to the selected objects
+    description: recolor objects in the grid
   - concept: guide shape match criteria
     kind: parameter selection
     for_param: selection criteria

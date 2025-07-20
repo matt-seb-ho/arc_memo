@@ -1,0 +1,16 @@
+pseudocode:
+  - recolor:
+      selection criteria: edge adjacent pixels
+      color: red
+summary: recolor edge-adjacent pixels to red
+concepts:
+  - concept: recoloring
+    kind: grid manipulation
+    uses_params:
+      selection criteria: criteria to select pixels for recoloring
+      color: the color to apply to the selected pixels
+    description: change the color of specific pixels in the grid
+  - concept: edge adjacent criteria
+    kind: parameter selection
+    for_param: selection criteria
+    description: selects pixels that are adjacent to the edge of the grid

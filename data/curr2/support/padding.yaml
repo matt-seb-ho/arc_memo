@@ -1,0 +1,10 @@
+pseudocode:
+  - pad grid:
+      padding: 1
+summary: pad the grid by 1 pixel on all sides
+concepts:
+  - concept: padding
+    kind: grid manipulation
+    uses_params:
+      padding: how much to pad the grid by
+    description: add padding around the grid

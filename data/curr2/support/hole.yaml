@@ -8,20 +8,20 @@ pseudocode:
 concepts:
   - concept: object extraction
     kind: intermediate operation
-    description: extract a group of pixels to treat as a single object
     uses_params:
       single color: whether an object is a single color or contains several
       connectivity: whether to use 4-way or 8-way connectivity, or allow for non-adjacent pixels to be bundled together
+    description: extract a group of pixels to treat as a single object
   - concept: hole
     kind: term definition
     description: a hole is a region of pixels not part of an object that is completely surrounded by an object
-  - concept: recolor
+  - concept: recoloring
     kind: grid manipulation
-    description: change color of some entity(s)
     uses_params:
       selection criteria: what to select for recoloring
       color scheme: what colors to use
+    description: change color of some entity(s)
   - concept: hole presence selection criteria
     kind: parameter selection
-    description: select objects that have a hole
     for_param: selection criteria
+    description: select objects that have a hole

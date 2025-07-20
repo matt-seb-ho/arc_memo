@@ -11,15 +11,15 @@ summary: replicate an object in all directions without gaps between
 concepts:
   - concept: object extraction
     kind: intermediate operation
-    description: extract an object from the grid
     uses_params:
       single color: whether the object can have multiple colors
       connectivity: 4-way, 8-way or none (none allows for non-connected objects)
+    description: extract an object from the grid
   - concept: object replication
     kind: grid manipulation
-    description: replicate an object in the grid
     uses_params:
       object: the object to replicate
       tiling: whether to repeat the object as a repeating tile
       tiling directions: the directions in which to tile the object (e.g., up, down, left, right)
       tiling gap: the gap between tiled objects
+    description: replicate an object in the grid

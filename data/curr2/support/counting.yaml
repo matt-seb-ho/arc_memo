@@ -7,6 +7,7 @@ pseudocode:
       start: leftmost column
       direction: right
       size: counting result
+summary: Count blue pixels in the input. Output the count as the number of pixels in a horizontal line in a new grid.
 concepts:
   - concept: counting
     kind: intermediate operation
@@ -16,14 +17,14 @@ concepts:
     description: create a new grid to store results
     uses_params:
       dimensions: the size of the new grid
-  - concept: draw line
+  - concept: line drawing
     kind: grid manipulation
     description: draw a line in the output grid
     uses_params:
       start: where to start drawing the line
       direction: the direction to draw the line (e.g., right, down)
       scale: line length
-  - concept: counting result scale
+  - concept: object counting
     kind: parameter selection
-    for: scale
+    for_param: scale
     description: use a counting result to set the scale of some output pattern

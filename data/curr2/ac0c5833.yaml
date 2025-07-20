@@ -24,6 +24,7 @@ concepts:
     uses_params:
       object: the object to copy
       locations: where to copy the pattern (e.g., each guide), may also specify orientation
+      rotation: match guide orientation to the copied object
   - concept: partial match location
     kind: parameter selection
     for_param: locations
@@ -34,3 +35,4 @@ support:
   - non_contiguous_object2.json
   - object_replication.json
   - partial_match_location.json
+  - rotate_object.json

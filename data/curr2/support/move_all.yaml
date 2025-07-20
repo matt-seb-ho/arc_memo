@@ -3,7 +3,7 @@ pseudocode:
       direction: right
       amount: 2 pixels
 concepts:
-  - concept: move objects
+  - concept: object movement
     kind: grid manipulation
     description: move objects in the grid
     uses_params:

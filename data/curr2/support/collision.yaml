@@ -6,13 +6,13 @@ pseudocode:
       collision: true
 summary: move all blue objects right with collision
 concepts:
-  - concept: move objects
+  - concept: object movement
     kind: grid manipulation
-    description: move objects in the grid
     uses_params:
       selection criteria: criteria to select which objects to move
       direction: the direction to move the objects
       collision: whether to handle collisions with edges and other objects
+    description: move objects in the grid
   - concept: fixed color based selection
     kind: parameter selection
     for_param: selection criteria

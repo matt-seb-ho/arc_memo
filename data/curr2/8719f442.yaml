@@ -1,0 +1,35 @@
+pseudocode:
+  - scale up input grid:
+      factor: 3
+  - pad grid:
+      padding: 3
+  - replicate object:
+      object: original scale input grid
+      locations: wherever input grid object touches the grid's edges, in the padded section
+summary: scale up by 3x, pad outside by 3 pixels, then copy the original grid to where the original grid's object touches the border.
+concepts:
+  - concept: scaling
+    kind: grid manipulation
+    uses_params:
+      factor: how much to scale the grid by
+    description: change the size of the grid
+  - concept: padding
+    kind: grid manipulation
+    uses_params:
+      padding: how much to pad the grid by
+    description: add padding around the grid
+  - concept: object replication
+    kind: grid manipulation
+    uses_params:
+      object: the object to replicate
+      locations: where to place the replicated object
+    description: copy an object to specified locations in the grid
+  - concept: edge adjacent criteria
+    kind: parameter selection
+    for_param: locations
+    description: selects pixels where the object is adjacent to the edge of the grid
+support:
+  - scaling.json
+  - padding.json
+  - object_replication.json
+  - edge_adjacent_criteria.json

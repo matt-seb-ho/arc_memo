@@ -2,11 +2,11 @@ pseudocode:
   - recolor objects:
       color scheme: blue to red, green to yellow
 concepts:
-  - concept: recolor
+  - concept: recoloring
     kind: grid manipulation
-    description: change color of some entity(s)
     uses_params:
       color scheme: what colors to use
+    description: change color of some entity(s)
   - concept: fixed mapping color scheme
     kind: parameter selection
     for_param: color scheme

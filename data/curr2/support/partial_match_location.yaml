@@ -10,17 +10,17 @@ summary: replicate a blue object to red pixels that partially match it
 concepts:
   - concept: object extraction
     kind: intermediate operation
-    description: extract an object from the grid
     uses_params:
       single color: whether the object can have multiple colors
       connectivity: 4-way, 8-way or none (none allows for non-connected objects)
+    description: extract an object from the grid
   - concept: object replication
     kind: grid manipulation
-    description: replicate an object in the grid
     uses_params:
       location: where to replicate the object (e.g., red pixels that partially match the blue object)
       object: the object to replicate
       color: color of the replicated object
+    description: replicate an object in the grid
   - concept: partial match location
     kind: parameter selection
     for_param: location

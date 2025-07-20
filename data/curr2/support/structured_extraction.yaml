@@ -11,13 +11,13 @@ pseudocode:
       organization: horizontal line
       color scheme: color of single color objects from left to right
 concepts: 
-  - concept: extract objects
+  - concept: object extraction
     kind: intermediate operation
-    description: extract objects from the grid
     uses_params:
       single color: whether to objects can have multiple colors
       connectivity: 4-way, 8-way or none (none allows for non-connected objects)
       organization: how objects are organized in the grid (this organization should be preserved in extracted form)
+    description: extract objects from the grid
   - concept: object sequence organization
     kind: parameter selection
     for_param: organization
@@ -26,19 +26,18 @@ concepts:
     description: extract objects in a sequence based on their position in a direction
   - concept: counting
     kind: intermediate operation
-    description: count some entity
     uses_params:
       selection criteria: criteria to select which objects to count
+    description: count some entity
   - concept: new output grid
     kind: grid manipulation
-    description: create a new grid to store results
     uses_params:
       dimensions: the size of the new grid
+    description: create a new grid to store results
   - concept: draw pixels
     kind: grid manipulation
-    description: draw a line in the output grid
     uses_params:
       organization: how to organize the pixels in the output grid (e.g., horizontal line)
       color scheme: what colors to use for the pixels
-
+    description: draw a line in the output grid
     
