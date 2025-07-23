@@ -12,7 +12,7 @@ from concept_mem.constants import (
     REPO_ROOT,
 )
 from concept_mem.data.arc_agi import Problem
-from concept_mem.evaluation.run import _load_problems
+from concept_mem.data.read_data_config import load_problems_from_config
 from concept_mem.utils import read_json, run_llm_job, write_json
 
 from .parse import parse_obs_spec_output, reformat_description
@@ -30,7 +30,7 @@ async def generate_image_captions(
     model: str,
     gen_cfg: GenerationConfig,
     output_dir: Path,
-    concept_list: str | None = None,
+    concept_list: str | dict[str, str] | None = None,
     skip_concept_list: bool = False,
     include_puzzle_text: bool = False,
     observation_only: bool = False,
@@ -43,11 +43,17 @@ async def generate_image_captions(
     queries = []
     logger.info("Preparing prompts...")
     for uid, problem in problems.items():
+        if isinstance(concept_list, str):
+            _concepts = concept_list
+        elif isinstance(concept_list, dict):
+            _concepts = concept_list.get(uid, None)
+        else:
+            _concepts = None
         uids.append(uid)
         queries.append(
             build_image_caption_query_messages(
                 problem,
-                concept_list=concept_list,
+                concept_list=_concepts,
                 skip_concept_list=skip_concept_list,
                 include_puzzle_text=include_puzzle_text,
             )
@@ -86,7 +92,7 @@ async def async_main(cfg: DictConfig) -> None:
     cfg = cfg.description
 
     # data and prompt preparation
-    problems = _load_problems(
+    problems = load_problems_from_config(
         dataset=cfg.data.dataset,
         split=cfg.data.split,
         # num_problems=cfg.data.num_problems,
@@ -104,7 +110,16 @@ async def async_main(cfg: DictConfig) -> None:
 
     # prepare concept list
     if isinstance(cfg.concept_list, (str, Path)):
-        concept_list = Path(cfg.concept_list).read_text()
+        cfg.concept_list = Path(cfg.concept_list)
+        if cfg.concept_list.suffix == ".txt":
+            concept_list = Path(cfg.concept_list).read_text()
+        elif cfg.concept_list.suffix == ".json":
+            concept_list = read_json(cfg.concept_list)
+        else:
+            raise ValueError(
+                f"Unsupported concept list file format: {cfg.concept_list.suffix}. "
+                "Please provide a .txt or .json file."
+            )
     else:
         concept_list = cfg.concept_list
 
