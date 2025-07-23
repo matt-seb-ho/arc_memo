@@ -1,0 +1,604 @@
+776ffc46:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=4)
+    guides = filter_objects(objects, criteria=is_inside_container)
+    for object in objects:
+      if object shape matches some guide shape:
+        output_grid = recolor(object, guide.color)
+  summary: mark a guide object (inside a container) and recolor objects that match the guide's shape
+  concepts:
+    - concept: inside container criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: object
+      description: condition on whether an object is inside a container
+      implementation:
+        - determine if the grid edge is reachable from the would-be inner object. The inner and outer objects only have the containment relationship if the inner object only reaches the grid edge through outer object pixels.
+    - concept: container
+      kind: structure
+      description: an object that contains other objects, often used to define a region of interest
+      cues:
+        - if there is an object with a cavity
+    - concept: shape match criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: shape
+        - name: other
+          typing: shape
+          description: shape to match against
+      description: condition on whether an object matches the other shape
+    - concept: recolor object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid | object
+      parameters:
+        - name: object
+          typing: object
+          description: the object to recolor
+        - name: color scheme
+          typing: color scheme := color | Callable[[object], color]
+          description: either a single color or logic that determines what object gets which color
+      description: recolor an object based on a color scheme
+      cues:
+        - if existing structures from the input grid appear in the output grid with different colors
+
+0d3d703e:
+  pseudocode: |
+    color_scheme = {
+      "red": "blue",
+      ...
+    }
+    for pixel in grid:
+      output_grid, _ = recolor(pixel, color_scheme=color_scheme)
+  summary: recolor with fixed mapping
+  concepts:
+    - concept: recolor object
+    - concept: fixed color mapping
+      kind: routine
+      routine_subtype: color scheme
+      output_typing: color
+      parameters:
+        - name: input
+          typing: object
+          description: the object/pixel to recolor
+      description: use a fixed, predetermined mapping from original -> new color
+
+cf98881b:
+  pseudocode: |
+    regions = split_regions(input, splitting_scheme=split_on_dividers)
+    output = regions[-1]
+    for region in reversed(regions[:-1]):
+      output = draw_object(region, output)
+  summary: split regions and overlay in left to right order
+  concepts:
+    - concept: split grid
+      kind: structure
+      description: where the grid is split into multiple regions that are treated as distinct
+      cues:
+        - divider lines that span the grid and partition it
+        - color based regions-- i.e. pixels of a color only appear in a certain section of the grid
+    - concept: split regions
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: list[grid]
+      parameters:
+        - name: input grid
+          typing: grid
+          description: the grid to split into regions
+        - name: splitting scheme
+          typing: splitting scheme := str | Callable[[grid], list[grid]]
+          description: logic to determine how to split the grid into regions
+    - concept: split on divider lines
+      kind: routine
+      routine_subtype: splitting scheme
+      output_typing: list[grid]
+      parameters:
+        - name: grid
+          typing: grid
+          description: the grid to split
+      description: identify lines that divide the grid into regions, extract these regions
+      implementation:
+        - determine where divider lines are and use array slicing to extract the regions
+    - concept: draw object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: sprite
+          typing: grid
+          description: the sprite to draw on top of the base grid
+        - name: base
+          typing: grid
+          description: the base grid to draw onto
+        - name: position
+          typing: position
+          description: the position to place the sprite on the base grid
+      description: draw a sprite on top of a base grid, drawing over the base grid with the sprite's non-background pixels
+      cues:
+        - if input objects are replicated one or more times in the output
+
+228f6490:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=4)
+    guides = filter_objects(objects, criteria=color_is_grey)
+    holes = [get_holes(guide) for guide in guides]
+    for object in objects - guides:
+      if object shape matches some hole shape:
+        output_grid = move_object(object, hole.position)
+  summary: move objects into other objects' holes if the object shape matches the hole shape
+  concepts:
+    - concept: specific color criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: object
+        - name: color
+          typing: color
+      description: condition on whether an object is/has a specific color
+    - concept: get object holes
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: list[object]
+      parameters:
+        - name: object
+          typing: object
+          description: the object to get holes from
+      description: get the holes in an object, i.e. the empty spaces inside the object
+      implementation:
+        - if a known background color is used, can use that color mask against the object
+        - alternatively, flood fill from non-object pixels to see if grid edges are reachable
+    - concept: hole
+      kind: structure
+      description: an empty space inside an object, often used to define a region of interest
+      cues:
+        - if there is an object with a cavity
+    - concept: shape match criteria
+    - concept: move object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid | object
+      parameters:
+        - name: object
+          typing: object
+          description: the object to move
+        - name: position
+          typing: position
+          description: the position to move the object to
+      description: move an object to a new position in the grid, updating the grid accordingly
+      cues:
+        - if existing structures from the input grid appear in the output grid with different positions
+      implementation:
+        - can draw the object at the new position, but most erase the object pixels from the old position first
+
+4093f84a:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=4)
+    grey_obj = find_object(objects, criteria=color_is_grey)
+    other_objects = filter_objects(objects, criteria=color_not_grey)
+    for object in other_objects:
+      direction = direction_between(object, grey_obj)
+      output = slide(object, direction, stopping_criteria=object_contact_stopping_criteria)
+      output = recolor(object, grey)
+  summary: slide objects towards a grey object, recoloring them to grey
+  concepts:
+    - concept: specific color criteria
+    - concept: direction between objects
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: direction
+      parameters:
+        - name: object1
+          typing: object
+        - name: object2
+          typing: object
+      description: determine the direction from one object to another, often used for sliding or moving objects towards a target
+    - concept: slide object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid | object
+      parameters:
+        - name: object
+          typing: object
+          description: the object to slide
+        - name: direction
+          typing: object
+          description: direction to slide in
+        - name: stopping criteria
+          typing: stopping criteria := Callable[[object, grid], bool]
+          description: criteria to determine when to stop sliding the object
+      description: moving an object in a specified direction step by step until a stopping condition is met
+      cues:
+        - if existing structures from the input grid appear in the output grid with different positions but objects are adjacent to each other in the movement direction
+      implementation:
+        - either consider all displacements and filter for valid displacements (contacting object/grid edge in movement direction)
+        - or just move one pixel at a time in the movement direction until a collision is detected
+    - concept: object contact stopping criteria
+      kind: routine
+      routine_subtype: stopping criteria
+      output_typing: bool
+      parameters:
+        - name: object
+          typing: object
+        - name: grid
+          typing: grid
+      description: condition on whether an object is in contact with another object or the grid edge in a specific direction
+      implementation:
+        - check if the object is adjacent to another object in the movement direction
+    - concept: recolor object
+    
+9f236235:
+  pseudocode: |
+    divider_lines = find_divider_lines(input_grid)
+    region_grid = split_regions(input_grid, splitting_scheme=divider_line_grid)
+    output_grid = convert_region_grid_to_pixel_grid(
+      region_grid, 
+      color_selection=pick_only_color_from_region
+    )
+    output_grid = reflect_grid(output_grid, axis=vertical)
+  summary: split grid into grid of regions, create a new grid with pixel corresponding to each region, and reflect the grid
+  concepts:
+    - concept: divider lines
+      kind: structure
+      description: lines that divide the grid into regions, often used to define a grid of regions
+      cues:
+        - if there are lines that span the grid and partition it
+    - concept: region grid
+      kind: structure
+      description: where the grid is partitioned into a grid of distinct regions
+      cues:
+        - horizontal and vertical lines that span the grid and partition it
+    - concept: split regions
+    - concept: split region grid
+      kind: routine
+      routine_subtype: splitting scheme
+      output_typing: list[list[grid]]
+      parameters:
+        - name: input grid
+          typing: grid
+          description: the grid to split into regions
+      description: split grid into a grid of regions
+      implementation:
+        - use divider lines and array slicing to extract regions from the grid
+    - concept: convert region grid to pixel grid
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: region_grid
+          typing: list[list[grid]]
+          description: the grid of regions to convert to a pixel grid
+        - name: color selection
+          typing: color selection := Callable[[grid], color]
+          description: logic to select a color for each region
+      description: convert a grid of regions into a pixel grid where each pixel corresponds to a region
+      implementation:
+        - create a new grid with the same dimensions as the region grid, and for each region, select a pixel using the color selection logic
+      cues:
+        - input grid contains a region grid, but output grid does not contain the same region grid structure
+        - output grid dimensions match the region grid dimensions
+    - concept: reflect grid
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: grid
+          typing: grid
+          description: the grid to reflect
+        - name: axis
+          typing: axis := Literal["horizontal", "vertical", "both"]
+          description: the axis to reflect the grid across (horizontal, vertical, or both)
+      description: reflect a grid across a specified axis, creating a mirrored version of the grid
+      implementation:
+        - use np.flip
+      cues:
+        - if existing structures from the input grid appear in the output grid with mirrored positions
+
+e21d9049:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=false, connectivity=4)
+    cross = objects[0]
+    horizontal_bar, vertical_bar = split_object(cross, object_splitting_scheme=split_cross)
+    output_grid = tile_object(horizontal_bar, start=horizontal_bar.rightmost + 1, direction=right, gap=0)
+    output_grid = tile_object(horizontal_bar, start=horizontal_bar.leftmost - horizontal_bar.width - 1, direction=left, gap=0)
+    output_grid = tile_object(vertical_bar, start=vertical_bar.bottommost + 1, direction=down, gap=0)
+    output_grid = tile_object(vertical_bar, start=vertical_bar.topmost - vertical_bar.height - 1, direction=up, gap=0)
+  summary: extend each arm of a cross object by tiling the horizontal and vertical bars in all four directions
+  concepts:
+    - concept: split object
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: list[object]
+      parameters:
+        - name: object
+          typing: object
+          description: the object to split
+        - name: object_splitting_scheme
+          typing: object_splitting_scheme := str | Callable[[object], list[object]
+          description: logic to determine how to split the object into parts
+      description: split an object into two parts based on a specified scheme
+    - concept: split cross
+      kind: routine
+      routine_subtype: object_splitting_scheme
+      output_typing: list[object]
+      parameters:
+        - name: cross
+          typing: object
+          description: the cross object to split
+      description: split a cross object into its horizontal and vertical bars
+      implementation:
+        - identify the center of the cross and split it into horizontal and vertical bars based on the center
+    - concept: tile object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: object
+          typing: object
+          description: the object to tile
+        - name: start
+          typing: position
+          description: the starting position to tile the object from
+        - name: direction
+          typing: direction := Literal["up", "down", "left", "right"]
+          description: the direction to tile the object in (up, down, left, or right)
+        - name: gap
+          typing: int
+          description: the gap between tiled objects
+      description: repeatedly copy an object in a specified direction
+      cues:
+        - if existing structures from the input grid appear in the output grid repeatedly in a regular formation
+      
+ff28f65a:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=4)
+    num_objects = count_objects(objects, criteria=None)
+    new_grid = create_new_grid(dimensions=(3, 3))
+    output_grid = draw_expandable_shape(pattern="checkerboard", color=blue, scale=num_objects, grid=new_grid)
+  summary: create a blue checkerboard pattern with blue number of blue squares = count of objects in the input grid
+  concepts:
+    - concept: count objects
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: int
+      parameters:
+        - name: objects
+          typing: list[object]
+          description: the list of objects to count
+        - name: criteria
+          typing: selection criteria
+          description: criteria to filter objects before counting (optional)
+      description: count the number of objects in a list, optionally filtering by criteria
+    - concept: create new grid
+      cues:
+        - if input grid dimensions don't match the output grid dimensions
+        - if output grid content vastly differs from input grid content
+    - concept: draw expandable shape
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: pattern
+          typing: pattern := str | Callable[[int], grid]
+          description: the pattern to draw (e.g., "checkerboard")
+        - name: color
+          typing: color
+          description: the color to use for the pattern
+        - name: scale
+          typing: int
+          description: the scale factor for the pattern, determining how many times to repeat it
+        - name: grid
+          typing: grid
+          description: the grid to draw the pattern on
+      description: draw a pattern on a grid, scaling it based on a specified factor
+      
+1b60fb0c:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=8)
+    sprite = object[0]
+    rotated_sprite = rotate_object(sprite, angle=90)
+    output_grid = draw_object(rotated_sprite, base=input_grid, position=sprite.position)
+    new_section = extract_new_pixels(old=input_grid, new=output_grid)
+    output_grid = recolor_object(new_section, color=red)
+  summary: complete the rotational symmetry and recolor the new section red
+  concepts:
+    - concept: rotate object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid | object
+      parameters:
+        - name: object
+          typing: object
+          description: the object to rotate
+        - name: angle
+          typing: int
+          description: the angle to rotate the object by (in degrees)
+      description: rotate an object by a specified angle, updating the grid accordingly
+      implementation:
+        - use np.rot90
+      cues:
+        - if you see an object in the input grid that is rotated in the output grid
+        - if you see an object that occurs multiple times with different rotations
+        - if you detect a new rotational symmetry in the output grid
+    - concept: draw object
+    - concept: extract new pixels
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: grid
+      parameters:
+        - name: old
+          typing: grid
+          description: the old grid to compare against
+        - name: new
+          typing: grid
+          description: the new grid to extract new pixels from
+      description: extract the new pixels that were added to the grid, i.e. the pixels that are in the new grid but not in the old grid
+      implementation:
+        - compare pixel by pixel
+    - concept: recolor object
+
+3e980e27:
+  pseudocode: |
+    extracted_objects = extract_objects(input_grid, single_color=false, connectivity=8)
+    guides = filter_objects(extracted_objects, criteria=size_over_1)
+    anchors = filter_objects(extracted_objects, criteria=size_is_1)
+    output_grid = input_grid
+    for anchor in anchors:
+      guide = find_object(guides, criteria=has_color(anchor.color))
+      if anchor.color == red:
+        guide = reflect_object(guide, axis="x=6")
+      alignment_pos = align_object(full_sprite=guide, anchor=anchor)
+      output_grid = draw_object(guide, base=output_grid, position=alignment_pos)
+  summary: copy guide objects to anchors with colors matching the guide colors and flipping the guide objet if the indicator is red
+  concepts:
+    - concept: size criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: object
+        - name: comparison operator
+          typing: comparison operator := Literal["==", "!=", "<", "<=", ">", ">="]
+        - name: comparison value
+          typing: int
+          description: the value to compare the object's size against
+      description: condition on whether an object meets a size criteria (numerical comparison on object size against some other value)
+    - concept: has color criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: object
+        - name: color
+          typing: color
+      description: condition on whether an object has a specific color
+    - concept: reflect object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid | object
+      parameters:
+        - name: object
+          typing: object
+          description: the object to reflect
+        - name: axis
+          typing: axis := Literal["x", "y", "both"]
+          description: the axis to reflect the object across (x, y, or both)
+      description: reflect an object across a specified axis, updating the grid accordingly
+      implementation:
+        - use np.flip
+      cues:
+        - if existing structures from the input grid appear in the output grid with mirrored orientation
+
+48d8fb45:
+  pseudocode: |
+    objects = extract_objects(input_grid, single_color=true, connectivity=8)
+    guide = find_object(objects, criteria=color_is_grey)
+    selected = find_object(objects, criteria=touching(guide))
+    output_grid = cropped(selected)
+  summary: crop the object that is touching a grey guide object
+  concepts:
+    - concept: specific color criteria
+    - concept: contact criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target
+          typing: object
+        - name: other
+          typing: object
+          description: the object to check contact with
+      description: condition on whether an object is in contact with another object, i.e. they share a pixel or edge
+    - concept: crop object
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: objects
+          typing: list[object]
+          description: the list of objects to crop
+      description: create a new grid that is a contiguous sub region of the input grid, containing the minimum bounding box of the specified objects
+      implementation:
+        - find the extrema for x and y coordinates and use that to slice the grid
+      cues:
+        - if the output grid is smaller than the input grid
+        - if the output grid contains only a subset of the objects in the input grid
+        - if the output grid is a contiguous sub region of the input grid
+      
+6cdd2623:
+  pseudocode: |
+    for color in unique_colors(input_grid):
+      color_subset = filter_objects(input_grid_pixels, criteria=has_color(color))
+      color_edge_subset = filter_objects(color_subset, criteria=is_edge_pixel(input_grid))
+      if color_edge_subset == color_subset:
+        break
+    for pixel in color_edge_subset:
+      for other_pixel in color_edge_subset:
+        if pixel != other_pixel and is_aligned(pixel, other_pixel):
+          output_grid = draw_line(pixel, other_pixel, color=color)
+  summary: draw lines between same color pixels on opposite edges
+  concepts:
+    - concept: unique colors
+      kind: routine
+      routine_subtype: intermediate
+      output_typing: list[color]
+      parameters:
+        - name: grid
+          typing: grid
+          description: the grid to extract unique colors from
+      description: extract a list of unique colors from a grid
+      implementation:
+        - use np.unique
+    - concept: has_color
+    - concept: edge pixel criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: target pixel
+          typing: object
+        - name: parent
+          typing: grid | object
+          description: specifies if checking pixel being on grid edge or on some object's edge
+      description: condition on whether a pixel is an edge pixel, i.e. it is on the boundary of an object or the grid
+      implementation:
+        - for grid, check pixel position and compare to 0 and grid dimensions
+    - concept: alignment criteria
+      kind: routine
+      routine_subtype: selection criteria
+      output_typing: bool
+      parameters:
+        - name: object1
+          typing: object
+        - name: object2
+          typing: object
+      description: condition on whether two objects are aligned, i.e. they share the same rows or columns
+    - concept: draw line
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: start_pixel
+          typing: object
+          description: the starting pixel to draw the line from
+        - name: end_pixel
+          typing: object
+          description: the ending pixel to draw the line to
+        - name: color
+          typing: color
+          description: the color of the line to draw
+      description: draw a line between two pixels in a grid, updating the grid accordingly
+      implementation:
+        - draw the line pixel by pixel, picking a starting point and following the direction to the end point
+      cues:
+        - output grid contains lines not present in the input grid
+      

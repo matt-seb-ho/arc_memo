@@ -1,0 +1,51 @@
+concepts:
+  - concept: object
+    kind: term definition
+    description: a group of pixels that are treated as a single entity
+  - concept: guide object
+    kind: term definition
+    description: an object that serves as a reference from which color/shape/position/size is used
+  - concept: extract objects 
+    kind: routine
+    parameters:
+      - name: input grid
+        type: grid
+        description: grid (or region of a grid) to extract objects from
+      - name: single color
+        type: bool 
+      - name: connectivity
+        type: str
+        description: object connectedness (4-way, 8-way, or none). None admits non-contiguous objects.
+  - concept: filter objects
+    kind: routine
+    output: list[object]
+    parameters:
+      - name: input objects
+        type: list[object]
+        description: the list of objects to filter
+      - name: criteria
+        type: Callable[[object], bool]
+        description: filter criteria
+    description: filter a list of objects based on some criteria
+  - concept: find object
+    kind: routine
+    output: object
+    parameters:
+      - name: input objects
+        type: list[object]
+        description: the list of objects to search in
+      - name: criteria
+        type: Callable[[object], bool]
+        description: criteria to find the object
+    description: find an object in a list of objects based on some criteria
+  - concept: create new grid
+    kind: routine
+    routine_subtype: grid manipulation
+    parameters:
+      - name: dimensions
+        typing: dimensions := tuple[int, int]
+        description: the dimensions of the new grid to create
+    description: create a new grid with specified dimensions
+    cues:
+      - if input grid dimensions don't match the output grid dimensions
+      - if structures from input are largely not present, it maybe more efficient to create a new grid for the output
