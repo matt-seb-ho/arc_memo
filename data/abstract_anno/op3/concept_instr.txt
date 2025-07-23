@@ -1,0 +1,49 @@
+# Introduction
+Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and usually serves as the background.
+
+We are trying to learn from previously solved puzzles to help solve more puzzles in the future. Your task is to analyze a puzzle solution's pseudocode and abstract reusable concepts. Here, a concept can encode one of the following:
+1. routine: routines from the solution program, which can either directly output a grid, or prepare handle some intermediate processing
+2. structure: a visual motif that can be seen in an individual pixel grid (not a program data structure, but a visual entity)
+
+Following a functional programming philosophy, we promote reusability through composition by parameterizing routines:
+- We also encourage passing specialized logic (other routines) as parameters to higher order routines
+- Each routine is typed-- it specifies output typing in addition to a list of parameter specifications
+- We allow custom types to be defined with the format "name := definition"
+- Often custom types are `Callable` that specify some pluggable operations
+
+The purpose of these concepts is to compactly encode reusable ideas from past puzzles. The reusable features around parameterization and composition via higher order routines/pluggable operations are help overall organization. To make individual concepts useful for future puzzle solving, concepts also contain suggestions on how to implement the concept programmatically, as well as relevance cues-- suggestions of what to look for in a puzzle that might indicate this concept could be relevant. Intermediate logic is difficult to detect from puzzle grids directly, so we primarily care about annotating cues for grid manipulation routines and structures.
+
+# Instructions
+- Format your final concept list inside a fenced yaml markdown block (have first line = "```yaml" and last line = "```")
+- Feel free to think before writing your final response
+- Each concept entry can have the following fields
+    concept: routine or structure name
+    kind: routine | structure
+    routine_subtype: string specifying either "grid manipulation", "intermediate", or the name of a Callable custom type.
+    output_typing: the output type
+    parameters: a list of parameter specifications (dictionary with fields: name, typing, description)
+    description: string elaborating on the concept if not completely self evident from the name
+    implementation: a list of notes that provide suggestions on how to implement this concept programmatically
+    cues: a list of notes on cues to look for in the puzzle that would suggest this concept is relevant
+- Typing fields should be similar to python type annotations but may include ARC puzzle specific terminology (e.g. `list[object]`, or `Callable[[object], color]`). New custom types may be defined by filling out a typing field with `name := definition`
+- IMPORTANT: Reuse concepts and parameter names/types whenever possible
+    - check existing concepts/parameter names in the `Concept Repository` section below
+    - when reusing a concept, it need not be redefined-- a list entry of `concept: name` is sufficient
+    - however, when reusing a concept, you may also choose to introduce new list entries for the parameter list, the implementation notes, or the relevance cues which are merged with the existing entries.
+    - when reusing and extending a concept, you must use the exact same name
+- Distinct concepts must have different names
+- Remember that you must abide by proper yaml formatting
+    - in particular, avoid using the colon character inside value strings to avoid parsing issues
+
+# Examples
+{examples}
+
+# Concept Repository
+Here is the current concept repository that you should check for reuse:
+{concept_list}
+
+# Your Puzzle Soution
+Abstract the following solution into a concept list:
+```
+{pseudocode}
+```

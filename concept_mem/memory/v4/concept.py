@@ -1,7 +1,10 @@
 # concept_mem/concept.py
 import itertools
+import logging
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 # --------------------------- Utilities --------------------------------- #
@@ -92,7 +95,23 @@ class Concept:
     @staticmethod
     def _merge_lines(curr: list[str], new_lines: list[str]) -> list[str]:
         # merge cues & implementation (dedupe, keep order)
-        return list(dict.fromkeys(itertools.chain(curr, new_lines)))
+        cleaned_new_lines = []
+        for line in new_lines:
+            if isinstance(line, dict):
+                if len(line) == 1:
+                    k, v = next(iter(line.items()))
+                    line = f"{k}: {v}"
+                else:
+                    logger.info(
+                        f"merge list[str] expects a string but received a dict with multiple keys: {line}"
+                    )
+                    line = str(line)
+            if isinstance(line, str):
+                cleaned_new_lines.append(line.strip())
+            else:
+                logger.info(f"merge list[str] expects a string but received: {line}")
+
+        return list(dict.fromkeys(itertools.chain(curr, cleaned_new_lines)))
 
     # --------------------- Rendering helpers ---------------------------- #
     def to_string(

@@ -326,7 +326,7 @@ e21d9049:
       description: split an object into two parts based on a specified scheme
     - concept: split cross
       kind: routine
-      routine_subtype: object_splitting_scheme
+      routine_subtype: object splitting scheme
       output_typing: list[object]
       parameters:
         - name: cross
@@ -377,6 +377,17 @@ ff28f65a:
           description: criteria to filter objects before counting (optional)
       description: count the number of objects in a list, optionally filtering by criteria
     - concept: create new grid
+      kind: routine
+      routine_subtype: grid manipulation
+      output_typing: grid
+      parameters:
+        - name: dimensions
+          typing: dimensions := tuple[int, int]
+          description: the dimensions of the new grid to create (rows, columns)
+        - name: fill color
+          typing: color
+          description: the color to fill the new grid with (default is 0)
+      description: create a new grid with specified dimensions, initialized with a fill color
       cues:
         - if input grid dimensions don't match the output grid dimensions
         - if output grid content vastly differs from input grid content
@@ -558,7 +569,7 @@ ff28f65a:
       description: extract a list of unique colors from a grid
       implementation:
         - use np.unique
-    - concept: has_color
+    - concept: has color criteria
     - concept: edge pixel criteria
       kind: routine
       routine_subtype: selection criteria

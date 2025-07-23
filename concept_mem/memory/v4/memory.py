@@ -54,9 +54,10 @@ class ConceptMemory:
         if not name:
             logger.info(f"[{puzzle_id}] Skipping concept: missing 'concept' field.")
             return
+        concept_exists = name in self.concepts
 
-        kind = ann.get("kind")
-        if kind not in {"structure", "routine"}:
+        kind = ann.get("kind", None)
+        if kind not in {"structure", "routine"} and not concept_exists:
             logger.info(f"[{puzzle_id}] Concept '{name}' invalid kind '{kind}'.")
             return
 
@@ -73,7 +74,6 @@ class ConceptMemory:
                 p = {"name": str(p)}
             params.append(p)
 
-        concept_exists = name in self.concepts
         if concept_exists:
             self.concepts[name].update(puzzle_id, ann)
         else:
@@ -84,8 +84,6 @@ class ConceptMemory:
                 output_typing=ann.get("output_typing", None),
                 parameters=[ParameterSpec(**p) for p in params],
                 description=ann.get("description"),
-                cues=ann.get("cues", []),
-                implementation=ann.get("implementation", []),
             )
             c.update(puzzle_id, ann)
             self.concepts[name] = c
@@ -302,8 +300,8 @@ class ConceptMemory:
         for concept_anno in parsed:
             self.write_concept(puzzle_id, concept_anno)
 
-    # ----------------------- Initialisation ----------------------------- #
-    def initialise_solutions(self, mapping: dict[str, dict]) -> None:
+    # ----------------------- initialization ----------------------------- #
+    def initialize_solutions(self, mapping: dict[str, dict]) -> None:
         for pid, ann in mapping.items():
             self.solutions[pid] = ProblemSolution(
                 problem_id=pid,
@@ -312,7 +310,7 @@ class ConceptMemory:
                 pseudocode=ann.get("pseudocode"),
             )
 
-    def initialise_from_annotations(self, annotations: dict[str, dict]) -> None:
+    def initialize_from_annotations(self, annotations: dict[str, dict]) -> None:
         for pid, ann in annotations.items():
             self.write_solution(pid, None, ann)
             for concept_ann in ann.get("concepts", []):
