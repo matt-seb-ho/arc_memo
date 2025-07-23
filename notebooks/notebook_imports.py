@@ -1,3 +1,4 @@
+from functools import cache
 import importlib
 import json
 import os
@@ -10,6 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tiktoken
 import yaml
 from omegaconf import OmegaConf
 from tqdm import tqdm
@@ -43,7 +45,7 @@ from concept_mem.utils import (
 
 def result_dir_to_df(
     res_dir: Path,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     iter_dir = get_latest_iteration_dir(res_dir)
     json_data = read_json(iter_dir / "solution_trees.json")
     sln_trees = {
@@ -72,3 +74,20 @@ def get_latest_iteration_dir(parent_dir: Path) -> Path:
                 continue
     assert highest != -1
     return parent_dir / f"{prefix}{highest}"
+
+
+def print_to_file(s) -> None:
+    target_path = REPO_ROOT / "notebooks/output/temp.txt"
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(s)
+    print(f"Output written to:\n{target_path}")
+
+
+def oai_token_len(text: str) -> int:
+    gpt4o_encoder = _get_gpt4o_tokenizer()
+    return len(gpt4o_encoder.encode(text))
+
+
+@cache
+def _get_gpt4o_tokenizer():
+    return tiktoken.encoding_for_model("gpt-4o")
