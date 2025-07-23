@@ -18,7 +18,7 @@ from concept_mem.utils import (
     run_llm_job,
     write_json,
 )
-from concept_mem.utils.barc_seed_processing import (
+from concept_mem.data.barc_seed_processing import (
     remove_concepts_from_barc_seed_solution,
 )
 
@@ -99,7 +99,8 @@ def parse_model_output(
 async def generate_pseudocode(
     problems: list[str],
     solutions: dict[str, str],
-    examples: dict[str, dict],
+    example_annotations: dict[str, dict],
+    example_solutions: dict[str, str] | None,
     llm_client: LLMClient,
     model: str,
     gen_cfg: GenerationConfig,
@@ -109,7 +110,7 @@ async def generate_pseudocode(
     # prepare ICL demo string
     formatted_examples = format_pseudocode_examples(
         problem_solutions=solutions,
-        annotations=examples,
+        annotations=example_annotations,
     )
     # prepare prompts
     puzzle_ids = []
@@ -161,6 +162,16 @@ async def generate_pseudocode(
     return results
 
 
+def _load_barc_seed_solutions() -> dict[str, str]:
+    barc_seeds = load_arc_data("barc_seeds")
+    bs_solutions = {}
+    for pzid, seed_puzzle in barc_seeds.items():
+        bs_solutions[pzid] = remove_concepts_from_barc_seed_solution(
+            seed_puzzle.code or "# no solution provided",
+        )
+    return bs_solutions
+
+
 async def async_main(cfg: DictConfig) -> None:
     # output directory setup
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
@@ -173,27 +184,27 @@ async def async_main(cfg: DictConfig) -> None:
     # set up target puzzles and solutions
     limit = cfg.annotate.limit_problems
     target_puzzles = []
-    solutions = {}
+    barc_seed_solutions = _load_barc_seed_solutions()
+    solutions = barc_seed_solutions.copy()
+    example_solutions = barc_seed_solutions.copy()
+
+    if cfg.annotate.example_solutions:
+        file_example_solutions = read_json(cfg.annotate.example_solutions)
+        example_solutions.update(file_example_solutions)
+
+    if cfg.annotate.solutions:
+        file_solutions = read_json(cfg.annotate.solutions)
+        solutions.update(file_solutions)
+
     if cfg.annotate.problem_ids is None:
         barc_seeds = load_arc_data("barc_seeds")
-        if cfg.annotate.solutions:
-            file_solutions = read_json(cfg.annotate.solutions)
-        else:
-            file_solutions = {}
         for pzid in barc_seeds:
-            seed_puzzle = barc_seeds[pzid]
-            if pzid in file_solutions:
-                solutions[pzid] = file_solutions[pzid]
-            else:
-                solutions[pzid] = remove_concepts_from_barc_seed_solution(
-                    seed_puzzle.code or "# no solution provided",
-                )
             if pzid in hand_annotations or (limit and len(target_puzzles) >= limit):
                 continue
             target_puzzles.append(pzid)
+        example_solutions = solutions
     else:
         pzids = read_json(cfg.annotate.problem_ids)
-        solutions = read_json(cfg.annotate.solutions)
         if limit:
             target_puzzles = pzids[:limit]
         else:
@@ -211,7 +222,8 @@ async def async_main(cfg: DictConfig) -> None:
     await generate_pseudocode(
         problems=target_puzzles,
         solutions=solutions,
-        examples=hand_annotations,
+        example_annotations=hand_annotations,
+        example_solutions=example_solutions,
         llm_client=llm_client,
         model=cfg.annotate.model.name,
         gen_cfg=gen_cfg,
