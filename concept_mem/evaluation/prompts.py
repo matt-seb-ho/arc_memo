@@ -73,12 +73,24 @@ We distilled some lessons and concepts from previously solved puzzles. Please no
 Here are the lessons and concepts:
 {hints}"""
 
+HINT_TEMPLATE_ABSTRACT = """\
+### Takeaways from Previously Solved Puzzles
+Constructing a program solution requires choosing operations and their parameters. We recorded some grid manipulation, parameter selection, and other helper routines that were used in previously solved puzzles. Here are the takeaways:
+{hints}"""
+
+HINT_TEMPLATE_CURR3 = """\
+### Takeaways from Previously Solved Puzzles
+Constructing a program solution requires choosing operations and their parameters. We recorded some grid structures and routines that were used in previously solved puzzles. Here are the takeaways:
+{hints}"""
+
 HINT_TEMPLATES = {
     "basic": HINT_TEMPLATE_MIN,
     "default": HINT_TEMPLATE_MIN,
     "min": HINT_TEMPLATE_MIN,
     "selected": HINT_TEMPLATE_SELECTED,
     "all_hints": HINT_TEMPLATE_ALL,
+    "abstract": HINT_TEMPLATE_ABSTRACT,
+    "curr3": HINT_TEMPLATE_CURR3,
 }
 
 # -- code generation instructions ----------------------------------------------
