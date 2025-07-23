@@ -1,0 +1,346 @@
+## structure concepts
+- concept: container
+  kind: structure
+  description: an object that contains other objects, often used to define a region of interest
+  cues:
+    - if there is an object with a cavity
+- concept: split grid
+  kind: structure
+  description: where the grid is split into multiple regions that are treated as distinct
+  cues:
+    - divider lines that span the grid and partition it
+    - color based regions-- i.e. pixels of a color only appear in a certain section of the grid
+- concept: hole
+  kind: structure
+  description: an empty space inside an object, often used to define a region of interest
+  cues:
+    - if there is an object with a cavity
+- concept: divider lines
+  kind: structure
+  description: lines that divide the grid into regions, often used to define a grid of regions
+  cues:
+    - if there are lines that span the grid and partition it
+- concept: region grid
+  kind: structure
+  description: where the grid is partitioned into a grid of distinct regions
+  cues:
+    - horizontal and vertical lines that span the grid and partition it
+
+## types
+- axis := Literal["x", "y", "both"]
+- direction := Literal["up", "down", "left", "right"]
+- pattern := str | Callable[[int], grid]
+
+## grid manipulation routines
+- concept: recolor object
+  kind: routine
+  description: recolor an object based on a color scheme
+  output_typing: grid | object
+  parameters:
+    - name: object | object - the object to recolor
+    - name: color scheme | color scheme := color | Callable[[object], color] - either a single color or logic that determines what object gets which color
+  cues:
+    - if existing structures from the input grid appear in the output grid with different colors
+- concept: draw object
+  kind: routine
+  description: draw a sprite on top of a base grid, drawing over the base grid with the sprite's non-background pixels
+  output_typing: grid
+  parameters:
+    - name: sprite | grid - the sprite to draw on top of the base grid
+    - name: base | grid - the base grid to draw onto
+    - name: position | position - the position to place the sprite on the base grid
+  cues:
+    - if input objects are replicated one or more times in the output
+- concept: move object
+  kind: routine
+  description: move an object to a new position in the grid, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - name: object | object - the object to move
+    - name: position | position - the position to move the object to
+  cues:
+    - if existing structures from the input grid appear in the output grid with different positions
+  implementation:
+    - can draw the object at the new position, but most erase the object pixels from the old position first
+- concept: slide object
+  kind: routine
+  description: moving an object in a specified direction step by step until a stopping condition is met
+  output_typing: grid | object
+  parameters:
+    - name: object | object - the object to slide
+    - name: direction | object - direction to slide in
+    - name: stopping criteria | stopping criteria := Callable[[object, grid], bool] - criteria to determine when to stop sliding the object
+  cues:
+    - if existing structures from the input grid appear in the output grid with different positions but objects are adjacent to each other in the movement direction
+  implementation:
+    - either consider all displacements and filter for valid displacements (contacting object/grid edge in movement direction)
+    - or just move one pixel at a time in the movement direction until a collision is detected
+- concept: convert region grid to pixel grid
+  kind: routine
+  description: convert a grid of regions into a pixel grid where each pixel corresponds to a region
+  output_typing: grid
+  parameters:
+    - name: region_grid | list[list[grid]] - the grid of regions to convert to a pixel grid
+    - name: color selection | color selection := Callable[[grid], color] - logic to select a color for each region
+  cues:
+    - input grid contains a region grid, but output grid does not contain the same region grid structure
+    - output grid dimensions match the region grid dimensions
+  implementation:
+    - create a new grid with the same dimensions as the region grid, and for each region, select a pixel using the color selection logic
+- concept: reflect grid
+  kind: routine
+  description: reflect a grid across a specified axis, creating a mirrored version of the grid
+  output_typing: grid
+  parameters:
+    - name: grid | grid - the grid to reflect
+    - name: axis | axis := Literal["horizontal", "vertical", "both"] - the axis to reflect the grid across (horizontal, vertical, or both)
+  cues:
+    - if existing structures from the input grid appear in the output grid with mirrored positions
+  implementation:
+    - use np.flip
+- concept: tile object
+  kind: routine
+  description: repeatedly copy an object in a specified direction
+  output_typing: grid
+  parameters:
+    - name: object | object - the object to tile
+    - name: start | position - the starting position to tile the object from
+    - name: direction | direction := Literal["up", "down", "left", "right"] - the direction to tile the object in (up, down, left, or right)
+    - name: gap | int - the gap between tiled objects
+  cues:
+    - if existing structures from the input grid appear in the output grid repeatedly in a regular formation
+- concept: draw expandable shape
+  kind: routine
+  description: draw a pattern on a grid, scaling it based on a specified factor
+  output_typing: grid
+  parameters:
+    - name: pattern | pattern := str | Callable[[int], grid] - the pattern to draw (e.g., "checkerboard")
+    - name: color | color - the color to use for the pattern
+    - name: scale | int - the scale factor for the pattern, determining how many times to repeat it
+    - name: grid | grid - the grid to draw the pattern on
+- concept: rotate object
+  kind: routine
+  description: rotate an object by a specified angle, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - name: object | object - the object to rotate
+    - name: angle | int - the angle to rotate the object by (in degrees)
+  cues:
+    - if you see an object in the input grid that is rotated in the output grid
+    - if you see an object that occurs multiple times with different rotations
+    - if you detect a new rotational symmetry in the output grid
+  implementation:
+    - use np.rot90
+- concept: reflect object
+  kind: routine
+  description: reflect an object across a specified axis, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - name: object | object - the object to reflect
+    - name: axis | axis := Literal["x", "y", "both"] - the axis to reflect the object across (x, y, or both)
+  cues:
+    - if existing structures from the input grid appear in the output grid with mirrored orientation
+  implementation:
+    - use np.flip
+- concept: crop object
+  kind: routine
+  description: create a new grid that is a contiguous sub region of the input grid, containing the minimum bounding box of the specified objects
+  output_typing: grid
+  parameters:
+    - name: objects | list[object] - the list of objects to crop
+  cues:
+    - if the output grid is smaller than the input grid
+    - if the output grid contains only a subset of the objects in the input grid
+    - if the output grid is a contiguous sub region of the input grid
+  implementation:
+    - find the extrema for x and y coordinates and use that to slice the grid
+- concept: draw line
+  kind: routine
+  description: draw a line between two pixels in a grid, updating the grid accordingly
+  output_typing: grid
+  parameters:
+    - name: start_pixel | object - the starting pixel to draw the line from
+    - name: end_pixel | object - the ending pixel to draw the line to
+    - name: color | color - the color of the line to draw
+  cues:
+    - output grid contains lines not present in the input grid
+  implementation:
+    - draw the line pixel by pixel, picking a starting point and following the direction to the end point
+
+## other routines
+### color scheme
+- concept: fixed color mapping
+  kind: routine
+  description: use a fixed, predetermined mapping from original -> new color
+  output_typing: color
+  parameters:
+    - name: input | object - the object/pixel to recolor
+### intermediate
+- concept: extract objects
+  kind: routine
+  parameters:
+    - name: input grid | grid - grid (or region of a grid) to extract objects from
+    - name: single color | bool - if True, only extract objects of a single color
+    - name: connectivity | str - object connectedness (4-way, 8-way, or none). None admits non-contiguous objects.
+- concept: filter objects
+  kind: routine
+  description: filter a list of objects based on some criteria
+  parameters:
+    - name: input objects | list[object] - the list of objects to filter
+    - name: criteria | selection criteria := Callable[[object], bool] - filter criteria
+- concept: find object
+  kind: routine
+  description: find an object in a list of objects based on some criteria
+  parameters:
+    - name: input objects | list[object] - the list of objects to search in
+    - name: criteria | selection criteria - criteria to find the object
+- concept: split regions
+  kind: routine
+  output_typing: list[grid]
+  parameters:
+    - name: input grid | grid - the grid to split into regions
+    - name: splitting scheme | splitting scheme := str | Callable[[grid], list[grid]] - logic to determine how to split the grid into regions
+- concept: get object holes
+  kind: routine
+  description: get the holes in an object, i.e. the empty spaces inside the object
+  output_typing: list[object]
+  parameters:
+    - name: object | object - the object to get holes from
+  implementation:
+    - if a known background color is used, can use that color mask against the object
+    - alternatively, flood fill from non-object pixels to see if grid edges are reachable
+- concept: direction between objects
+  kind: routine
+  description: determine the direction from one object to another, often used for sliding or moving objects towards a target
+  output_typing: direction
+  parameters:
+    - name: object1 | object
+    - name: object2 | object
+- concept: split object
+  kind: routine
+  description: split an object into two parts based on a specified scheme
+  output_typing: list[object]
+  parameters:
+    - name: object | object - the object to split
+    - name: object splitting scheme | object splitting scheme := str | Callable[[object], list[object]] - logic to determine how to split the object into parts
+- concept: count objects
+  kind: routine
+  description: count the number of objects in a list, optionally filtering by criteria
+  output_typing: int
+  parameters:
+    - name: objects | list[object] - the list of objects to count
+    - name: criteria | selection criteria - criteria to filter objects before counting (optional)
+- concept: extract new pixels
+  kind: routine
+  description: extract the new pixels that were added to the grid, i.e. the pixels that are in the new grid but not in the old grid
+  output_typing: grid
+  parameters:
+    - name: old | grid - the old grid to compare against
+    - name: new | grid - the new grid to extract new pixels from
+  implementation:
+    - compare pixel by pixel
+- concept: unique colors
+  kind: routine
+  description: extract a list of unique colors from a grid
+  output_typing: list[color]
+  parameters:
+    - name: grid | grid - the grid to extract unique colors from
+  implementation:
+    - use np.unique
+### object_splitting_scheme
+- concept: split cross
+  kind: routine
+  description: split a cross object into its horizontal and vertical bars
+  output_typing: list[object]
+  parameters:
+    - name: cross | object - the cross object to split
+  implementation:
+    - identify the center of the cross and split it into horizontal and vertical bars based on the center
+### selection criteria
+- concept: inside container criteria
+  kind: routine
+  description: condition on whether an object is inside a container
+  output_typing: bool
+  parameters:
+    - name: target | object
+  implementation:
+    - determine if the grid edge is reachable from the would-be inner object. The inner and outer objects only have the containment relationship if the inner object only reaches the grid edge through outer object pixels.
+- concept: shape match criteria
+  kind: routine
+  description: condition on whether an object matches the other shape
+  output_typing: bool
+  parameters:
+    - name: target | shape
+    - name: other | shape - shape to match against
+- concept: specific color criteria
+  kind: routine
+  description: condition on whether an object is/has a specific color
+  output_typing: bool
+  parameters:
+    - name: target | object
+    - name: color | color
+- concept: size criteria
+  kind: routine
+  description: condition on whether an object meets a size criteria (numerical comparison on object size against some other value)
+  output_typing: bool
+  parameters:
+    - name: target | object
+    - name: comparison operator | comparison operator := Literal["==", "!=", "<", "<=", ">", ">="]
+    - name: comparison value | int - the value to compare the object's size against
+- concept: has color criteria
+  kind: routine
+  description: condition on whether an object has a specific color
+  output_typing: bool
+  parameters:
+    - name: target | object
+    - name: color | color
+- concept: contact criteria
+  kind: routine
+  description: condition on whether an object is in contact with another object, i.e. they share a pixel or edge
+  output_typing: bool
+  parameters:
+    - name: target | object
+    - name: other | object - the object to check contact with
+- concept: edge pixel criteria
+  kind: routine
+  description: condition on whether a pixel is an edge pixel, i.e. it is on the boundary of an object or the grid
+  output_typing: bool
+  parameters:
+    - name: target pixel | object
+    - name: parent | grid | object - specifies if checking pixel being on grid edge or on some object's edge
+  implementation:
+    - for grid, check pixel position and compare to 0 and grid dimensions
+- concept: alignment criteria
+  kind: routine
+  description: condition on whether two objects are aligned, i.e. they share the same rows or columns
+  output_typing: bool
+  parameters:
+    - name: object1 | object
+    - name: object2 | object
+### splitting scheme
+- concept: split on divider lines
+  kind: routine
+  description: identify lines that divide the grid into regions, extract these regions
+  output_typing: list[grid]
+  parameters:
+    - name: grid | grid - the grid to split
+  implementation:
+    - determine where divider lines are and use array slicing to extract the regions
+- concept: split region grid
+  kind: routine
+  description: split grid into a grid of regions
+  output_typing: list[list[grid]]
+  parameters:
+    - name: input grid | grid - the grid to split into regions
+  implementation:
+    - use divider lines and array slicing to extract regions from the grid
+### stopping criteria
+- concept: object contact stopping criteria
+  kind: routine
+  description: condition on whether an object is in contact with another object or the grid edge in a specific direction
+  output_typing: bool
+  parameters:
+    - name: object | object
+    - name: grid | grid
+  implementation:
+    - check if the object is adjacent to another object in the movement direction

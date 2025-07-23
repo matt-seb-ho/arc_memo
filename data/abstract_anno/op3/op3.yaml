@@ -320,8 +320,8 @@ e21d9049:
         - name: object
           typing: object
           description: the object to split
-        - name: object_splitting_scheme
-          typing: object_splitting_scheme := str | Callable[[object], list[object]
+        - name: object splitting scheme
+          typing: object splitting scheme := str | Callable[[object], list[object]]
           description: logic to determine how to split the object into parts
       description: split an object into two parts based on a specified scheme
     - concept: split cross
