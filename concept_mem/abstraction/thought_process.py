@@ -8,9 +8,9 @@ from omegaconf import DictConfig
 
 from concept_mem.constants import DEFAULT_CODE, HYRDA_CONFIG_PATH, REPO_ROOT
 from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.data.barc_seed_processing import extract_barc_seed_comment_sections
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.utils import (
-    extract_barc_seed_comment_sections,
     read_json,
     run_llm_job,
     write_json,
@@ -62,7 +62,8 @@ def get_soluton_summary(problem: Problem, description_only: bool = False) -> str
     where summary := the description comment (and optionally the concepts comment)
     NOTE: the summary excludes the solution code itself
     """
-    if getattr(problem, "code", DEFAULT_CODE) == DEFAULT_CODE:
+    problem_code = getattr(problem, "code", None)
+    if problem_code is None or problem_code == DEFAULT_CODE:
         return None
     comments = extract_barc_seed_comment_sections(problem.code)
     concepts = comments.get("concepts", "")
