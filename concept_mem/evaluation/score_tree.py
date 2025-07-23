@@ -113,65 +113,78 @@ def score_problem_attempt(
 - all filters are **composable** because they are just boolean masks on the df
 """
 
+STEP_TAGS = [
+    "puzzle_id",
+    "branch_id",
+    "thread_id",
+    "step_idx",
+]
 
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # flattening helpers
 
 
-def _iter_rows(solution_trees: dict[str, SolutionTree]):
-    """Yield dict‑rows for every IO‑pair in every step."""
-
+def _iter_rows(
+    solution_trees: dict[str, SolutionTree],
+) -> tuple[list[dict], list[dict]]:
+    """Yield per-case and per-step row dicts for normalized table output."""
+    case_rows = []
+    step_rows = []
     for puzzle_id, tree in solution_trees.items():
         for branch_id, branch in tree.prompt_branches.items():
             for thread_id, thread in branch.threads.items():
                 for step in thread.steps:
-                    for res in step.train_results + step.test_results:
-                        yield {
-                            "puzzle_id": puzzle_id,
-                            "branch_id": branch_id,
-                            "thread_id": thread_id,
-                            "step_idx": step.step_idx,
-                            "is_train": res.is_train,
-                            "pair_idx": res.pair_idx,
-                            "correct": res.correct,
+                    step_key = {
+                        "puzzle_id": puzzle_id,
+                        "branch_id": branch_id,
+                        "thread_id": thread_id,
+                        "step_idx": step.step_idx,
+                    }
+                    step_rows.append(
+                        {
+                            **step_key,
                             "validated": step.validated,
                             "parsing_error": step.parsing_error,
                             "completion": step.completion,
                         }
+                    )
+                    for res in step.train_results + step.test_results:
+                        case_rows.append(
+                            {
+                                **step_key,
+                                "is_train": res.is_train,
+                                "case_idx": res.pair_idx,
+                                "correct": res.correct,
+                            }
+                        )
+    return case_rows, step_rows
 
 
-def flatten_solution_trees(solution_trees: dict[str, SolutionTree]) -> pd.DataFrame:
-    """Convert nested `SolutionTree` mapping to a DataFrame."""
+def flatten_solution_trees(
+    solution_trees: dict[str, SolutionTree],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Convert nested `SolutionTree` mapping into normalized step_df and case_df."""
+    case_rows, step_rows = _iter_rows(solution_trees)
+    if not case_rows:
+        return pd.DataFrame(), pd.DataFrame()
+    case_df = pd.DataFrame(case_rows)
+    case_df["correct"] = case_df["correct"].astype(bool)
+    case_df["is_train"] = case_df["is_train"].astype(bool)
+    step_df = pd.DataFrame(step_rows)
+    return case_df, step_df
 
-    rows = list(_iter_rows(solution_trees))
-    if not rows:
-        return pd.DataFrame()  # empty input guard
 
-    df = pd.DataFrame(rows)
-    # Enforce dtypes that play nicely with boolean math later
-    df["correct"] = df["correct"].astype(bool)
-    df["is_train"] = df["is_train"].astype(bool)
-    return df
-
-
-# -----------------------------------------------------------------------------
-# scoring back‑ends
+# ----------------------------------------------------------------------------
+# scoring logic
 
 
 def _keep_last_step(df: pd.DataFrame) -> pd.DataFrame:
-    """Return only rows whose `step_idx` equals the *maximum* for their thread."""
-    last_idx = df.groupby(["puzzle_id", "branch_id", "thread_id"], sort=False)[
-        "step_idx"
-    ].transform("max")
-    return df[df["step_idx"] == last_idx]
+    grouping_cols = ["puzzle_id", "branch_id", "thread_id"]
+    max_step = df.groupby(grouping_cols, sort=False)["step_idx"].transform("max")
+    return df[df["step_idx"] == max_step]
 
 
 def _official_per_pair(group: pd.DataFrame, attempts_allowed: int | None) -> bool:
-    """Return *True* if at least one of the first *k* attempts is correct."""
-
-    # preserve chronological ordering (step_idx) to approximate "first k model
-    # interactions" semantics; you can swap this to another secondary key (e.g.
-    # log‑prob) if you have it.
     if attempts_allowed is not None:
         head = group.sort_values("step_idx").head(attempts_allowed)
         return head["correct"].any()
@@ -183,14 +196,6 @@ def official_score_per_puzzle(
     attempts_allowed: int | None = None,
     step_selection: Literal["all", "last"] = "all",
 ) -> pd.DataFrame:
-    """Compute the *official* score
-
-    \sum_puzzles \frac{1}{N_p} \sum_{i=1}^{N_p} s_i
-
-    where N_p is the number of IO‑pairs in puzzle p, and s_i is the score for the ith puzzle
-    (mean fraction of correctly solved test IO‑pairs per puzzle, then summed across puzzles).
-    """
-
     if df.empty:
         return pd.Series(dtype=float)
     if step_selection == "last":
@@ -198,12 +203,11 @@ def official_score_per_puzzle(
 
     test_df = df[~df["is_train"]]
     solved_per_pair = (
-        test_df.groupby(["puzzle_id", "pair_idx"], sort=False)
+        test_df.groupby(["puzzle_id", "case_idx"], sort=False)
         .apply(lambda g: _official_per_pair(g, attempts_allowed), include_groups=False)
         .reset_index(name="solved")
     )
 
-    # fraction of solved pairs per puzzle
     per_puzzle = solved_per_pair.groupby("puzzle_id", sort=False)["solved"].mean()
     return per_puzzle
 
@@ -213,14 +217,6 @@ def official_score(
     attempts_allowed: int | None = None,
     step_selection: Literal["all", "last"] = "all",
 ) -> float:
-    """Compute the *official* score
-
-    \sum_puzzles \frac{1}{N_p} \sum_{i=1}^{N_p} s_i
-
-    where N_p is the number of IO‑pairs in puzzle p, and s_i is the score for the ith puzzle
-    (mean fraction of correctly solved test IO‑pairs per puzzle, then summed across puzzles).
-    """
-
     official_score_per_puzzle_series = official_score_per_puzzle(
         df,
         attempts_allowed=attempts_allowed,
@@ -228,7 +224,6 @@ def official_score(
     )
     if official_score_per_puzzle_series.empty:
         return 0.0
-    # mean fraction of solved pairs per puzzle
     return official_score_per_puzzle_series.sum()
 
 
@@ -236,7 +231,7 @@ def strict_score_per_step(
     df: pd.DataFrame,
     *,
     include_train: bool = False,
-    step_selection: Literal["all", "last"] = "last",  # re‑use for consistency
+    step_selection: Literal["all", "last"] = "last",
 ) -> pd.Series:
     if df.empty:
         return pd.Series(dtype=int)
@@ -246,14 +241,7 @@ def strict_score_per_step(
     if step_selection == "last":
         df = _keep_last_step(df)
 
-    # step‑level strict correctness
-    step_tags = [
-        "puzzle_id",
-        "branch_id",
-        "thread_id",
-        "step_idx",
-    ]
-    step_correct = df.groupby(step_tags, sort=False)["correct"].all()
+    step_correct = df.groupby(STEP_TAGS, sort=False)["correct"].all()
     return step_correct
 
 
@@ -261,7 +249,7 @@ def strict_score_per_puzzle(
     df: pd.DataFrame,
     *,
     include_train: bool = False,
-    step_selection: Literal["all", "last"] = "all",  # re‑use for consistency
+    step_selection: Literal["all", "last"] = "all",
 ) -> pd.Series:
     step_correct = strict_score_per_step(
         df,
@@ -270,7 +258,6 @@ def strict_score_per_puzzle(
     )
     if step_correct.empty:
         return pd.Series(dtype=int)
-    # if any step is strictly correct...
     per_puzzle = step_correct.groupby("puzzle_id", sort=False).any()
     return per_puzzle
 
@@ -279,14 +266,8 @@ def strict_score(
     df: pd.DataFrame,
     *,
     include_train: bool = False,
-    step_selection: Literal["all", "last"] = "all",  # re‑use for consistency
+    step_selection: Literal["all", "last"] = "all",
 ) -> int:
-    """
-    Return the number of puzzles that are *strict‑correct* under the rules.
-
-    - a code solution is strictly correct if it passes all test IO-pairs
-    (and optionally all train IO-pairs).
-    """
     strict_score_per_puzzle_series = strict_score_per_puzzle(
         df,
         include_train=include_train,
@@ -294,5 +275,4 @@ def strict_score(
     )
     if strict_score_per_puzzle_series.empty:
         return 0
-    # count puzzles that are strictly correct
     return strict_score_per_puzzle_series.sum()

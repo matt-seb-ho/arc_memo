@@ -321,7 +321,7 @@ class EvaluationRunner:
         save_tree: bool = True,
         save_csv: bool = False,
     ) -> None:
-        df = flatten_solution_trees(self.trees)
+        df, _ = flatten_solution_trees(self.trees)
         if save_tree:
             serializable_trees = {
                 k: t.to_serializable_dict() for k, t in self.trees.items()
