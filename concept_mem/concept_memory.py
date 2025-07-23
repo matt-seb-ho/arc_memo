@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import orjson
 import yaml
@@ -82,6 +83,7 @@ class ConceptMemory:
         parameter_format: str = "none",
         include_usage: bool = False,
         indentation: int = 0,
+        filter_concept: Callable[[Concept], bool] | None = None,
     ) -> str:
         # TODO: figure out how to include pseudocode solutions
         components: list[str] = []
@@ -111,11 +113,14 @@ class ConceptMemory:
                         parameter_format=parameter_format,
                         problem_usage_info=problem_usage_info,
                         indentation=indentation,
+                        filter_concept=filter_concept,
                     )
                 )
                 continue
             for concept_name in concept_names:
                 concept = self.concepts[concept_name]
+                if filter_concept is not None and not filter_concept(concept):
+                    continue
                 components.append(
                     concept.to_string(
                         include_description=include_description,
@@ -235,6 +240,7 @@ class ConceptMemory:
         parameter_format: str = "none",
         problem_usage_info: dict[str, str] | None = None,
         indentation: int = 0,
+        filter_concept: Callable[[Concept], bool] | None = None,
     ) -> str:
         ps_concepts = [
             self.concepts[name]
@@ -242,6 +248,8 @@ class ConceptMemory:
         ]
         for_param_groups = defaultdict(list)
         for concept in ps_concepts:
+            if filter_concept is not None and not filter_concept(concept):
+                continue
             for_param_groups[concept.for_param].append(concept)
         components = []
         for param, concepts in for_param_groups.items():
