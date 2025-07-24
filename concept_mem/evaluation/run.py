@@ -82,6 +82,7 @@ async def async_main(cfg: DictConfig) -> None:
         long_cot_sel_cfg=lcs_cfg,
         output_dir=output_dir,
         dry_run=cfg.dry_run,
+        helper_lib_path=str(REPO_ROOT / "concept_mem/utils/code_execution/starter.py"),
     )
     await eval_runner.run(problems=problems)
     logger.info(f"Output directory: {output_dir}")

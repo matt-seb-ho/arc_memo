@@ -74,6 +74,7 @@ class EvaluationRunner:
         long_cot_sel_cfg: LongCoTSelectionConfig,
         output_dir: Path,
         dry_run: bool = False,
+        helper_lib_path: str = None,
     ) -> None:
         self.llm = llm
         self.model = model
@@ -95,6 +96,7 @@ class EvaluationRunner:
         else:
             self.lessons = {}
         self.dry_run = dry_run
+        self.helper_lib_path = helper_lib_path
 
         self.trees: dict[str, SolutionTree] = {}
         self.initial_prompts: dict[tuple[str, str], str] = {}  # (puzzle_id, variant_id)
@@ -141,6 +143,7 @@ class EvaluationRunner:
             else:
                 puzzle_prompts = self.prompt_builder.build_initial_prompts(
                     problem=problem,
+                    helper_lib_path=self.helper_lib_path,
                 )
             for branch_id, prompt in puzzle_prompts.items():
                 self.initial_prompts[(puzzle_id, branch_id)] = prompt
@@ -380,6 +383,7 @@ async def async_main(cfg: DictConfig) -> None:
         long_cot_sel_cfg=lcs_cfg,
         output_dir=output_dir,
         dry_run=cfg.dry_run,
+        helper_lib_path=cfg.starter_lib_path,
     )
     await eval_runner.run(problems=problems)
     logger.info(f"Output directory: {output_dir}")

@@ -62,6 +62,7 @@ class EvaluationRunner:
         long_cot_sel_cfg: LongCoTSelectionConfig,
         output_dir: Path,
         dry_run: bool = False,
+        helper_lib_path: str = None,  # NEW: path to starter.py
     ) -> None:
         self.llm = llm
         self.model = model
@@ -83,6 +84,7 @@ class EvaluationRunner:
         else:
             self.lessons = {}
         self.dry_run = dry_run
+        self.helper_lib_path = helper_lib_path  # NEW
 
         self.traces: dict[str, PuzzleTrace] = {}
         self.initial_prompts: dict[tuple[str, str], str] = {}  # (puzzle_id, variant_id)
@@ -125,6 +127,7 @@ class EvaluationRunner:
             else:
                 prompts = self.prompt_builder.build_initial_prompts(
                     problem=problem,
+                    helper_lib_path=self.helper_lib_path,  # Pass starter.py path
                 )
             for variant_id, prompt in prompts.items():
                 self.initial_prompts[(puzzle_id, variant_id)] = prompt

@@ -9,6 +9,7 @@ from concept_mem.evaluation.prompts import make_prompt, make_retry_prompt
 from concept_mem.evaluation.retry_policy import RetryPolicy
 from concept_mem.evaluation.solution_tree import SolutionThread
 from concept_mem.utils import read_json
+from concept_mem.utils.code_execution import starter
 
 logger = logging.getLogger(__name__)
 
@@ -68,20 +69,29 @@ class PromptBuilder:
     def build_initial_prompts(
         self,
         problem: Problem,
+        helper_lib_path: str = None,
         **kwargs,
     ) -> dict[str, str]:
         """
         Build the initial prompt for a given problem and variant.
-
-        currently unsupported args from make_prompt:
-        - concept (ground truth concept label from BARC)
-        - ICL
-        - common_lib
+        Optionally include helper library signatures in the prompt.
         """
         puzzle_id = problem.uid
         if self.problem_data and puzzle_id not in self.problem_data:
             logger.warning(f"Problem data not found for {puzzle_id}. Using defaults.")
         puzzle_data = self.problem_data.get(puzzle_id, {"0": {}})
+
+        # Extract helper signatures if path provided
+        common_lib = None
+        if helper_lib_path:
+            import pathlib
+            path = pathlib.Path(helper_lib_path)
+            source = path.read_text()
+            sigs = starter.extract_function_signatures(source)
+            # Format for prompt
+            common_lib = "\n".join(
+                f"{s['signature']}\n    {s['docstring'] or ''}" for s in sigs
+            )
 
         prompts = {}
         for variant_id, variant_data in puzzle_data.items():
@@ -92,6 +102,7 @@ class PromptBuilder:
                 hint_template_key=self.prompt_options.hint_template_key,
                 instruction_key=self.prompt_options.instruction_key,
                 require_hint_citations=self.prompt_options.require_hint_citations,
+                common_lib=common_lib,
                 **kwargs,
             )
         return prompts
