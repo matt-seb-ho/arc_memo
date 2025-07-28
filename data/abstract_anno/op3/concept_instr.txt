@@ -3,7 +3,7 @@ Consider a class of "ARC" puzzles where each puzzle has a hidden transformation 
 
 We are trying to learn from previously solved puzzles to help solve more puzzles in the future. Your task is to analyze a puzzle solution's pseudocode and abstract reusable concepts. Here, a concept can encode one of the following:
 1. routine: routines from the solution program, which can either directly output a grid, or prepare handle some intermediate processing
-2. structure: a visual motif that can be seen in an individual pixel grid (not a program data structure, but a visual entity)
+2. structure: a class of visual entities (not program data structures) that can be seen in an individual pixel grid. The visual entity should be general, perhaps by being defined by their function or in relation to an operation.
 
 Following a functional programming philosophy, we promote reusability through composition by parameterizing routines:
 - We also encourage passing specialized logic (other routines) as parameters to higher order routines
@@ -11,7 +11,31 @@ Following a functional programming philosophy, we promote reusability through co
 - We allow custom types to be defined with the format "name := definition"
 - Often custom types are `Callable` that specify some pluggable operations
 
-The purpose of these concepts is to compactly encode reusable ideas from past puzzles. The reusable features around parameterization and composition via higher order routines/pluggable operations are help overall organization. To make individual concepts useful for future puzzle solving, concepts also contain suggestions on how to implement the concept programmatically, as well as relevance cues-- suggestions of what to look for in a puzzle that might indicate this concept could be relevant. Intermediate logic is difficult to detect from puzzle grids directly, so we primarily care about annotating cues for grid manipulation routines and structures.
+The overarching goal is to help future puzzle solving which boils down to 2 problems:
+1. determining what the transformation is (by examining input/output examples)
+2. implementing the transformation in code
+
+- These concepts are meant to compactly encode ideas from solved puzzles and help puzzle solving by remembering what operations could be involved and how they might interact with each other via typing. 
+- Parameterization and composition via higher order routines/pluggable operations helps ensure concepts are reusable and not overly specific to one puzzle
+- But to specifically address the 2 main problems, we also annotate concepts with:
+    1. relevance cues: suggestion of what to look for at puzzle solving time that would indicate this concept is potentially relevant.
+        - can either describe (1) things to look for in the puzzle grids or (2) related concepts that might implicate this one
+        - we primarily care about annotating cues for grid manipulation routines and structures where there are concrete things to look for in the reference grids.
+    2. implementation notes: suggestions on how to implement the idea programmatically.
+
+# Examples
+{examples}
+
+# Concept Repository
+Here is the current concept repository that you should check for reuse:
+{concept_list}
+
+# Your Puzzle Solution
+Abstract the following solution into a concept list:
+```
+{summary}
+{pseudocode}
+```
 
 # Instructions
 - Format your final concept list inside a fenced yaml markdown block (have first line = "```yaml" and last line = "```")
@@ -24,26 +48,20 @@ The purpose of these concepts is to compactly encode reusable ideas from past pu
     parameters: a list of parameter specifications (dictionary with fields: name, typing, description)
     description: string elaborating on the concept if not completely self evident from the name
     implementation: a list of notes that provide suggestions on how to implement this concept programmatically
-    cues: a list of notes on cues to look for in the puzzle that would suggest this concept is relevant
+    cues: a list of notes suggesting what to look for at puzzle solving time that would suggest this concept is relevant (e.g. what to look for in example input/output grids, or other concepts being considered that may also implicate this concept)
 - Typing fields should be similar to python type annotations but may include ARC puzzle specific terminology (e.g. `list[object]`, or `Callable[[object], color]`). New custom types may be defined by filling out a typing field with `name := definition`
 - IMPORTANT: Reuse concepts and parameter names/types whenever possible
+    - reusing a concept or parameter means reusing its exact name
     - check existing concepts/parameter names in the `Concept Repository` section below
-    - when reusing a concept, it need not be redefined-- a list entry of `concept: name` is sufficient
-    - however, when reusing a concept, you may also choose to introduce new list entries for the parameter list, the implementation notes, or the relevance cues which are merged with the existing entries.
-    - when reusing and extending a concept, you must use the exact same name
+    - when reusing a concept:
+        - it need not be redefined-- a list entry of `concept: name` is sufficient
+        - however you may also choose to extend it (introduce new list entries for the parameter list, the implementation notes, or the relevance cues which are merged with the existing entries). This involves specifying the same concept name as the existing one to be extended.
+- Avoid coupling the concepts too closely with the exact solution implementation. 
+    - often times, there is a broader idea that can be implemented with roundabout methods easier to express in code
+    - we should record the broader idea in our concept memory but record the easier implementation in the implementation notes
 - Distinct concepts must have different names
-- Remember that you must abide by proper yaml formatting
-    - in particular, avoid using the colon character inside value strings to avoid parsing issues
-
-# Examples
-{examples}
-
-# Concept Repository
-Here is the current concept repository that you should check for reuse:
-{concept_list}
-
-# Your Puzzle Soution
-Abstract the following solution into a concept list:
-```
-{pseudocode}
-```
+- Output valid yaml
+    - avoid putting colons in entries where we're expecting a list[str]
+    - be careful about multiline strings
+- IMPORTANT: No need to encode every implementation detail from the solution into a concept, focus on the important ideas, logic, and structure.
+    - ultimately we want concepts to be reusable, so if something seems overly specific and unlikely to reappear in other puzzles, do not add it

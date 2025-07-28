@@ -8,7 +8,8 @@ instruction_block_file: data/abstract_anno/op1/op1_yaml_fmt.yaml
 # hand_annotations_file: data/abstract_anno/icl_anno_v8.yaml
 # hand_annotations_file: data/abstract_anno/op1/opus1.yaml
 # hand_annotations_file: data/abstract_anno/op2/op2_prog.yaml
-hand_annotations_file: data/abstract_anno/op3/op3.yaml
+# hand_annotations_file: data/abstract_anno/op3/op3.yaml
+hand_annotations_file: data/abstract_anno/op3/op3a.yaml
 example_solutions: null
 
 # example concepts
@@ -20,7 +21,8 @@ solutions: null
 limit_problems: null
 
 # for phase 2: concept gen
-preliminary_concepts_file: data/abstract_anno/op3/preliminaries.yaml
+# preliminary_concepts_file: data/abstract_anno/op3/preliminaries.yaml
+preliminary_concepts_file: data/abstract_anno/op3/prelim2.yaml
 
 # pseudocode: outputs/2025-07-08/22-08-41/phase1.json
 pseudocode: outputs/2025-07-09/16-46-48/initial_analysis.json

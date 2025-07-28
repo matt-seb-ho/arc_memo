@@ -6,7 +6,6 @@ from dataclasses import asdict, dataclass, field
 
 logger = logging.getLogger(__name__)
 
-
 # --------------------------- Utilities --------------------------------- #
 _TYPE_DEF_RE = re.compile(r"^\s*([^:=\s]+)\s*:=\s*(.+)$")
 
@@ -35,11 +34,11 @@ class ParameterSpec:
 @dataclass
 class Concept:
     """
-    New schema:
-
+    Schema
+    ------
     - name: str
     - kind: 'structure' | 'routine'
-    - routine_subtype: str | None         # only meaningful if kind == 'routine'
+    - routine_subtype: str | None         # only for kind == 'routine'
     - output_typing: str | None
     - parameters: List[ParameterSpec]
     - description: str | None
@@ -58,7 +57,20 @@ class Concept:
     implementation: list[str] = field(default_factory=list)
     used_in: list[str] = field(default_factory=list)
 
-    # ------------------------ Merge logic ------------------------------- #
+    # ----------------------- Init / validation ------------------------- #
+    def __post_init__(self):
+        # loading from file leads to self.parameters being a list[dict]
+        assert isinstance(self.parameters, list)
+        fixed_params: list[ParameterSpec] = []
+        for p in self.parameters:
+            if isinstance(p, dict):
+                p = ParameterSpec(**p)
+            elif not isinstance(p, ParameterSpec):
+                raise TypeError(f"Expected ParameterSpec or dict, got {type(p)}: {p}")
+            fixed_params.append(p)
+        self.parameters = fixed_params
+
+    # ------------------------ Merge logic ------------------------------ #
     def update(self, problem_id: str, annotation: dict) -> None:
         if problem_id not in self.used_in:
             self.used_in.append(problem_id)
@@ -113,25 +125,32 @@ class Concept:
 
         return list(dict.fromkeys(itertools.chain(curr, cleaned_new_lines)))
 
-    # --------------------- Rendering helpers ---------------------------- #
+    # --------------------- Rendering helpers --------------------------- #
     def to_string(
         self,
         *,
         include_description: bool = True,
         indentation: int = 0,
-        skip_subtype: bool = False,
+        # unified skip-* controls (all default False ⇒ show everything)
+        skip_kind: bool = False,
+        skip_routine_subtype: bool = False,
+        skip_parameters: bool = False,
+        skip_parameter_description: bool = False,
+        skip_cues: bool = False,
+        skip_implementation: bool = False,
     ) -> str:
         """
-        Pretty-print this concept in a YAML-ish block.
+        Pretty-print this concept as a YAML-ish block.
 
-        skip_subtype: omit the 'routine_subtype' line (used when grouping by subtype).
+        All *skip_* flags default to False → everything rendered unless skipped.
         """
         ind = " " * indentation
-        lines: list[str] = [
-            f"{ind}- concept: {self.name}",
-            f"{ind}  kind: {self.kind}",
-        ]
-        if self.kind == "routine" and not skip_subtype and self.routine_subtype:
+        lines: list[str] = [f"{ind}- concept: {self.name}"]
+
+        if not skip_kind:
+            lines.append(f"{ind}  kind: {self.kind}")
+
+        if self.kind == "routine" and not skip_routine_subtype and self.routine_subtype:
             lines.append(f"{ind}  routine_subtype: {self.routine_subtype}")
 
         if include_description and self.description:
@@ -140,27 +159,30 @@ class Concept:
         if self.output_typing:
             lines.append(f"{ind}  output_typing: {self.output_typing}")
 
-        if self.parameters:
+        # Parameters ----------------------------------------------------
+        if self.parameters and not skip_parameters:
             lines.append(f"{ind}  parameters:")
             for p in self.parameters:
-                line = f"{ind}    - name: {p.name}"
+                line = f"{ind}    - {p.name}"
                 if p.typing:
-                    line += f" | {p.typing}"
-                if p.description:
-                    line += f" - {p.description}"
+                    line += f" (type: {p.typing})"
+                if p.description and not skip_parameter_description:
+                    line += f": {p.description}"
                 lines.append(line)
 
-        if self.cues:
+        # Cues & implementation ----------------------------------------
+        if self.cues and not skip_cues:
             lines.append(f"{ind}  cues:")
             for c in self.cues:
                 lines.append(f"{ind}    - {c}")
 
-        if self.implementation:
+        if self.implementation and not skip_implementation:
             lines.append(f"{ind}  implementation:")
             for note in self.implementation:
                 lines.append(f"{ind}    - {note}")
 
         return "\n".join(lines)
 
+    # -------------------------- Misc ----------------------------------- #
     def asdict(self) -> dict:
         return asdict(self)

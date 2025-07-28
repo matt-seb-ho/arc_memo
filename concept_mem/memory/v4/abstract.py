@@ -32,6 +32,7 @@ CONCEPT_GEN_EX_TEMPLATE = """\
 {header}
 Puzzle Solution:
 ```
+{summary}
 {solution}
 ```
 Annotation:
@@ -54,15 +55,20 @@ def format_concept_examples(
             continue
         if problem_id not in problem_solutions:
             if "pseudocode" in annotation:
-                solution = yaml.dump(annotation["pseudocode"], sort_keys=False).strip()
+                # solution = yaml.dump(annotation["pseudocode"], sort_keys=False).strip()
+                solution = annotation["pseudocode"].strip()
             else:
                 logger.info(f"Missing solution for ICL example problem {problem_id}")
                 continue
         else:
             solution = problem_solutions[problem_id]
+        summary = annotation.get("summary", "")
+        if summary:
+            summary = f"# solution summary: {summary.strip()}\n"
         formatted_annotation = yaml.dump(annotation["concepts"], sort_keys=False)
         example = CONCEPT_GEN_EX_TEMPLATE.format(
             header=header_template.format(example_number=i),
+            summary=summary,
             solution=solution,
             annotation=formatted_annotation.strip(),
         )
@@ -96,6 +102,7 @@ def parse_concept_model_output(
 async def generate_concepts_batch(
     problems: list[str],
     solutions: dict[str, str],
+    summaries: dict[str, str] | None,
     examples: dict[str, dict],
     concept_mem: ConceptMemory,
     llm_client: LLMClient,
@@ -116,9 +123,13 @@ async def generate_concepts_batch(
         if puzzle_id not in solutions:
             logger.warning(f"Missing solution for puzzle {puzzle_id}, skipping")
             continue
+        summary = summaries.get(puzzle_id, "") if summaries else ""
+        if summary:
+            summary = f"# solution summary: {summary.strip()}\n"
         prompt = ABSTRACTION_INSTR.format(
             examples=formatted_examples,
             concept_list=concept_mem.to_string(),
+            summary=summary,
             pseudocode=solutions[puzzle_id],
         ).strip()
         puzzle_ids.append(puzzle_id)
@@ -160,6 +171,7 @@ async def generate_concepts_batch(
 async def generate_concepts(
     problems: list[str],
     solutions: dict[str, str],
+    summaries: dict[str, str] | None,
     examples: dict[str, dict],
     concept_mem: ConceptMemory,
     batch_size: int,
@@ -177,6 +189,7 @@ async def generate_concepts(
         concept_batch = await generate_concepts_batch(
             problems=problem_batch,
             solutions=solutions,
+            summaries=summaries,
             examples=examples,
             concept_mem=concept_mem,
             llm_client=llm_client,
@@ -224,11 +237,13 @@ async def async_main(cfg: DictConfig) -> None:
     # prepare pseudocode
     pseudocode = read_json(cfg.annotate.pseudocode)
     reformatted_pseudocode = {}
+    summaries = {}
     for k, entry in pseudocode.items():
         if isinstance(entry, str):
             reformatted_pseudocode[k] = entry
         else:
             reformatted_pseudocode[k] = entry["pseudocode"]
+            summaries[k] = entry.get("summary", "")
     pseudocode = reformatted_pseudocode
 
     # model related setup
@@ -256,6 +271,7 @@ async def async_main(cfg: DictConfig) -> None:
     await generate_concepts(
         problems=target_puzzles,
         solutions=pseudocode,
+        summaries=summaries,
         examples=hand_annotations,
         concept_mem=concept_mem,
         batch_size=cfg.annotate.batch_size,

@@ -28,6 +28,7 @@
 
 ## types
 - axis := Literal["x", "y", "both"]
+- dimensions := tuple[int, int]
 - direction := Literal["up", "down", "left", "right"]
 - pattern := str | Callable[[int], grid]
 
@@ -109,6 +110,16 @@
     - name: gap | int - the gap between tiled objects
   cues:
     - if existing structures from the input grid appear in the output grid repeatedly in a regular formation
+- concept: create new grid
+  kind: routine
+  description: create a new grid with specified dimensions, initialized with a fill color
+  output_typing: grid
+  parameters:
+    - name: dimensions | dimensions := tuple[int, int] - the dimensions of the new grid to create (rows, columns)
+    - name: fill color | color - the color to fill the new grid with (default is 0)
+  cues:
+    - if input grid dimensions don't match the output grid dimensions
+    - if output grid content vastly differs from input grid content
 - concept: draw expandable shape
   kind: routine
   description: draw a pattern on a grid, scaling it based on a specified factor
@@ -162,10 +173,36 @@
     - name: start_pixel | object - the starting pixel to draw the line from
     - name: end_pixel | object - the ending pixel to draw the line to
     - name: color | color - the color of the line to draw
+    - name: start | position - the starting position to draw the line from
+    - name: direction | direction := Literal["up", "down", "left", "right", "up-right", "up-left", "down-right", "down-left"] - the direction to draw the line in (up, down, left, or right)
+    - name: length | int - the length of the line to draw
   cues:
     - output grid contains lines not present in the input grid
   implementation:
     - draw the line pixel by pixel, picking a starting point and following the direction to the end point
+- concept: draw border outside
+  kind: routine
+  description: draw a border around the outside of an object
+  output_typing: grid
+  parameters:
+    - name: target | object - the object to draw a border around
+    - name: border color | color - the color of the border to draw
+  cues:
+    - if input objects appear with extra layer(s) of pixels around them in the output grid
+  implementation:
+    - identify outermost pixels of the object and color their empty neighbors
+    - could be easier to draw over the object with a larger sprite, then copy the original object pixels back over to its original position
+- concept: tile pattern
+  kind: routine
+  description: tile a pattern in a specified direction with a given step size
+  output_typing: grid
+  parameters:
+    - name: pattern | grid - the pattern to tile
+    - name: start | position - the starting position to tile the pattern from
+    - name: direction | direction := Literal["up", "down", "left", "right"] - the direction to tile the pattern in (up, down, left, or right)
+    - name: step | int - the step size for tiling the pattern
+  cues:
+    - if there are repeating patterns in the output grid that were not present in the input grid
 
 ## other routines
 ### color scheme
@@ -230,15 +267,6 @@
   parameters:
     - name: objects | list[object] - the list of objects to count
     - name: criteria | selection criteria - criteria to filter objects before counting (optional)
-- concept: extract new pixels
-  kind: routine
-  description: extract the new pixels that were added to the grid, i.e. the pixels that are in the new grid but not in the old grid
-  output_typing: grid
-  parameters:
-    - name: old | grid - the old grid to compare against
-    - name: new | grid - the new grid to extract new pixels from
-  implementation:
-    - compare pixel by pixel
 - concept: unique colors
   kind: routine
   description: extract a list of unique colors from a grid
@@ -247,7 +275,7 @@
     - name: grid | grid - the grid to extract unique colors from
   implementation:
     - use np.unique
-### object_splitting_scheme
+### object splitting scheme
 - concept: split cross
   kind: routine
   description: split a cross object into its horizontal and vertical bars
@@ -272,13 +300,20 @@
   parameters:
     - name: target | shape
     - name: other | shape - shape to match against
-- concept: specific color criteria
+- concept: is color criteria
   kind: routine
-  description: condition on whether an object is/has a specific color
+  description: condition on whether an object is a given color
   output_typing: bool
   parameters:
     - name: target | object
     - name: color | color
+- concept: new pixels criteria
+  kind: routine
+  description: condition on whether an object is new, i.e. does not exist in the old grid
+  output_typing: bool
+  parameters:
+    - name: target | object - the object to check if it is new
+    - name: old | grid - the old grid to compare against
 - concept: size criteria
   kind: routine
   description: condition on whether an object meets a size criteria (numerical comparison on object size against some other value)
@@ -289,7 +324,7 @@
     - name: comparison value | int - the value to compare the object's size against
 - concept: has color criteria
   kind: routine
-  description: condition on whether an object has a specific color
+  description: condition on whether a target object's colors include a given color
   output_typing: bool
   parameters:
     - name: target | object
@@ -335,9 +370,9 @@
   implementation:
     - use divider lines and array slicing to extract regions from the grid
 ### stopping criteria
-- concept: object contact stopping criteria
+- concept: collision criteria
   kind: routine
-  description: condition on whether an object is in contact with another object or the grid edge in a specific direction
+  description: detects a collision when an object is in contact with another object in the direction of movement
   output_typing: bool
   parameters:
     - name: object | object

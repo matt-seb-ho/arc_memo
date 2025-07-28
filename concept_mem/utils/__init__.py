@@ -18,6 +18,7 @@ from .visualization import (
     display_img_file,
     draw_io_grids,
     visualize_barc_problem,
+    visualize_grid,
     visualize_problem,
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     "draw_io_grids",
     "display_img_file",
     "visualize_barc_problem",
+    "visualize_grid",
     "visualize_problem",
     "run_llm_job",
 ]

@@ -10,13 +10,20 @@ from typing import Callable
 import orjson
 import yaml
 
-from concept_mem.memory.v4.concept import Concept, ParameterSpec, maybe_parse_typedef
 from concept_mem.constants import REPO_ROOT
+from concept_mem.memory.v4.concept import (
+    Concept,
+    ParameterSpec,
+    maybe_parse_typedef,
+)
 from concept_mem.utils import extract_yaml_block
 
 logger = logging.getLogger(__name__)
 
 
+# --------------------------------------------------------------------- #
+#                               Dataclasses                             #
+# --------------------------------------------------------------------- #
 @dataclass
 class ProblemSolution:
     problem_id: str
@@ -25,12 +32,12 @@ class ProblemSolution:
     pseudocode: str | None = None
 
 
+# --------------------------------------------------------------------- #
+#                            ConceptMemory                              #
+# --------------------------------------------------------------------- #
 class ConceptMemory:
     """
     Stores concepts, solutions, and custom type defs.
-
-    Custom types are auto-extracted whenever we see a 'typing' string that
-    looks like 'Name := annotation'.
     """
 
     DEFAULT_CATEGORY_ORDER = [
@@ -42,13 +49,13 @@ class ConceptMemory:
 
     def __init__(self) -> None:
         self.concepts: dict[str, Concept] = {}
-        self.categories: dict[str, list[str]] = defaultdict(
-            list
-        )  # 'structure'/'routine' ➜ names
+        self.categories: dict[str, list[str]] = defaultdict(list)  # kind → names
         self.solutions: dict[str, ProblemSolution] = {}
-        self.custom_types: dict[str, str] = {}  # name -> annotation
+        self.custom_types: dict[str, str] = {}  # typedef name → annotation
 
-    # ---------------------------- Ingestion ----------------------------- #
+    # ----------------------------------------------------------------- #
+    #                              Ingestion                            #
+    # ----------------------------------------------------------------- #
     def write_concept(self, puzzle_id: str, ann: dict) -> None:
         name = ann.get("concept") or ann.get("name")
         if not name:
@@ -81,7 +88,7 @@ class ConceptMemory:
                 name=name,
                 kind=kind,
                 routine_subtype=routine_subtype,
-                output_typing=ann.get("output_typing", None),
+                output_typing=ann.get("output_typing"),
                 parameters=[ParameterSpec(**p) for p in params],
                 description=ann.get("description"),
             )
@@ -115,71 +122,104 @@ class ConceptMemory:
                 n, t = parsed
                 self.custom_types[n] = t
 
-    # ------------------------- Rendering -------------------------------- #
+    # ----------------------------------------------------------------- #
+    #                              Rendering                            #
+    # ----------------------------------------------------------------- #
     def to_string(
         self,
         *,
         concept_names: list[str] | None = None,
         include_description: bool = True,
+        # unified skip-* controls (all default False → show everything)
+        skip_kind: bool = True,
+        skip_routine_subtype: bool = True,
+        skip_parameters: bool = False,
+        skip_parameter_description: bool = True,
+        skip_cues: bool = False,
+        skip_implementation: bool = False,
+        # usage-condensed rendering
+        usage_threshold: int = 2,
         indentation: int = 0,
         filter_concept: Callable[[Concept], bool] | None = None,
     ) -> str:
         """
-        Master renderer following the new section order.
-
-        Sections:
-          1) structures
-          2) types (custom typedefs)
-          3) grid manipulation routines
-          4) other routines grouped by routine_subtype
+        Render memory in four sections.  If `len(concept.used_in) < usage_threshold`
+        the concept is listed only by name under a single summary bullet:
+            - lower usage concepts: [name1, name2, ...]
         """
         whitelist = set(concept_names) if concept_names else None
-
         blocks: list[str] = []
 
-        # 1. Structures
-        struct_block = self.to_string_structures(
+        # 1) Structures -------------------------------------------------
+        blk = self._to_string_structures(
             whitelist=whitelist,
             include_description=include_description,
+            skip_kind=skip_kind,
+            skip_routine_subtype=skip_routine_subtype,
+            skip_parameters=skip_parameters,
+            skip_parameter_description=skip_parameter_description,
+            skip_cues=skip_cues,
+            skip_implementation=skip_implementation,
+            usage_threshold=usage_threshold,
             indentation=indentation,
             filter_concept=filter_concept,
         )
-        if struct_block:
-            blocks.append(struct_block)
+        if blk:
+            blocks.append(blk)
 
-        # 2. Types
-        types_block = self.to_string_types(indentation=indentation)
-        if types_block:
-            blocks.append(types_block)
+        # 2) Types ------------------------------------------------------
+        blk = self._to_string_types(indentation=indentation)
+        if blk:
+            blocks.append(blk)
 
-        # 3. Grid manipulation routines
-        grid_block = self.to_string_grid_manip(
+        # 3) Grid-manipulation routines --------------------------------
+        blk = self._to_string_grid_manip(
             whitelist=whitelist,
             include_description=include_description,
+            skip_kind=skip_kind,
+            skip_parameters=skip_parameters,
+            skip_parameter_description=skip_parameter_description,
+            skip_cues=skip_cues,
+            skip_implementation=skip_implementation,
+            usage_threshold=usage_threshold,
             indentation=indentation,
             filter_concept=filter_concept,
         )
-        if grid_block:
-            blocks.append(grid_block)
+        if blk:
+            blocks.append(blk)
 
-        # 4. Other routines
-        other_block = self.to_string_other_routines(
+        # 4) Other routines --------------------------------------------
+        blk = self._to_string_other_routines(
             whitelist=whitelist,
             include_description=include_description,
+            skip_kind=skip_kind,
+            skip_routine_subtype=skip_routine_subtype,
+            skip_parameters=skip_parameters,
+            skip_parameter_description=skip_parameter_description,
+            skip_cues=True,
+            skip_implementation=skip_implementation,
+            usage_threshold=usage_threshold,
             indentation=indentation,
             filter_concept=filter_concept,
         )
-        if other_block:
-            blocks.append(other_block)
+        if blk:
+            blocks.append(blk)
 
         return "\n\n".join(blocks).rstrip()
 
-    # ---- Individual sections ------------------------------------------ #
-    def to_string_structures(
+    # --------------------------- Sections ----------------------------- #
+    def _to_string_structures(
         self,
         *,
-        whitelist: set | None = None,
+        whitelist: set | None,
         include_description: bool,
+        skip_kind: bool,
+        skip_routine_subtype: bool,
+        skip_parameters: bool,
+        skip_parameter_description: bool,
+        skip_cues: bool,
+        skip_implementation: bool,
+        usage_threshold: int,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
@@ -190,20 +230,36 @@ class ConceptMemory:
         ]
         if not names:
             return ""
-        lines = ["## structure concepts"]
+
+        full_render: list[str] = []
+        low_usage_names: list[str] = []
+
         for n in names:
             c = self.concepts[n]
             if filter_concept and not filter_concept(c):
                 continue
-            lines.append(
-                c.to_string(
-                    include_description=include_description,
-                    indentation=indentation,
+            if len(c.used_in) < usage_threshold:
+                low_usage_names.append(c.name)
+            else:
+                full_render.append(
+                    c.to_string(
+                        include_description=include_description,
+                        indentation=indentation,
+                        skip_kind=skip_kind,
+                        skip_routine_subtype=skip_routine_subtype,
+                        skip_parameters=skip_parameters,
+                        skip_parameter_description=skip_parameter_description,
+                        skip_cues=skip_cues,
+                        skip_implementation=skip_implementation,
+                    )
                 )
-            )
+
+        lines: list[str] = ["## structure concepts", *full_render]
+        if low_usage_names:
+            lines.append(f"- lower usage concepts: [{', '.join(low_usage_names)}]")
         return "\n".join(lines)
 
-    def to_string_types(self, *, indentation: int) -> str:
+    def _to_string_types(self, *, indentation: int) -> str:
         if not self.custom_types:
             return ""
         ind = " " * indentation
@@ -212,15 +268,20 @@ class ConceptMemory:
             lines.append(f"{ind}- {name} := {anno}")
         return "\n".join(lines)
 
-    def to_string_grid_manip(
+    def _to_string_grid_manip(
         self,
         *,
         whitelist: set | None,
         include_description: bool,
+        skip_kind: bool,
+        skip_parameters: bool,
+        skip_parameter_description: bool,
+        skip_cues: bool,
+        skip_implementation: bool,
+        usage_threshold: int,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
-        # subset of routines
         grid_names = [
             n
             for n in self.categories.get("routine", [])
@@ -229,29 +290,50 @@ class ConceptMemory:
         ]
         if not grid_names:
             return ""
-        lines = ["## grid manipulation routines"]
+
+        full_render: list[str] = []
+        low_usage_names: list[str] = []
+
         for n in grid_names:
             c = self.concepts[n]
             if filter_concept and not filter_concept(c):
                 continue
-            lines.append(
-                c.to_string(
-                    include_description=include_description,
-                    indentation=indentation,
-                    skip_subtype=True,  # already under the group header
+            if len(c.used_in) < usage_threshold:
+                low_usage_names.append(c.name)
+            else:
+                full_render.append(
+                    c.to_string(
+                        include_description=include_description,
+                        indentation=indentation,
+                        skip_kind=skip_kind,
+                        skip_routine_subtype=True,  # suppressed inside header
+                        skip_parameters=skip_parameters,
+                        skip_parameter_description=skip_parameter_description,
+                        skip_cues=skip_cues,
+                        skip_implementation=skip_implementation,
+                    )
                 )
-            )
+
+        lines: list[str] = ["## grid manipulation routines", *full_render]
+        if low_usage_names:
+            lines.append(f"- lower usage concepts: [{', '.join(low_usage_names)}]")
         return "\n".join(lines)
 
-    def to_string_other_routines(
+    def _to_string_other_routines(
         self,
         *,
         whitelist: set | None,
         include_description: bool,
+        skip_kind: bool,
+        skip_routine_subtype: bool,
+        skip_parameters: bool,
+        skip_parameter_description: bool,
+        skip_cues: bool,
+        skip_implementation: bool,
+        usage_threshold: int,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
-        # collect routines with non-grid subtype
         routines = [
             self.concepts[n]
             for n in self.categories.get("routine", [])
@@ -261,28 +343,42 @@ class ConceptMemory:
         if not routines:
             return ""
 
-        # group by subtype
         buckets: dict[str, list[Concept]] = defaultdict(list)
         for c in routines:
             key = c.routine_subtype or "misc"
             buckets[key].append(c)
 
         lines: list[str] = ["## other routines"]
+        low_usage_overall: list[str] = []
+
         for subtype in sorted(buckets.keys()):
             lines.append(f"### {subtype}")
             for c in buckets[subtype]:
                 if filter_concept and not filter_concept(c):
                     continue
-                lines.append(
-                    c.to_string(
-                        include_description=include_description,
-                        indentation=indentation,
-                        skip_subtype=True,
+                if len(c.used_in) < usage_threshold:
+                    low_usage_overall.append(c.name)
+                else:
+                    lines.append(
+                        c.to_string(
+                            include_description=include_description,
+                            indentation=indentation,
+                            skip_kind=skip_kind,
+                            skip_routine_subtype=skip_routine_subtype,
+                            skip_parameters=skip_parameters,
+                            skip_parameter_description=skip_parameter_description,
+                            skip_cues=skip_cues,
+                            skip_implementation=skip_implementation,
+                        )
                     )
-                )
+
+        if low_usage_overall:
+            lines.append(f"- lower usage concepts: [{', '.join(low_usage_overall)}]")
         return "\n".join(lines)
 
-    # ------------------------ Model output ingest ----------------------- #
+    # ----------------------------------------------------------------- #
+    #                   Model-output ingest & initialization             #
+    # ----------------------------------------------------------------- #
     def update_from_model_output(self, puzzle_id: str, llm_output: str) -> None:
         yaml_block = extract_yaml_block(llm_output)
         try:
@@ -300,7 +396,6 @@ class ConceptMemory:
         for concept_anno in parsed:
             self.write_concept(puzzle_id, concept_anno)
 
-    # ----------------------- initialization ----------------------------- #
     def initialize_solutions(self, mapping: dict[str, dict]) -> None:
         for pid, ann in mapping.items():
             self.solutions[pid] = ProblemSolution(
@@ -316,7 +411,9 @@ class ConceptMemory:
             for concept_ann in ann.get("concepts", []):
                 self.write_concept(pid, concept_ann)
 
-    # -------------------------- Persistence ----------------------------- #
+    # ----------------------------------------------------------------- #
+    #                           Persistence                              #
+    # ----------------------------------------------------------------- #
     def save_to_file(self, path: Path) -> None:
         blob = {
             "concepts": {n: asdict(c) for n, c in self.concepts.items()},

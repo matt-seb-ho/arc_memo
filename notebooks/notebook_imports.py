@@ -37,6 +37,7 @@ from concept_mem.utils import (
     get_puzzle_url,
     read_json,
     read_yaml,
+    visualize_grid,
     visualize_problem,
     write_json,
     write_yaml,

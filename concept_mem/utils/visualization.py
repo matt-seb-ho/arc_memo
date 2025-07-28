@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------
 
 
+def visualize_grid(arr: np.ndarray):
+    return arckit.vis.draw_grid(arr)
+
+
 def visualize_problem(problem: Problem, **kwargs):
     task = convert_problem_to_task(problem, "custom", dataset="custom")
     return arckit.vis.draw_task(task, include_test="all", **kwargs)

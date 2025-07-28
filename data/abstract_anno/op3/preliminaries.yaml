@@ -18,6 +18,9 @@ concepts:
       - name: connectivity
         typing: str
         description: object connectedness (4-way, 8-way, or none). None admits non-contiguous objects.
+      - name: background color
+        typing: str
+        description: the background color to ignore when extracting objects. Default value is 0 or black.
   - concept: filter objects
     kind: routine
     routine_subtype: intermediate
