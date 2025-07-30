@@ -1,0 +1,1071 @@
+## structure concepts
+- concept: split grid
+  description: where the grid is split into multiple regions that are treated as distinct
+  cues:
+    - divider lines (of any color) that span the grid and partition it into regions
+    - visually distinct regions or objects that are processed separately, often separated by colored or black lines, columns, or rows
+    - color-based regions where pixels of a certain color only appear within specific sections of the grid
+- concept: container
+  description: an object that contains other objects, often used to define a region of interest
+  cues:
+    - if there is an object with a cavity
+    - if there are objects with an empty interior and a single pixel inside, and the output fills the interior with that pixel's color
+- concept: divider lines
+  description: lines that divide the grid into regions, often used to define a grid of regions
+  cues:
+    - if there are lines that span the grid and partition it
+- concept: hole
+  description: an empty space inside an object, often used to define a region of interest
+  cues:
+    - if there is an object with a cavity
+- concept: region grid
+  description: where the grid is partitioned into a grid of distinct regions
+  cues:
+    - presence of horizontal and vertical lines that partition the grid into non-overlapping regions or tiles
+    - input grid is visually organized as a grid of distinct regions, or output grid has one pixel per input region, preserving region order
+- concept: stripe
+  description: a contiguous object that is either one row (horizontal) or one column (vertical) in extent, often used to fill or pattern a region
+  cues:
+    - if the grid contains objects that are long and thin, spanning the width or height of a region
+    - if the output grid consists of a single row or column of colored pixels, especially with one color per pixel
+    - if the output grid is a vertical or horizontal line of colors
+- concept: intersection of lines
+  description: the position(s) where two or more lines overlap, often marked with a special color or object
+  cues:
+    - if output grid contains special markings or a distinct color at the crossing points of lines
+    - if lines of different colors cross and a third color appears at the intersection
+    - if lines cross at a single pixel, especially where a colored pixel exists in the input grid
+  implementation:
+    - Detect line segments in the grid, then identify overlapping positions by checking for shared coordinates among lines
+    - Mark intersection points with a special color or object as specified by the transformation rule
+- concept: bar
+  description: an object that spans the full width or height of the grid, often serving as a target or anchor for other objects
+  cues:
+    - if the grid contains objects that are as wide or as tall as the grid itself
+    - if output pixels are aligned with or stop at such objects
+    - if the output grid consists of colored rectangles or lines spanning the grid
+- concept: pixel object
+  description: an object consisting of a single pixel, often treated as a movable or target entity
+  cues:
+    - presence of isolated single pixels in the input grid that are moved or removed in the output
+    - output grid is a single pixel (1x1), possibly with its color encoding a result
+  implementation:
+    - represent as a tuple of (row, column, color) or as a mask identifying single non-background pixels
+    - detect by scanning for grid positions where a non-background color is surrounded by background pixels
+- concept: square object
+  description: an object whose height and width are equal; often used as a unit for expansion, framing, or patterning
+  cues:
+    - if the grid contains objects that are perfect squares (equal height and width)
+    - if the output grid treats square-shaped objects differently, such as centering frames or expansions on them
+    - if the output grid is composed of concentric or nested square regions
+    - if the output grid is a square whose size is determined by properties of the input grid (e.g., width, color count)
+    - if the output grid is composed of repeated or stacked copies of an input object, filling a square region
+- concept: frame
+  description: an object that forms a rectangular border or outline, typically used to contain or highlight another object
+  cues:
+    - if the output grid contains a rectangular border (often of a specific color) surrounding another object or region
+    - if an object is placed inside a colored rectangular outline in the output
+    - if the output region is cropped to a rectangle containing a border and its contents
+- concept: background
+  description: the color used as the background or to fill unused grid space, typically 0 (black)
+  cues:
+    - if the output grid is initialized with a single color before other drawing
+    - if unused or empty grid regions are filled with a uniform color
+- concept: fixed pattern
+  description: a small grid or sprite with a fixed arrangement of colored pixels, often used as a motif or patch to be overlaid at a specific position
+  cues:
+    - if a recognizable, fixed-size pattern or motif (such as a colored square or diagonal) appears in the output grid, especially centered on an input pixel or object, or used to overwrite regions
+    - if the output grid contains motifs or templates of a fixed size (e.g., 4x4) not present in the input, or if patterns are matched to a reference set to determine output properties
+- concept: row
+  description: a horizontal sequence of pixels in the grid, often treated as a region or object for per-row processing
+  cues:
+    - if the output grid is manipulated or recolored on a row-by-row basis
+    - if each row is processed independently in the solution logic
+    - if each row of the output grid is filled with a single color corresponding to an input pattern
+    - if output grid is constructed row by row, with each row determined by input features
+- concept: rectangle object
+  description: an object whose shape is a rectangle, often used for bars, highlights, or as a region to fill
+  cues:
+    - if the output grid contains filled rectangles of a single color, especially adjacent to or below input objects
+    - if new rectangular regions are added in the output grid with dimensions determined by properties of input objects
+    - if the solution searches for or processes rectangular regions in the grid
+- concept: symmetry types
+  description: the set of symmetry types to check for, such as "rotational", "vertical", "horizontal", or "diagonal"
+  cues:
+    - if the solution distinguishes between different types of symmetry (e.g., mirror vs. rotational)
+    - if objects are selected based on being symmetric under one or more transformations
+- concept: cross object
+  description: an object composed of a filled row and a filled column intersecting at a single position, typically forming a plus sign
+  cues:
+    - presence of a plus-shaped pattern formed by a row and column of the same color in the grid
+    - output grid is created by drawing a filled row and column intersecting at a specific position
+- concept: vertical line
+  description: a contiguous object that spans a single column from a starting row to an ending row, often used for drawing or filling
+  cues:
+    - if the output grid contains vertical lines of a single color, especially extending from a pixel to the grid edge
+    - if repeated vertical lines are drawn at regular intervals along a row
+    - if vertical lines are used as boundaries for cropping or region selection
+- concept: cup (container with opening)
+  description: an object that is a container with an open boundary (opening), typically to be filled or have lines drawn from its opening
+  cues:
+    - if the grid contains a region bounded on all sides except one (the opening)
+    - if the output grid fills a region inside a container and extends features from its open edge
+- lower usage concepts: [pyramid of lines, repeated sprite with symmetry, nested layers, spiral path, border pixels, opening of container, corner pixel, tiling of mirrored sprites, pixel cluster, large object, cup opening]
+
+## types
+- axis := Literal["x", "y", "both", "horizontal", "vertical"] | int | float | tuple[axis, int | float]
+- dimensions := tuple[int, int]
+- direction := Literal["up", "down", "left", "right"]
+- list[symmetry := Callable[[position], position]]
+- pattern := str | Callable[[int], grid]
+- shape := Any
+- symmetry := Callable[[position], position]
+
+## grid manipulation routines
+- concept: recolor object
+  description: recolor an object based on a color scheme
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - color scheme (type: dict[color, color])
+    - object | object | position - the object or pixel to recolor
+    - color scheme | dict[color, color] - mapping from original color to new color
+    - color (type: color)
+  cues:
+    - if structures or objects from the input grid appear in the output grid with different colors
+    - if all pixels of one color in the output grid are replaced with another color (systematic color swap)
+    - if regions or objects are recolored based on a property (e.g., size, position, or matching a specific pixel)
+    - if the output grid contains regions filled with a new color not present in the input
+    - if background or other colors are systematically replaced in the output grid
+    - if the output grid is visually similar to the input except for a color swap
+    - if colored pixels or regions appear in the output grid at positions that were black or missing in the input, especially adjacent to colored pixels or aligned with features of input objects
+    - if a region or contiguous area is uniformly recolored, possibly based on a pixel in a special position (e.g., corner, interior of a container)
+    - if an input pixel or object is removed or replaced with background color in the output grid (deletion by recoloring)
+    - if a special color (e.g., grey or yellow) appears at a position determined by the interaction or meeting of input objects or paths
+  implementation:
+    - for a single pixel, set grid[position] = color
+    - after drawing operations that may overwrite a pixel, restore that pixel to its intended color
+    - for each pixel, if its color is in the color scheme, replace it with the mapped color
+    - for a region or object, iterate over its pixels and set each to the target color or according to the color scheme
+    - for a region, if a pixel is background (e.g., black), set it to the specified color; otherwise, leave it unchanged
+    - at special positions (e.g., meeting points or intersections), set the pixel to a designated color (e.g., grey) instead of either input color
+- concept: draw object
+  description: draw a sprite on top of a base grid, drawing over the base grid with the sprite's non-background pixels
+  output_typing: grid
+  parameters:
+    - sprite (type: grid)
+    - base (type: grid)
+    - position (type: position)
+    - background (type: color)
+  cues:
+    - if input objects are replicated or overlaid one or more times in the output
+    - if a sprite, motif, or pattern is drawn or overlaid at a specific position in the output grid
+    - if a completed, modified, or transformed region is overlaid back onto the original grid at its original or a specified position
+    - if colored regions, patterns, or sprites are overlaid at specific positions or inside larger objects/frames in the output grid
+    - if layers or patterns are built up by drawing on top of each other, or objects are redrawn to restore outlines or details
+    - if the output grid is constructed by assembling multiple copies of an object at specified positions
+  implementation:
+    - overlay the sprite's non-background pixels onto the base grid at the specified position, leaving background pixels unchanged
+- concept: move object
+  description: move an object to a new position in the grid, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - position (type: position)
+    - direction (type: direction)
+    - step (type: int)
+  cues:
+    - if existing structures from the input grid appear in the output grid with different positions
+    - if the output grid is a shifted version of the input grid or of an object in the input grid
+    - if objects are repositioned to align with another object's coordinate (e.g., matching y or x position)
+    - if pixels or objects in the input grid appear to "fall" or move vertically to the lowest available position in their column in the output grid, or are shifted downward, possibly stacking on a baseline or other pixels
+    - if a pixel or object in the input grid appears shifted by one row or column in the output grid, including single colored pixels moving to a new position
+    - if the solution checks for adjacency by moving an object one step in a direction and testing for overlap/contact
+  implementation:
+    - erase the object pixels from the old position before drawing the object at the new position
+    - to move an object by one pixel in a direction, increment the object's coordinate(s) accordingly and redraw it at the new position
+    - to align objects along a coordinate, set the desired coordinate (e.g., y) to match the reference object while keeping the other coordinate unchanged
+    - for relative moves, update all pixel positions of the object by the direction and step
+- concept: tile object
+  description: repeatedly copy an object in a specified direction
+  output_typing: grid
+  parameters:
+    - object (type: object)
+    - start (type: position)
+    - direction (type: direction)
+    - gap (type: int)
+    - pattern (type: grid)
+    - repetitions (type: tuple[int, int])
+  cues:
+    - if an object or motif from the input grid is repeated in a regular, evenly spaced pattern in the output grid (e.g., filling a dimension, forming a rectangular grid, or along a line)
+    - if the output grid is larger than the input grid and consists of exact or regularly spaced copies of the input or its sub-objects
+    - if an object is repeatedly moved and drawn at regular intervals in a fixed direction in the output grid
+  implementation:
+    - use numpy.tile or nested loops to repeat the input grid or object the specified number of times along each axis or direction, applying the specified gap between repetitions
+    - repeatedly move and draw the object by the specified gap in the given direction, stopping when the placement would go out of bounds
+- concept: create new grid
+  description: create a new grid with specified dimensions, initialized with a fill color
+  output_typing: grid
+  parameters:
+    - dimensions (type: dimensions := tuple[int, int])
+    - fill color (type: color)
+  cues:
+    - if output grid dimensions differ from input grid dimensions
+    - if output grid content is initialized as blank or filled with a single color before further drawing or tiling
+    - if output grid is a fixed size (e.g., 1x1, single row/column, or specific pattern) regardless of input grid size or content
+    - if output grid dimensions depend on the number of objects or layers in the input
+    - if output grid is larger or smaller than any input region and not a direct copy of any input region
+  implementation:
+    - use numpy.full or numpy.zeros to create a new grid with the specified dimensions and fill color
+    - ensure the grid is initialized before any drawing or overlay operations
+    - parameterize the grid size and fill color to allow for flexible reuse in different contexts
+- concept: reflect grid
+  description: reflect a grid across a specified axis, creating a mirrored version of the grid
+  output_typing: grid
+  parameters:
+    - grid (type: grid)
+    - axis (type: axis := Literal["horizontal", "vertical", "both"])
+  cues:
+    - if existing structures from the input grid appear in the output grid with mirrored positions
+  implementation:
+    - use np.flip
+- concept: rotate object
+  description: rotate an object by a specified angle, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - angle (type: int)
+    - center (type: position)
+  cues:
+    - Presence of an object in the input grid that appears rotated in the output grid
+    - Same object appears multiple times with different rotations
+    - Emergence of rotational symmetry in the output grid not present in the input
+  implementation:
+    - Use numpy functions such as np.rot90 or affine transformations to rotate the object's pixels around the specified center
+- concept: draw line
+  description: draw a line between two pixels in a grid, updating the grid accordingly
+  output_typing: grid
+  parameters:
+    - start (type: position)
+    - end (type: position)
+    - color (type: color)
+    - direction (type: direction := Literal["up", "down", "left", "right", "up-right", "up-left", "down-right", "down-left"])
+    - length (type: int | str)
+    - grid (type: grid)
+    - stop_at_color (type: color)
+    - step (type: int)
+    - until (type: stopping criteria := Callable[[position, grid], bool])
+    - stop_at (type: object | grid)
+  cues:
+    - output grid contains lines not present in the input grid
+    - output grid contains lines passing through, extending from, or adjacent to specific pixels or objects in the input grid
+    - lines span the entire grid in a direction from a given pixel, or terminate at a colored object or grid edge
+    - lines are drawn in straight, diagonal, or staircase patterns, possibly alternating directions or forming an "X"
+    - lines are drawn from specific points (e.g., object corners, edges, or centers) outward in one or more directions
+    - output grid contains lines connecting objects, pixels, or scattered points to the edge of a region or frame
+    - lines are repeated at regular intervals along a row or column, or show periodic gaps (e.g., every other cell colored)
+    - output grid contains new horizontal or vertical bars aligned with colored pixels in the input grid, possibly replacing single pixels with full-length bars
+    - lines are drawn from or to specific colored pixels and stop at another color, object, or grid boundary
+    - output grid contains lines that "navigate" around obstacles or change direction at the grid edge
+    - output grid shows objects with longer arms or bars than in the input, or arms extended from a central axis
+    - output grid contains new colored bars or lines at the center or top of rectangles or other shapes
+  implementation:
+    - draw the line pixel by pixel from the starting point, updating the position by the direction vector until the end point, grid edge, or stopping condition is met
+    - for lines spanning the grid, set length to grid height (vertical) or grid width (horizontal); for "to_edge", continue until the grid boundary
+    - use a loop to set each pixel along the line to the specified color; for step > 1, color every step-th pixel
+    - for diagonal lines, increment/decrement both x and y according to the direction
+    - for staircase or alternating patterns, update the direction and starting position as needed
+    - stop drawing if the next pixel is the stop_at_color, stop_at object, or if a custom stopping criteria is met
+    - for repeated lines at regular intervals, loop over offsets and call the line-drawing routine for each
+    - for vertical or horizontal bars, fix one coordinate and vary the other across the grid dimension
+    - to extend arms or bars, use the center or relevant object edge as the start and draw in each direction with the desired length
+    - for lines that must avoid obstacles, include logic to change direction or skip blocked positions
+    - return the last position reached (end_pixel) if further processing is needed
+- concept: slide object
+  description: moving an object in a specified direction step by step until a stopping condition is met
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - direction (type: object)
+    - stopping criteria (type: stopping criteria := Callable[[object, grid], bool])
+    - steps (type: int)
+  cues:
+    - If objects or structures in the input grid appear in the output grid shifted in a cardinal direction, often stopping just before contacting another object or the grid boundary.
+    - If movement is limited to a certain number of steps, or objects move stepwise in a direction until a condition is met (such as collision or reaching a target).
+    - If pixels or objects move in straight lines toward a target or region, with the output showing their new positions after such movement.
+  implementation:
+    - Move the object one step at a time in the specified direction, checking the stopping_criteria after each step; stop when the criteria is met or after the specified number of steps.
+    - Alternatively, consider all possible displacements in the direction and select the furthest valid position before a collision or boundary, according to the stopping_criteria.
+- concept: convert region grid to pixel grid
+  description: convert a grid of regions into a pixel grid where each pixel corresponds to a region
+  output_typing: grid
+  parameters:
+    - region_grid (type: list[list[grid]])
+    - color selection (type: color selection := Callable[[grid], color])
+  cues:
+    - Input grid contains a region grid, but output grid does not preserve the region grid structure.
+    - Output grid dimensions match the number of regions along each axis of the input region grid (i.e., one output pixel per region).
+    - Output pixel colors correspond to a representative color from each region in the input grid.
+  implementation:
+    - Create a new grid with the same dimensions as the region grid; for each region, use the color selection logic to determine a representative color (e.g., the color of the top-left pixel or the dominant/only color in the region) and assign it to the corresponding output pixel.
+- concept: draw expandable shape
+  description: draw a pattern on a grid, scaling it based on a specified factor
+  output_typing: grid
+  parameters:
+    - pattern (type: pattern := str | Callable[[int], grid])
+    - color (type: color)
+    - scale (type: int)
+    - grid (type: grid)
+  cues:
+    - if a region is extended from an edge or indicator pixel, with width or height matching another object's extent or extending to the grid border in a specific direction
+    - if output grid contains bars or rectangles extending from an object to the grid edge, with size determined by the object's dimensions
+  implementation:
+    - for a "rectangle_bar" pattern, create a rectangle of the appropriate width or height starting at the indicator and extending in the given direction to the grid edge; scale parameter determines the width (if extending horizontally) or height (if vertically)
+- concept: reflect object
+  description: reflect an object across a specified axis, updating the grid accordingly
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - axis (type: axis)
+    - mirror_axis (type: int | float)
+    - mirror_axis | position (type: int | float | position)
+  cues:
+    - if structures or objects in the input grid appear in the output grid with mirrored orientation
+    - if objects in the output are mirrored versions of input objects, especially when the axis of reflection is not always the grid center
+    - if reflection occurs relative to another object, such as a frame, guide, or adjacent colored pixel
+    - if the output grid contains repeated or tiled mirrored copies of an input object or region, possibly with different orientations (e.g., original, horizontally flipped, vertically flipped)
+    - if the solution tests for equality up to reflection
+    - if the axis of reflection is determined by the position of an indicator, marker, or is aligned with an object's edge
+    - if mirrored halves or regions are reflected before being placed or used to cover another region in the output
+  implementation:
+    - use np.flip for standard horizontal or vertical axis reflections
+    - calculate the mirror axis (line of symmetry) based on the position of a reference object, indicator, or specified coordinate
+    - for each pixel in the object, compute its reflected position across the specified axis and mirror_axis; for non-grid-aligned axes, perform custom coordinate transforms
+    - for grid-aligned axes, use np.flip; for arbitrary axes or positions, compute new coordinates manually
+    - reflect the object across the specified axis and position, ensuring placement aligns with the intended region or adjacent object
+- concept: crop around objects
+  description: create a new grid that is a contiguous sub region of the input grid, containing the minimum bounding box of the specified objects
+  output_typing: grid
+  parameters:
+    - objects (type: list[object])
+    - border (type: int)
+    - background (type: color)
+  cues:
+    - if the output grid is smaller than the input grid
+    - if the output grid contains only a subset of the objects in the input grid
+    - if the output grid is a contiguous subregion of the input grid, especially one corresponding to a single object, region of interest, frame, or container
+    - if a central pattern or minimal sprite is extracted from a larger grid for further manipulation
+    - if only the content of an object (without surrounding background) is drawn elsewhere in the output grid
+    - if patterns or objects are copied from the input grid but appear tightly cropped in the output
+    - if the output grid is a rectangle bounded by colored lines or a minimal bounding box containing a single object from the input grid
+    - if you need to extract the content of a region or square, ignoring divider lines or background
+  implementation:
+    - find the extrema for x and y coordinates of the specified objects and use them to slice the grid
+    - to remove a border, crop the bounding box of the object and then trim the specified number of pixels from each edge
+    - after cropping, optionally trim away a border of background color pixels or mask out pixels of the background color if specified
+    - to extract a sprite or region, crop the bounding box of the object, possibly by specifying (row, col, height, width)
+- concept: draw border outside
+  description: draw a border around the outside of an object
+  output_typing: grid
+  parameters:
+    - target (type: object)
+    - border color (type: color)
+  cues:
+    - if input objects appear with extra layer(s) of pixels around them in the output grid
+    - if a single pixel in the input grid is surrounded by a colored border in the output grid, with all other pixels set to background
+    - if the output grid contains a square or rectangular border centered on a unique pixel
+  implementation:
+    - identify outermost pixels of the object and color their empty neighbors to create the border
+    - for a border of width 1, create a 3x3 square centered at the target pixel and set the border pixels to the border color, using array slicing or coordinate offsets
+    - alternatively, draw a larger version of the object (including the border), then overwrite the original object pixels to preserve their color
+- concept: create square border
+  description: create a square border (frame) of a specified color centered at a given position, with a specified half-width
+  output_typing: grid
+  parameters:
+    - center (type: position)
+    - half_width (type: int)
+    - color (type: color)
+  cues:
+    - if output grid contains concentric square frames or borders centered on a point or object
+    - if there are repeated square outlines expanding from a central point
+    - if frames are always a fixed multiple of the object size (e.g., twice as large)
+  implementation:
+    - create a grid with pixels set to the color on the four sides of the square defined by center and half_width
+    - compute the side length as twice the object's size (or another scale factor), center the frame on the object, and set the border pixels to the specified color
+- concept: reflect pixel across axes
+  description: compute all positions obtained by reflecting a pixel across the specified axes through a given center
+  output_typing: list[position]
+  parameters:
+    - position (type: position)
+    - axes (type: list[axis])
+    - center (type: position)
+  cues:
+    - if output grid contains reflected copies of an object or pixel, especially around the center of a symmetric object
+    - if the output grid restores symmetry by mirroring pixels across an axis
+    - if pixels in the output grid appear in symmetric positions relative to an axis
+  implementation:
+    - for each axis, compute the reflected position with respect to the center; for multiple axes, produce all combinations
+- concept: draw objects
+  description: draw a list of objects onto a base grid, overlaying each object's pixels at their respective positions
+  output_typing: grid
+  parameters:
+    - objects (type: list[object])
+    - base (type: grid)
+    - positions (type: list[position])
+    - bounding_box_only (type: bool)
+  cues:
+    - if multiple objects are drawn onto a blank or new grid in the output
+    - if the output grid is constructed by overlaying recolored or transformed objects
+    - if the output grid is a minimal bounding rectangle containing all objects, with no empty space
+  implementation:
+    - for each object, draw its pixels onto the base grid at its position, possibly using the draw object routine
+    - if bounding_box_only is True, crop the output to the minimal rectangle containing all objects
+- concept: fill region
+  description: fill all pixels in a region or object with a specified color
+  output_typing: grid
+  parameters:
+    - region (type: grid | object)
+    - color (type: color)
+    - region | grid | object (type: grid | object)
+  cues:
+    - if regions, rows, or bars in the output grid are uniformly filled with a single color
+    - if the output grid shows regions recolored based on a property (e.g., size, count, or position)
+    - if a bar, region, or path is extended and filled with a color in the output grid
+    - if output grid shows new colored pixels extending from a base pixel, object, or along a sequence (path/trail)
+    - if the output grid is initialized as blank and then filled with colored pixels based on a count or property
+  implementation:
+    - set all pixels in the specified region, row, or path to the given color, optionally using array assignment or masking
+    - for each position along the intended region or path, set the pixel to the specified color if it matches a condition (e.g., is background), possibly using a loop until a stopping condition is met
+    - set the first N pixels (in a specified order, e.g., left-to-right, top-to-bottom) to the color, where N is determined by a count or property
+- concept: pathfinding with custom movement rules
+  description: find a path from a set of initial states to a goal state, expanding successors according to custom movement rules
+  output_typing: list[position]
+  parameters:
+    - initial_states (type: list[tuple[position, direction]])
+    - goal_criteria (type: Callable[[tuple[position, direction]], bool])
+    - successor_fn (type: Callable[[tuple[position, direction]], list[tuple[position, direction]]])
+  cues:
+    - output grid contains a path or trail connecting two objects or regions, especially with turns only at specific pixels
+    - movement is constrained by barriers or only allowed to turn at special markers
+    - path is colored in the output grid following a specific rule set
+    - process moves stepwise, changing direction only when blocked, and fills a path or region in the output grid
+  implementation:
+    - use BFS or DFS to explore possible states, expanding successors according to the movement rules
+    - maintain visited states to avoid cycles
+    - return the sequence of positions forming the path once a goal is reached
+- concept: scale object
+  description: scale an object by a given factor, enlarging or shrinking it proportionally along one or both axes
+  output_typing: object | grid
+  parameters:
+    - object (type: object)
+    - factor (type: int | tuple[int, int])
+  cues:
+    - if a small object in the input grid appears larger or smaller in the output, especially filling a frame or container
+    - if the output object is a scaled (enlarged or reduced) version of an input object, with regions that visually match the input but at a different size
+    - if each pixel or object in the input grid is replaced by a larger or smaller version in the output grid
+  implementation:
+    - use numpy.kron or similar functions to repeat the object's pixels according to the scaling factor
+    - for non-uniform scaling, repeat rows and columns separately based on the scaling factors for each axis
+    - ensure the scaled object fits within the intended container or frame in the output grid
+- concept: logical operation on corresponding pixels
+  description: create a new grid by applying a logical or arithmetic operation to corresponding pixels from multiple input grids
+  output_typing: grid
+  parameters:
+    - grids (type: list[grid])
+    - operation (type: Callable[[list[color]], color])
+  cues:
+    - if the output grid is the same shape as input regions and each pixel depends only on the corresponding pixels in the regions
+    - if the output grid is a logical combination (e.g., AND, OR, XOR, NOR, difference) of two regions
+    - if the output grid highlights differences or similarities between two regions or patterns
+  implementation:
+    - for each position, apply the operation to the list of pixel values from each grid at that position
+    - for difference or highlighting, set the output pixel to a special color if the inputs differ, and another color if they match
+- concept: copy grid
+  description: create a copy of a grid, often used as a base for further drawing or manipulation
+  output_typing: grid
+  parameters:
+    - grid (type: grid)
+  cues:
+    - if the output grid is initialized as a copy of a region or object from the input grid
+    - if further drawing or overlaying is performed on a grid that should preserve the original content
+  implementation:
+    - use numpy.copy or similar to duplicate the grid
+- concept: repeated translation
+  description: repeatedly translate an object by a fixed stride in a given direction and draw it onto the grid
+  output_typing: grid
+  parameters:
+    - object (type: object)
+    - start_position (type: position)
+    - direction (type: direction)
+    - stride (type: int)
+    - repetitions (type: int)
+    - base (type: grid)
+  cues:
+    - if output grid contains repeated, evenly spaced copies of an object in a straight line, diagonal, or other direction
+    - if an object is "stamped" multiple times in a regular pattern to fill a region, possibly with recoloring
+  implementation:
+    - for each repetition, compute the new position by adding stride * direction to the start position and draw the object at that position
+    - stop if the object would go out of bounds or overlap non-background pixels
+    - for diagonal translation, increment both row and column by the stride for each repetition
+- concept: repeat color sequence in rows
+  description: fill each row of a grid (starting from start_row) with colors from a sequence, cycling through the sequence as needed
+  output_typing: grid
+  parameters:
+    - grid (type: grid)
+    - start_row (type: int)
+    - color_sequence (type: list[color])
+  cues:
+    - if output grid rows are filled with a repeating or cyclical color pattern derived from an input row, such as lower rows matching the top row's color sequence
+  implementation:
+    - for each row starting from start_row, fill the row with color_sequence[i % len(color_sequence)]
+- concept: crop object
+  description: crop an object to its minimal bounding box, returning the cropped grid or object
+  output_typing: grid | object
+  parameters:
+    - object (type: object)
+    - background (type: color)
+  cues:
+    - if the output grid or a sprite is a tight crop of an object from the input grid
+    - if a region or subregion of the output grid is extracted for further manipulation, such as flipping, tiling, or other transformations
+    - if the output grid contains only the content inside a frame or border, possibly with the border width trimmed
+    - if a contiguous subregion of the input grid, bounded by lines, colored markers, or special pixels (e.g., vertical bars, corner markers), is used in the output
+  implementation:
+    - find the minimum and maximum x and y coordinates of the object's pixels and slice the grid accordingly
+    - allow specifying the crop region via bounding boxes, explicit coordinates, or by referencing special markers
+    - optionally mask out or ignore pixels of the background color if specified
+- concept: set pixel
+  description: set the color of a specific pixel in a grid, overwriting its previous value
+  output_typing: grid
+  parameters:
+    - grid (type: grid)
+    - position (type: position)
+    - color (type: color)
+  cues:
+    - if a single pixel is removed, recolored, or changed in the output grid
+    - if a specific pixel (such as a corner or center pixel) is missing, changed, or set to a specific color in the output
+    - if individual pixels are colored at computed positions, especially when expanding, growing, or restoring objects
+    - if the output grid contains new colored pixels at positions not present in the input
+  implementation:
+    - assign the specified color to the given position in the grid (e.g., grid[position] = color)
+- lower usage concepts: [complete partial sprite, create staircase pattern, shift pixel within object, delete object, slide from center, combine regions, concatenate grids, place object on opposite side, draw line until color, fill missing pattern pixels with divider color, create cross, create periodic hole pattern, create rectangle, alternating pattern stacking, shift object position, crop grid, copy rows, bottom row alignment, fill region with pattern by grid position, create_hollow_rectangle, rectangle shape, repeat pattern at periodic offsets, resize object, mask object, remove object, append row, extend colored segment, crop region between lines, flood fill alternating, combine objects, obstacle avoidance path, scale grid]
+
+## other routines
+### Callable[[object], int]
+### Callable[[tuple[position, direction]], list[tuple[position, direction]]]
+### color scheme
+- concept: fixed color mapping
+  description: use a fixed, predetermined mapping from original -> new color
+  output_typing: color
+  parameters:
+    - input (type: object)
+  implementation:
+    - assign colors to objects in the order determined by sorting or ranking
+### color selection
+- concept: pick only color from region
+  description: select the only non-background color present in a region; assumes the region contains exactly one color besides the background (e.g., black)
+  output_typing: color
+  parameters:
+    - region (type: grid)
+  implementation:
+    - Use np.unique to find colors in the region, exclude the background/divider color, and return the remaining color
+### intermediate
+- concept: extract objects
+  parameters:
+    - input grid (type: grid)
+    - single color (type: bool)
+    - connectivity (type: str)
+    - background color (type: str)
+    - criteria (type: selection criteria := Callable[[object], bool])
+- concept: filter objects
+  description: filter a list of objects based on some criteria
+  parameters:
+    - input objects (type: list[object])
+    - criteria (type: selection criteria := Callable[[object], bool])
+- concept: find object
+  description: find an object in a list of objects based on some criteria
+  parameters:
+    - input objects (type: list[object])
+    - criteria (type: selection criteria)
+- concept: split regions
+  output_typing: list[grid]
+  parameters:
+    - input grid (type: grid)
+    - splitting scheme (type: splitting scheme := str | Callable[[grid], list[grid]])
+- concept: get object holes
+  description: get the holes in an object, i.e. the empty spaces inside the object
+  output_typing: list[object]
+  parameters:
+    - object (type: object)
+  implementation:
+    - Use a background color mask to identify holes within the object if the background color is known.
+    - Alternatively, perform a flood fill from non-object pixels to determine if empty regions inside the object are not connected to the grid edge, indicating holes.
+- concept: direction between objects
+  description: determine the direction from one object to another, often used for sliding or moving objects towards a target
+  output_typing: direction
+  parameters:
+    - object1 (type: object)
+    - object2 (type: object)
+    - allowed_directions (type: list[direction])
+  implementation:
+    - can be applied to positions, such as using the mean position of colored pixels versus background pixels
+    - compute the vector from the source to the target and select the closest matching direction from allowed_directions
+- concept: split object
+  description: split an object into two parts based on a specified scheme
+  output_typing: list[object]
+  parameters:
+    - object (type: object)
+    - object splitting scheme (type: object splitting scheme := str | Callable[[object], list[object]])
+- concept: count objects
+  description: count the number of objects in a list, optionally filtering by criteria
+  output_typing: int
+  parameters:
+    - objects (type: list[object])
+    - criteria (type: selection criteria)
+    - by (type: str)
+  implementation:
+    - if by="color", count the number of objects for each color and return a dict mapping color to count
+    - can use collections.Counter or similar to tally counts by attribute
+- concept: unique colors
+  description: extract a list of unique colors from a grid
+  output_typing: list[color]
+  parameters:
+    - grid (type: grid)
+    - exclude (type: list[color])
+  implementation:
+    - use np.unique, then filter out excluded colors
+- concept: sort objects
+  description: sort a list of objects according to a key function, often used to order objects spatially
+  output_typing: list[object]
+  parameters:
+    - objects (type: list[object])
+    - key (type: Callable[[object], Any])
+    - reverse (type: bool)
+  implementation:
+    - use Python's sorted() with a lambda function extracting the relevant key (e.g., x or y coordinate, position tuple, size, area, count, or attribute)
+    - for diagonal ordering, use a lambda extracting the diagonal index (e.g., x+y or x-y)
+    - for left-to-right or top-to-bottom sorting, use a lambda extracting the object's minimum x or y coordinate (e.g., bounding box edge)
+    - for sorting by frequency or size, use the count or area as the key and set reverse=True for descending order if needed
+    - for top-left ordering, use a lambda extracting (y, x) from the object's position attribute
+    - set reverse=True to sort from largest to smallest (e.g., tallest to shortest, outermost to innermost)
+- concept: orientation detection
+  description: determine if a set of objects are all horizontal (height 1) or all vertical (width 1)
+  output_typing: Literal["horizontal", "vertical"]
+  parameters:
+    - objects (type: list[object])
+  implementation:
+    - check if all objects have height 1 (horizontal) or width 1 (vertical)
+    - check if all objects have the same x (vertical alignment) or y (horizontal alignment) coordinate
+- concept: is symmetric
+  description: check if a grid is symmetric (mirror symmetry) along a specified axis
+  output_typing: bool
+  parameters:
+    - grid (type: grid)
+    - axis (type: axis := Literal["horizontal", "vertical", "both", "diagonal", "rotational"])
+  implementation:
+    - compare the grid or object to its reflection along the specified axis using np.flip or similar
+    - for rotational symmetry, check if the object is invariant under 90/180/270 degree rotation using np.rot90 or equivalent
+- concept: detect translational symmetry
+  description: detect the translational symmetry transformation(s) present in a grid, optionally ignoring specified colors
+  output_typing: symmetry := Callable[[position], position]
+  parameters:
+    - grid (type: grid)
+    - ignore colors (type: list[color])
+    - direction (type: Literal["vertical", "horizontal"])
+    - background (type: color)
+  implementation:
+    - compare shifted versions of the grid, excluding ignored colors, to identify translation vectors that map the pattern onto itself
+    - use cross-correlation or brute-force shifting and comparison to detect repeating units
+    - for vertical or horizontal symmetry, specifically check for repeating rows or columns or objects at regular intervals in the specified direction
+- concept: orbit
+  description: compute the set of positions (the orbit) that a given position maps to under repeated application of a symmetry transformation
+  output_typing: list[position]
+  parameters:
+    - position (type: position)
+    - symmetry (type: symmetry := Callable[[position], position])
+    - order (type: int)
+  implementation:
+    - repeatedly apply the symmetry transformation to the position, collecting all unique positions until a cycle is detected or for a fixed number of steps (order)
+    - for each i in 0 to order-1, apply the symmetry transformation i times to the starting position and collect the results (e.g., for rotational symmetry, rotate the position by i * angle around the center)
+- concept: move position
+  description: compute the new position by moving from the given position in the specified direction by a given distance
+  output_typing: position
+  parameters:
+    - position (type: position)
+    - direction (type: direction := Literal["up", "down", "left", "right"])
+    - distance (type: int)
+  implementation:
+    - update the position coordinates according to the direction and distance (e.g., for "up", subtract from row index; for "right", add to column index)
+    - for each direction and distance, add the direction vector multiplied by the step to the starting position
+- concept: bounding box corners
+  description: compute the four corner positions of the bounding box of an object
+  output_typing: list[position]
+  parameters:
+    - object (type: object)
+  implementation:
+    - find min and max x and y coordinates among the object's pixels to determine the four corners
+    - can be used to extract the color of a corner pixel for use in recoloring
+- concept: get mirror axis
+  description: compute the coordinate of the mirror axis (line of symmetry) for reflection, based on the frame and the object's position
+  output_typing: int | float
+  parameters:
+    - frame (type: object)
+    - object (type: object)
+    - orientation (type: Literal["horizontal", "vertical"])
+    - reference (type: object)
+  implementation:
+    - For vertical or horizontal orientation, determine the mirror axis coordinate (row or column) based on the object's position relative to the frame or indicator; this may be just beyond the object's edge closest to the indicator or relative to the frame's center.
+    - Compare the object's position to the frame's center or to the indicator's position to determine the correct side and select the appropriate axis and coordinate for reflection.
+- concept: count pixels
+  description: count the number of pixels of a specific color within an object
+  output_typing: int
+  parameters:
+    - object (type: object)
+    - color (type: color)
+    - color | criteria (type: color | Callable[[color], bool])
+  implementation:
+    - count the number of pixels in the object's mask or region that match the specified color or satisfy the given criteria; for regions, count pixels not equal to the background or divider color; can use np.sum or boolean masks for implementation
+- concept: all positions
+  description: generate all possible positions where an object can be placed within a container such that it fits entirely inside
+  output_typing: list[position]
+  parameters:
+    - container (type: object)
+    - object (type: object)
+    - grid (type: grid)
+  implementation:
+    - slide the object's bounding box over all positions where it remains within the container's bounding box, typically using nested loops over the grid's shape to yield all (row, col) positions
+- concept: reverse direction
+  description: compute the opposite of a given direction (e.g., reverse("down-right") -> "up-left")
+  output_typing: direction
+  parameters:
+    - direction (type: direction := Literal["up-right", "down-right", "up-left", "down-left", "up", "down", "left", "right"])
+  implementation:
+    - map each direction to its reverse (e.g., "up-right" <-> "down-left", "up" <-> "down", "left" <-> "right")
+    - reverse the x component for horizontal bounces and the y component for vertical bounces
+- concept: region size
+  description: compute the area (number of pixels) of a region
+  output_typing: int
+  parameters:
+    - region (type: grid)
+  implementation:
+    - count the number of non-background pixels in the region, e.g., using np.sum(region != background_color)
+- concept: center
+  description: compute the center position of an object, optionally restricted to pixels of a specified color or color predicate
+  output_typing: position
+  parameters:
+    - object (type: object | grid)
+    - color (type: color | Callable[[color], bool])
+  implementation:
+    - if color is specified, only consider pixels matching the color (or those selected by the predicate)
+    - compute the center by averaging the x and y coordinates of the selected pixels (center of mass)
+- concept: get neighbor pixel
+  description: get the neighboring pixel or position in a specified direction
+  output_typing: object | position
+  parameters:
+    - pixel (type: object | position)
+    - direction (type: direction := Literal["up", "down", "left", "right", "up-right", "up-left", "down-right", "down-left"])
+  implementation:
+    - add the direction offset to the pixel's coordinates
+- concept: select every nth element
+  description: select every nth element from a sequence, optionally starting at a given offset
+  output_typing: list[Any]
+  parameters:
+    - sequence (type: list[Any])
+    - n (type: int)
+    - offset (type: int)
+  implementation:
+    - {'use Python slicing': 'sequence[offset::n]'}
+- concept: find color
+  description: find a color in the grid that matches a given criteria, such as being the only color in a row or column, or not equal to another color
+  output_typing: color
+  parameters:
+    - grid (type: grid)
+    - criteria (type: selection criteria := Callable[[color], bool])
+  implementation:
+    - for each unique color in the grid, check if it satisfies the provided criteria function
+    - to find a bar or divider color, check for any row or column where all pixels are equal and use that color
+    - to find a background color, select any color in the grid that is not the bar or divider color
+    - to identify a color used for uninterrupted lines, check if a color forms continuous rows or columns
+- concept: diagonal neighbors
+  description: get the neighboring pixels in all four diagonal directions from a given position
+  output_typing: list[object] | list[position]
+  parameters:
+    - position (type: position)
+    - grid (type: grid)
+  implementation:
+    - for a given (x, y), diagonal neighbors are at (x-1, y-1), (x-1, y+1), (x+1, y-1), (x+1, y+1)
+    - ensure neighbor positions are within grid bounds before accessing or modifying them
+- concept: within bounds
+  description: check if a given position is within the valid bounds of the grid
+  output_typing: bool
+  parameters:
+    - position (type: position)
+    - grid (type: grid)
+  implementation:
+    - check that 0 <= x < grid width and 0 <= y < grid height
+- concept: count neighbors in object
+  description: count the number of neighboring pixels of the given object that are also part of the reference object, using the specified connectivity
+  output_typing: int
+  parameters:
+    - object (type: object)
+    - reference_object (type: object)
+    - connectivity (type: int)
+    - criteria (type: Callable[[object], bool])
+  implementation:
+    - for each pixel in the object, check all neighbors (according to connectivity) and count how many are in the reference object's pixel set and satisfy the criteria
+    - sum across all pixels in the object if it is more than a single pixel
+    - for noise removal, use a criteria that excludes background color (e.g., is_not_color(black))
+- concept: argmax
+  description: select the element from a sequence that yields the maximum value according to the key function
+  output_typing: Any
+  parameters:
+    - sequence (type: list[Any])
+    - key (type: Callable[[Any], Any])
+  implementation:
+    - use Python's max() function with the key argument to select the element with the maximum value according to the provided key function
+- concept: positions_where
+  description: get the list of positions in an array where a condition holds (e.g., where a mask is True)
+  output_typing: list[tuple[int, int]]
+  parameters:
+    - condition (type: ndarray[bool] | Callable[[Any], bool])
+  implementation:
+    - use numpy's np.argwhere or np.where to get positions matching the condition
+- concept: unique
+  description: extract unique elements from a sequence, preserving order
+  output_typing: list[Any]
+  parameters:
+    - sequence (type: list[Any])
+  implementation:
+    - use a set to track seen elements and filter duplicates while preserving the original order of the sequence
+- concept: period detection
+  description: determine the period (height or width) of a repeating pattern in the grid, i.e., the minimal size such that the grid is composed of repeated copies of a sprite (possibly with symmetry)
+  output_typing: int
+  parameters:
+    - grid (type: grid)
+    - axis (type: axis := Literal["horizontal", "vertical"])
+  implementation:
+    - For each possible period, partition the grid along the specified axis and check if all regions are identical, allowing for possible reflection symmetry.
+    - Utilize shape matching and reflection operations to account for symmetric repetitions.
+- concept: centered at
+  description: compute the upper-left anchor position for overlaying a pattern so that its center aligns with a specified position
+  output_typing: position
+  parameters:
+    - center_pos (type: position)
+    - overlay_shape (type: dimensions := tuple[int, int])
+  implementation:
+    - subtract half the overlay's height and width (using integer division) from the center position to get the anchor
+- concept: count
+  description: count the number of elements in a sequence; can be used to count unique colors, objects, etc.
+  output_typing: int
+  parameters:
+    - sequence (type: list[Any])
+  implementation:
+    - use len() on the sequence
+- concept: most common color
+  description: find the color that appears most frequently in the grid, typically used as the background color
+  output_typing: color
+  parameters:
+    - grid (type: grid)
+  implementation:
+    - use numpy or collections.Counter to count color frequencies and select the most common color
+- concept: object_area
+  description: compute the area (number of pixels) of an object, often used for sorting or ranking objects by size
+  output_typing: int
+  parameters:
+    - object (type: object)
+  implementation:
+    - count the number of non-background pixels in the object's mask or region
+- concept: find row
+  description: find the index of a row in the grid that matches a given criteria (e.g., all pixels are a specific color)
+  output_typing: int
+  parameters:
+    - grid (type: grid)
+    - criteria (type: selection criteria := Callable[[object], bool])
+  implementation:
+    - iterate over rows and apply the criteria; return the index of the matching row
+- concept: compute orbit
+  description: compute the set of positions that a given position maps to under repeated application of a symmetry transformation, restricted to a grid's bounds
+  output_typing: list[position]
+  parameters:
+    - position (type: position)
+    - symmetry (type: symmetry := Callable[[position], position])
+    - grid (type: grid)
+  implementation:
+    - repeatedly apply the symmetry transformation to the starting position, collecting all unique positions within the grid until a cycle is detected or a position goes out of bounds
+- concept: get row
+  description: extract the sequence of colors from a specified row in the grid
+  output_typing: list[color]
+  parameters:
+    - grid (type: grid)
+    - row (type: int)
+  implementation:
+    - use grid[row] to extract the row as a list or array
+- concept: bounding box
+  description: compute the minimal rectangle containing all specified objects
+  output_typing: grid | object
+  parameters:
+    - objects (type: list[object])
+  implementation:
+    - find the minimum and maximum x and y coordinates among all object pixels to define the bounding box, then slice the grid accordingly
+- concept: diagonal direction
+  description: determine the diagonal direction(s) for line drawing, often used to extend patterns along both diagonals
+  output_typing: direction := Literal["up-right", "down-right", "up-left", "down-left"]
+  parameters:
+    - object (type: object)
+  implementation:
+    - {'represent diagonal directions using direction vectors': '(1,1), (1,-1), (-1,1), (-1,-1) corresponding to up-right, down-right, up-left, and down-left'}
+- concept: edge pixels
+  description: extract all pixel objects in a grid of a given color that are located on the edge of the grid
+  output_typing: list[object]
+  parameters:
+    - grid (type: grid)
+    - color (type: color)
+    - object (type: object)
+  implementation:
+    - for each pixel in the grid or object, if its color matches and its position is on the grid edge, or if any neighboring position is not part of the object, include it as an edge pixel
+### misc
+- concept: in bounds
+  description: check if a given position is within the valid bounds of the grid
+  output_typing: bool
+  parameters:
+    - position (type: position)
+    - grid_shape (type: tuple[int, int])
+  implementation:
+    - check that 0 <= y < grid_shape[0] and 0 <= x < grid_shape[1] before assigning or accessing a grid position
+### object splitting scheme
+### selection criteria
+- concept: shape match criteria
+  description: condition on whether an object matches the other shape
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - other (type: shape)
+    - size (type: dimensions := tuple[int, int])
+    - allow_scale (type: bool)
+    - allow_partial (type: bool)
+  implementation:
+    - compare the object's bounding box dimensions or aspect ratio to the given size or shape
+    - for allow_scale, check if one shape is an integer multiple of the other in both dimensions
+    - for allow_partial, ignore pixels that are off-grid when comparing shapes
+- concept: is color criteria
+  description: condition on whether an object is a given color
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - color (type: color)
+- concept: size criteria
+  description: condition on whether an object meets a size criteria (numerical comparison on object size against some other value)
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - comparison operator (type: comparison operator := Literal["==", "!=", "<", "<=", ">", ">="])
+    - comparison value (type: int)
+  implementation:
+    - compare the object's size attribute (such as area or pixel count) to the given value using the specified operator
+- concept: has color criteria
+  description: condition on whether a target object's colors include a given color
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - color (type: color)
+- concept: contact criteria
+  description: condition on whether an object is in contact with another object, i.e. they share a pixel or edge
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - other (type: object)
+    - background (type: color)
+  implementation:
+    - check if the moved object is adjacent to or overlapping the target object after each step
+    - for each pair of objects, check if their pixel sets are adjacent or overlap (using 4-way or 8-way connectivity as appropriate), ignoring background color
+    - can use connected components labeling to see if two regions are part of the same component
+- concept: on edge criteria
+  description: check if target object is on the edge of a parent object or grid
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - parent (type: grid | object)
+  implementation:
+    - for grid, check if object's pixel positions coincide with the border (i.e., row or column index is 0 or at max index)
+- concept: has shape criteria
+  description: condition on whether an object has the specified shape (height, width)
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - shape (type: dimensions := tuple[int, int])
+  implementation:
+    - compare the object's bounding box dimensions to the given shape
+- concept: not_in criteria
+  description: condition on whether a pixel's color is not in a list of excluded colors
+  output_typing: bool
+  parameters:
+    - color (type: color)
+    - exclude (type: list[color])
+  implementation:
+    - return True if color not in exclude
+- concept: is line criteria
+  description: condition on whether an object is a line (i.e., height 1 or width 1), optionally with a specified orientation
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - orientation (type: Literal["horizontal", "vertical"])
+  implementation:
+    - determine if the object's height is 1 (for horizontal) or width is 1 (for vertical)
+    - if orientation is specified, check only the corresponding dimension; otherwise, check if either dimension is 1
+- concept: is inside object
+  description: check if a given position is inside the specified object
+  output_typing: bool
+  parameters:
+    - position (type: position)
+    - object (type: object)
+  implementation:
+    - check if the position is in the object's pixel set or mask
+- concept: all pixels are color criteria
+  description: condition on whether all pixels in an object are of the specified color
+  output_typing: bool
+  parameters:
+    - target (type: object)
+    - color (type: color)
+  implementation:
+    - check if all pixels in the object's mask or region are equal to the specified color
+- concept: is on bounding box edge criteria
+  description: check if a pixel is on the edge of a bounding box (e.g., to identify the opening of a container)
+  output_typing: bool
+  parameters:
+    - position (type: position)
+    - bounding_box (type: object)
+  implementation:
+    - compare the pixel's coordinates to the min/max x and y of the bounding box
+- concept: not
+  description: returns a selection criteria that negates the result of another criteria
+  output_typing: Callable[[object], bool]
+  parameters:
+    - criteria (type: Callable[[object], bool])
+  implementation:
+    - return a function that returns not criteria(target)
+### splitting scheme
+- concept: split on divider lines
+  description: identify lines that divide the grid into regions, extract these regions
+  output_typing: list[grid]
+  parameters:
+    - grid (type: grid)
+    - divider_color (type: color)
+  implementation:
+    - identify continuous lines of the divider color that span the grid and use them to slice the grid into regions via array slicing
+- concept: split region grid
+  description: split grid into a grid of regions
+  output_typing: list[list[grid]]
+  parameters:
+    - input grid (type: grid)
+  implementation:
+    - use divider lines and array slicing to extract regions from the grid
+### stopping criteria
+- concept: collision criteria
+  description: detects a collision when an object is in contact with another object in the direction of movement
+  output_typing: bool
+  parameters:
+    - object (type: object)
+    - grid (type: grid)
+    - other (type: object)
+  implementation:
+    - check if the object is adjacent to the specified target object in the movement direction after each step
+- lower usage concepts: [diagonal order, custom successors, pattern-to-color mapping, remove consecutive duplicates, distance, bounding box center, mean position, detect mirror symmetry, red pixels, find farthest border pixel, get diagonal direction, interpolate paths, alternating color pattern, decrementing length pattern, is in bounds, opposite direction, frame size proportional to object, get endpoints, reflect direction, which side of rectangle hit, plugged pixel count, all valid positions, anchor position for centered overlay, sliding window, midpoint between, bottom left position, edges of object, stride for translation, map object corner to output, max, color exclusion, find unique color, find column, find background color, rotate direction, enumerate nonoverlapping placements, count empty pixels, arrange regions as grid, position_along_axis, find pixels, get edge pixel, combinations, generate rectangles, unique color, lowest row below, grid edges, find rectangles from corners, next pixel in direction, horizontal_towards, vertical_towards, find extremal points, distance to grid edge, all pairs, cells between, find divider line color, transpose, count shape features, map value, find mirror symmetry, argmax_displacement, displacement_direction, displacement_magnitude, detect rotational symmetry, rightmost pixel, aligned_inside, min_distance, other_indicator, find pixel, generate all rotations and flips, all positions within grid, find direction from opening, indicator color, indicator region size, position, axis_perpendicular_to, adjusted position, orthogonal neighbors, find edge with color, get flow direction, get push direction, split cross, split_vertical_center, split_horizontal_center, split into quadrants, inside container criteria, new pixels criteria, alignment criteria, border fits within grid, border is redundant, has mirror symmetry criteria, pixel has neighbor in direction criteria, closest to criteria, has hole criteria, pixel is inside grid criteria, contains color criteria, is blank criteria, is opposite edge criteria, is adjacent criteria, is between objects, all pixels equal in row or column criteria, not equal criteria, is_not_color, vertical line beneath object criteria, odd-one-out region, is_aligned, has only one nonblack color, is hollow rectangle, has grey adjacent to corners, is filled rectangle, not_equal, full_overlap, occurs_exactly_once, color match at overlap criteria, all_pixels_not_in criteria, is_inside_container criteria, is shape square, all_nonblack_pixels, is_touching, stopping criteria, no collision with, stop at non-black]
