@@ -1,0 +1,78 @@
+Here's the implementation for the puzzle based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider lines, region extraction, array slicing
+
+# description:
+# The input is a grid potentially divided into distinct regions by horizontal or vertical lines of a specific color.
+# Identify these divider lines and use them to segment the grid into separate regions.
+# Each region is extracted as a subgrid, excluding the divider lines themselves.
+# The output is a list of these subgrids, preserving their original content and relative order.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Find the divider color, which is the color that forms complete horizontal or vertical lines
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            color = input_grid[i, j]
+            if np.all(input_grid[i, :] == color) or np.all(input_grid[:, j] == color):
+                divider_color = color
+                break
+    assert divider_color is not None, "No divider color found"
+
+    # Find the indices of the horizontal and vertical divider lines
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == divider_color)]
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == divider_color)]
+
+    # Add boundaries for easier slicing
+    horizontal_dividers = [-1] + horizontal_dividers + [input_grid.shape[1]]
+    vertical_dividers = [-1] + vertical_dividers + [input_grid.shape[0]]
+
+    # Extract subgrids excluding divider lines
+    subgrids = []
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            x1, x2 = vertical_dividers[i] + 1, vertical_dividers[i + 1]
+            y1, y2 = horizontal_dividers[j] + 1, horizontal_dividers[j + 1]
+            subgrid = input_grid[x1:x2, y1:y2]
+            if subgrid.size > 0:
+                subgrids.append(subgrid)
+
+    return subgrids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(width, height))
+
+    # Randomly select a color to be the divider color
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly decide the number of horizontal and vertical dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    # Place the horizontal and vertical dividers
+    horizontal_indices = randomly_spaced_indices(max_len=height, n_indices=num_horizontal_dividers, border_size=1, padding=1)
+    vertical_indices = randomly_spaced_indices(max_len=width, n_indices=num_vertical_dividers, border_size=1, padding=1)
+
+    for y in horizontal_indices:
+        grid[:, y] = divider_color
+    for x in vertical_indices:
+        grid[x, :] = divider_color
+
+    return grid
+```
+
+### Implementation Details
+- **Divider Identification**: The `main` function first identifies the color used for the complete horizontal or vertical lines, which serve as dividers.
+- **Region Extraction**: After identifying the divider lines, the grid is segmented into regions by slicing between these dividers.
+- **Output Construction**: Each region is extracted as a subgrid and collected into a list. This list forms the output.
+- **Stochastic Input Generation**: `generate_input` creates a random grid with randomly placed divider lines to ensure varied inputs.
+- **Preservation of Order**: Both the extraction and listing of subgrids maintain the original order of regions as they appear in the grid.

@@ -1,0 +1,86 @@
+Let's create a new puzzle involving object movement, grid update, erase, and redraw. We'll implement the functions `main` and `generate_input`. The goal is to identify an object within a grid, erase it, and redraw it at a specified target position without causing any overlap with existing non-background pixels.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# Identify a single object within the grid and a target position. Remove the object from its original location by erasing its pixels.
+# Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels.
+# The grid is updated to reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect all objects in the input grid.
+    # 2. Choose one object to move and determine its current position.
+    # 3. Determine a random free target position on the grid for the object.
+    # 4. Erase the object from its current position.
+    # 5. Redraw the object at the target position, ensuring no overlap with existing objects.
+
+    # Step 1: Detect objects
+    objects = detect_objects(input_grid, background=Color.BLACK, monochromatic=False, connectivity=8)
+
+    # Assume we are moving the first detected object for simplicity
+    object_to_move = objects[0]
+
+    # Step 2: Determine current position
+    x_current, y_current = object_position(object_to_move, background=Color.BLACK)
+
+    # Step 3: Determine a random free target position
+    sprite = crop(object_to_move, background=Color.BLACK)
+    x_target, y_target = random_free_location_for_sprite(input_grid, sprite, padding=0, background=Color.BLACK)
+
+    # Step 4: Erase the object from its current position
+    # Create a copy of the grid to work on
+    output_grid = np.copy(input_grid)
+    for x, y in np.argwhere(object_to_move != Color.BLACK):
+        output_grid[x + x_current, y + y_current] = Color.BLACK
+
+    # Step 5: Redraw the object at the target position
+    blit_sprite(output_grid, sprite, x_target, y_target, background=Color.BLACK)
+    
+    return output_grid
+
+
+def generate_input():
+    # Generate a random grid with a few non-overlapping objects
+    n, m = 15, 15  # grid size
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate a random number of objects
+    num_objects = np.random.randint(2, 5)
+    
+    for _ in range(num_objects):
+        # Generate a random object (sprite)
+        sprite_size = np.random.randint(3, 6)
+        sprite = random_sprite(sprite_size, sprite_size, color_palette=Color.NOT_BLACK, background=Color.BLACK)
+        
+        # Place the sprite on the grid, ensuring it doesn't overlap with existing objects
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, background=Color.BLACK)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no space is found, try creating a smaller object
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+- **Main Function:**
+  - Detects all objects in the input grid using `detect_objects`.
+  - Chooses one object to move (for simplicity, the first detected object).
+  - Determines the current position of the object.
+  - Finds a random free position to move the object without overlapping existing objects using `random_free_location_for_sprite`.
+  - Erases the object from its current position.
+  - Redraws the object at the target position using `blit_sprite`.
+
+- **Generate Input Function:**
+  - Randomly creates a grid of size 15x15 with a few randomly generated non-overlapping objects.
+  - Uses `random_sprite` to create random object shapes and `random_free_location_for_sprite` to ensure they don't overlap when placed on the grid.

@@ -1,0 +1,81 @@
+Here's an implementation of the described puzzle, where we fill enclosed holes in a guide object using a target object:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole filling, guide object, target object, enclosed regions, non-overlapping placement
+
+# description:
+# The input consists of a guide object with enclosed holes and a separate target object.
+# The goal is to fill the interior holes within the guide object (regions not connected to the border) with the target object.
+# The target object should be fitted into the hole geometry without overlapping existing non-background pixels.
+# Filling continues until all holes are filled or no more legal placements are possible.
+# The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+def main(input_grid):
+    # Extract the guide object and target object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+    guide_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))  # Assume largest object is the guide
+    target_object = min(objects, key=lambda obj: np.sum(obj != Color.BLACK))  # Assume smallest object is the target
+
+    # Create an output grid that starts as a copy of the input grid
+    output_grid = input_grid.copy()
+
+    # Find the interior holes in the guide object
+    interior_mask = object_interior(guide_object, background=Color.BLACK)
+    holes = np.argwhere(interior_mask & (guide_object == Color.BLACK))
+
+    # Attempt to fill each hole with the target object
+    for x, y in holes:
+        try:
+            # Try to place the target object at this hole location
+            blit_sprite(output_grid, target_object, x, y, background=Color.BLACK)
+            # If blit is successful, mark this hole as filled
+            for i in range(target_object.shape[0]):
+                for j in range(target_object.shape[1]):
+                    if target_object[i, j] != Color.BLACK:
+                        interior_mask[x+i, y+j] = False
+        except ValueError:
+            # If placement isn't possible, move to the next hole
+            continue
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random size
+    width = np.random.randint(10, 20)
+    height = np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Create a guide object with enclosed holes
+    guide_object = random_sprite(np.random.randint(5, 10), np.random.randint(5, 10), density=0.8, color_palette=[Color.BLUE], background=Color.BLACK)
+    guide_object = np.pad(guide_object, 2, constant_values=Color.BLACK)  # Pad to ensure it's fully enclosed
+    x, y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    blit_sprite(grid, guide_object, x, y)
+
+    # Create a target object
+    target_object = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), density=0.5, color_palette=[Color.RED], background=Color.BLACK)
+    x, y = random_free_location_for_sprite(grid, target_object, padding=1)
+    blit_sprite(grid, target_object, x, y)
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts and Description**: This puzzle involves detecting enclosed holes within a guide object and filling them with a separate target object. The process involves finding connected components, identifying interior regions, and placing objects without overlaps.
+
+2. **`main` Function**: 
+   - Extracts the guide and target objects from the input grid.
+   - Identifies interior holes in the guide object that are not connected to the border.
+   - Attempts to fill these holes with the target object, checking for potential placements without overlaps.
+
+3. **`generate_input` Function**:
+   - Randomly creates a guide object with potential interior holes.
+   - Randomly creates a target object smaller than the guide object.
+   - Places both objects onto the input grid.
+
+This puzzle encourages students to think about spatial placement and object filling in a constrained environment.

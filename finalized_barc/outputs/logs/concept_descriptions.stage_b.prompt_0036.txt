@@ -1,0 +1,526 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+line drawing, pixel connectivity, grid update
+
+Description: 
+Given a grid with two distinct pixels marked as start and end, draw a straight line connecting these two pixels. Use Bresenham's line algorithm to determine the path of the line. Update the grid by coloring each pixel along the path with a specified line color. All other pixels in the grid remain unchanged.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def object_position(obj, background=Color.BLACK, anchor='upper left'):
+    """
+    (x,y) position of the provided object. By default, the upper left corner.
+
+    anchor: "upper left", "upper right", "lower left", "lower right", "center", "upper center", "lower center", "left center", "right center"
+
+    Example usage:
+    x, y = object_position(obj, background=background_color, anchor="upper left")
+    middle_x, middle_y = object_position(obj, background=background_color, anchor="center")
+    """
+
+def object_colors(obj, background=Color.BLACK):
+    """
+    Returns a list of colors in the object.
+
+    Example usage:
+    colors = object_colors(obj, background=background_color)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# lines, intersection
+
+# description:
+# In the input, you will see a grid with a single orange pixel and a single teal pixel.
+# To make the output, draw an orange vertical line and an orange horizontal line that intersect at the orange pixel, and draw a teal vertical line and a teal horizontal line that intersect at the teal pixel. The lines should go from edge to edge of the grid.
+# Lastly, draw a red pixel where the teal and orange lines intersect.
+
+def main(input_grid):
+    # make output grid
+    output_grid = np.copy(input_grid)
+
+    # get the index of the orange pixel
+    orange = np.where(input_grid == Color.ORANGE)
+    x, y = orange[0][0], orange[1][0]
+
+    # get the index of the teal pixel
+    teal = np.where(input_grid == Color.TEAL)
+    x2, y2 = teal[0][0], teal[1][0]
+
+    # draw lines from one edge of the grid through the orange and teal pixels and across to the other edge of the grid:
+    # draw orange vertical line
+    output_grid[x, :] = Color.ORANGE # Can also use draw_line(output_grid, x, 0, length=None, color=Color.ORANGE, direction=(0, 1))
+    # draw orange horizontal line
+    output_grid[:, y] = Color.ORANGE # Can also use draw_line(output_grid, 0, y, length=None, color=Color.ORANGE, direction=(1, 0))
+    # draw teal vertical line
+    output_grid[x2, :] = Color.TEAL # Can also use draw_line(output_grid, x2, 0, length=None, color=Color.TEAL, direction=(0, 1))
+    # draw teal horizontal line
+    output_grid[:, y2] = Color.TEAL # Can also use draw_line(output_grid, 0, y2, length=None, color=Color.TEAL, direction=(1, 0))
+    
+
+    # draw both intersection points
+    output_grid[x, y2] = Color.RED
+    output_grid[x2, y] = Color.RED
+
+    return output_grid
+
+def generate_input():
+    # make a 9x9 black grid for the background
+    n = m = 9
+    grid = np.zeros((n,m), dtype=int)
+
+    # put an orange pixel at a random point on the grid
+    x, y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[x,y] = Color.ORANGE
+
+    # put a teal pixel at a random point on the grid but not in the same row or column as the orange pixel
+    x2, y2 = np.random.randint(0, n), np.random.randint(0, m)
+    while x2 == x or y2 == y:
+        x2, y2 = np.random.randint(0, n), np.random.randint(0, m)
+    grid[x2,y2] = Color.TEAL
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+import time
+
+# concepts:
+# path finding
+
+
+# description:
+# In the input you will see teal pixels and a short green line and a short red line.
+# Find a path starting from the green line and ending at the red line and color that path green, with the following constraints:
+# You can't go through a teal pixel; you can only change direction when you hit a teal pixel; you have to start in the direction of the green line.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the start and end points of the pathfinding problem
+    # 2. Define the state space, initial state(s), successor function, and goal test
+    # 3. Run bfs to find the shortest path from start to end
+    # 4. Color the path green
+
+    # 1. Parse the input, based on color
+    # There is the start object, end object, and barriers object
+    background = Color.BLACK
+    start_object = input_grid.copy()
+    start_object[start_object != Color.GREEN] = background
+    end_object = input_grid.copy()
+    end_object[end_object != Color.RED] = background
+    barriers_object = input_grid.copy()
+    barriers_object[barriers_object != Color.TEAL] = background
+
+    # Determine the orientation of the start object
+    x_coordinates = {x for x, y in np.argwhere(start_object == Color.GREEN)}
+    y_coordinates = {y for x, y in np.argwhere(start_object == Color.GREEN)}
+    # vertical line?
+    if len(x_coordinates) == 1:
+        possible_orientations = [(0, 1), (0, -1)]
+    # horizontal line?
+    elif len(y_coordinates) == 1:
+        possible_orientations = [(1, 0), (-1, 0)]
+    else:
+        assert False, "Start object is not horizontal/vertical"
+    
+    # 2. Define the state space, initial state(s), successor function, and goal test
+    # A state is a tuple of (x, y, orientation)
+    # orientation is a tuple of (dx, dy)
+        
+    # Initially we begin at a point on the line, along the orientation of the line
+    initial_states = [(x, y, orientation)
+                      for x, y in np.argwhere(start_object == Color.GREEN)
+                      for orientation in possible_orientations]
+    
+
+    def successors(state):
+        x, y, orientation = state
+        dx, dy = orientation
+
+        if not (0 <= x + dx < input_grid.shape[0] and 0 <= y + dy < input_grid.shape[1]):
+            return
+
+        if barriers_object[x + dx, y + dy] == background:
+            yield (x + dx, y + dy, orientation)
+        if barriers_object[x + dx, y + dy] != background:
+            # right angle turns
+            new_orientations = [(dy, dx), (-dy, -dx)]
+            for new_orientation in new_orientations:
+                yield (x, y, new_orientation)
+    
+    def is_goal(state):
+        x, y, (dx, dy) = state
+        if not (0 <= x + dx < end_object.shape[0] and 0 <= y + dy < end_object.shape[1]):
+            return False
+        return end_object[x + dx, y + dy] == Color.RED
+    
+    # 3. Run bfs to find the shortest path from start to end
+    queue = list(initial_states)
+    visited = set(initial_states)
+    parent = {}
+    while queue:
+        state = queue.pop(0)        
+        if is_goal(state):
+            break        
+        for successor in successors(state):
+            if successor not in visited:
+                visited.add(successor)
+                parent[successor] = state
+                queue.append(successor)
+
+    assert is_goal(state), "No path found"
+    
+    path = []
+    while state in parent:
+        path.append(state)
+        state = parent[state]
+
+    # 4. Color the path green
+    # draw on top of the input grid
+    output_grid = input_grid.copy()
+    for x, y, _ in path:
+        output_grid[x, y] = Color.GREEN
+
+    return output_grid
+
+def generate_input():
+    # We want to first generate a successful path and add some noise teal pixels.
+    # Finally, we will remove the intermediate pixels in the path.
+    # Because the problem never uses the color 42, we will draw the path in that color, but finally erase it before returning the grid.
+
+    # Initialize grid
+    n = random.randint(14, 20)
+    grid = np.zeros((n, n), dtype=int)
+
+    # Generate start sprite, making it vertical (1x2 dimensions). We will rotate the final grid randomly to get a variety of orientations.
+    start_sprite = random_sprite(1, 2, density=1, color_palette=[Color.GREEN])
+
+    # Draw start sprite
+    start_x, start_y = random_free_location_for_sprite(grid, start_sprite, border_size=4)
+    blit_sprite(grid, start_sprite, start_x, start_y)
+
+    # Make a random path from the start to the end, leaving color 42 along the path, and leaving teal pixels at each turn
+    x,y = start_x, start_y-1
+    orientation = (0, -1)
+    target_length = random.randint(10, 20)
+    for _ in range(target_length):
+        # Draw the path
+        grid[x, y] = 42        
+
+        if random.random() < 0.2:
+            # right angle turn
+            dx, dy = orientation
+            new_orientation = random.choice([(dy, dx), (-dy, -dx)])
+            grid[x+dx, y+dy] = Color.TEAL
+            orientation = new_orientation
+        
+        dx, dy = orientation
+        x += dx
+        y += dy
+
+        if x < 0 or x >= n or y < 0 or y >= n: return generate_input()
+    
+    # Color the ending red
+    grid[x, y] = Color.RED
+    grid[x-dx, y-dy] = Color.RED
+
+    # randomly sprinkle teal in unoccupied locations
+    for x, y in np.argwhere(grid == Color.BLACK):
+        if random.random() < 0.3:
+            grid[x, y] = Color.TEAL
+
+    # Replace the path with black
+    grid[grid == 42] = Color.BLACK
+
+    # Randomly rotate
+    grid = np.rot90(grid, k=random.randint(0, 3))
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# growing
+
+# description:
+# In the input you will see a grid with some green rectangles. Each rectangle has one red pixel on one of its borders.
+# To make the output, you should extend the green region of each rectangle to the border of the grid in the direction of the red pixel, with the extent of the line increasing with the extent of the rectangle.
+# Also you should draw a red line from the red pixel to the border of the grid.
+
+
+def main(input_grid):
+    # Initialize the output grid
+    output_grid = np.copy(input_grid)
+    
+    rectangle_color = Color.GREEN
+    indicator_color = Color.RED
+    background = Color.BLACK
+
+    # get all the green rectangles on the grid. because of the red pixel on the border of the rectangle, they are not monochromatic.
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=False, background=background)
+    for obj in objects:
+        # find the red indicator
+        for red_x, red_y in np.argwhere(obj == indicator_color):
+            break
+
+        # Get the dimensions of the object, and its position
+        x, y, width, height = bounding_box(obj, background=background)  
+
+        # depending on which side of the rectangle that the indicator is on, we draw in different directions
+        # left edge: draw to the left
+        if red_x == x:
+            # Extend the green rectangle to the left until it reaches the border
+            output_grid[0:red_x, red_y-(width-1) : red_y+(width-1)+1] = rectangle_color
+            # Draw the red line from the red pixel to the border
+            draw_line(output_grid, x=red_x, y=red_y, direction=(-1, 0), color=indicator_color)
+        elif red_x == x + width - 1:
+            # Extend the green rectangle to the right until it reaches the border
+            output_grid[red_x:, red_y-(width-1) : red_y+(width-1)+1] = rectangle_color
+            # Draw the red line from the red pixel to the border
+            draw_line(output_grid, x=red_x, y=red_y, direction=(1, 0), color=indicator_color)
+        elif red_y == y:
+            # Extend the green rectangle to the top until it reaches the border
+            output_grid[red_x-(height-1) : red_x+(height-1)+1, 0:red_y] = rectangle_color
+            # Draw the red line from the red pixel to the border
+            draw_line(output_grid, x=red_x, y=red_y, direction=(0, -1), color=indicator_color)
+        elif red_y == y + height - 1:
+            # Extend the green rectangle to the bottom until it reaches the border
+            output_grid[red_x-(height-1) : red_x+(height-1)+1, red_y:] = rectangle_color
+            # Draw the red line from the red pixel to the border
+            draw_line(output_grid, x=red_x, y=red_y, direction=(0, 1), color=indicator_color)
+        else:
+            assert False, "The red pixel is not on the border of the rectangle"
+
+    return output_grid
+
+def generate_input():
+    # Create the background grid
+    n, m = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.full((n, m), Color.BLACK)
+
+    rectangle_num = 2
+    rectangle_color = Color.GREEN
+    indicator_color = Color.RED
+
+    # Draw rectangles on the grid
+    for i in range(rectangle_num):
+        width, height = np.random.randint(3, 20), np.random.randint(3, 20)
+
+        # The width should be twice smaller than the height
+        while (width * 2 + 2) >= height:
+            width, height = np.random.randint(3, 20), np.random.randint(3, 20)
+
+        green_rectangle = np.full((width, height), rectangle_color)
+
+        # Place one indicator pixel on one random border of the rectangle
+        # Spare enough space for the extend line with the same size of width - 1
+        x_coord = np.random.choice([0, width - 1])
+        y_coord = np.random.choice(range(width + 1, height - (width + 1)))
+        green_rectangle[x_coord, y_coord] = indicator_color
+        # Randomly rotate the object so that we get a variety of orientations
+        if np.random.choice([True, False]):
+            green_rectangle = np.rot90(green_rectangle)
+            x_coord, y_coord = y_coord, x_coord
+
+        # Place the rectangle on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid=grid, sprite=green_rectangle, padding=2, padding_connectivity=8)        
+        # Check if there is no space for the rectangle
+        except:
+            return generate_input()
+        blit_sprite(grid, green_rectangle, x=x, y=y)
+
+    # Check if the generated grid is valid
+    transformed_grid = main(grid)
+    objects = find_connected_components(grid=transformed_grid, connectivity=4, monochromatic=False)
+
+    # After transformation, the two objects should not touch each other
+    if len(objects) != rectangle_num:
+        # Regenerate the grid
+        return generate_input()
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# geometric pattern
+
+# description:
+# In the input you will see a grid with a single coloured pixel.
+# To make the output, move the colored pixel down one pixel and draw a yellow line from the pixel to the top of the grid.
+# Finally repeat the yellow line by repeating it horizontally left/right with a period of 2 pixels.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the pixel from the input grid
+    # 2. Move the pixel one pixel down
+    # 3. Draw a yellow line from the pixel to the top of the grid, repeating it horizontally left/right with a period of 2 pixels
+
+    # 1. Extract the pixel
+    pixel = find_connected_components(input_grid, monochromatic=True)[0]
+    pixel_x, pixel_y = object_position(pixel)
+    pixel_color = object_colors(pixel)[0]
+
+    # 2. Move the pixel one pixel down
+    output_grid = input_grid.copy()
+    output_grid[pixel_x, pixel_y + 1] = pixel_color
+    output_grid[pixel_x, pixel_y] = Color.BLACK
+
+    # 3. Draw the vertical line from the pixel to top
+
+    # Draw the line from left to right
+    horizontal_period = 2
+    for x in range(pixel_x, output_grid.shape[0], horizontal_period):
+        draw_line(output_grid, x=x, y=pixel_y, direction=(0, -1), color=Color.YELLOW)
+
+    # Draw the line from left to right
+    for x in range(pixel_x, -1, -horizontal_period):
+        draw_line(output_grid, x=x, y=pixel_y, direction=(0, -1), color=Color.YELLOW)
+    return output_grid
+
+def generate_input():
+    # Generate the background grid
+    width, height = np.random.randint(5, 30, size=2)
+    grid = np.zeros((width, height), dtype=int)
+
+    # Randomly choose one color
+    color = np.random.choice([color for color in Color.NOT_BLACK if color != Color.YELLOW])
+
+    # Randomly place the pixel on the grid
+    x, y = np.random.randint(0, width - 1), np.random.randint(0, height - 1)
+    grid[x, y] = color
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

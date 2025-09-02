@@ -1,0 +1,71 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider lines, region extraction, array slicing
+
+# description:
+# The input grid is a 2D array where certain rows or columns are entirely filled with a specific color, acting as dividers.
+# These dividers segment the grid into separate regions. The task is to identify these divider lines, 
+# segment the grid into distinct subgrids, and return these subgrids as a list, excluding the dividers themselves.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify horizontal and vertical divider lines
+    # 2. Use these lines to segment the grid into separate regions
+    # 3. Extract and return these regions as subgrids, excluding the dividers
+
+    width, height = input_grid.shape
+    # Assume the divider color is the most frequent color in the grid
+    unique, counts = np.unique(input_grid, return_counts=True)
+    divider_color = unique[np.argmax(counts)]
+
+    # Identify horizontal and vertical divider lines
+    horizontal_dividers = [y for y in range(height) if np.all(input_grid[:, y] == divider_color)]
+    vertical_dividers = [x for x in range(width) if np.all(input_grid[x, :] == divider_color)]
+
+    # Add grid boundaries as implied dividers
+    horizontal_dividers = [0] + horizontal_dividers + [height]
+    vertical_dividers = [0] + vertical_dividers + [width]
+
+    # Extract subgrids
+    subgrids = []
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            x1, x2 = vertical_dividers[i] + 1, vertical_dividers[i + 1]
+            y1, y2 = horizontal_dividers[j] + 1, horizontal_dividers[j + 1]
+            subgrid = input_grid[x1:x2, y1:y2]
+            subgrids.append(subgrid)
+
+    return subgrids
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(Color.ALL_COLORS, (width, height), replace=True)
+
+    # Choose a random color for the divider
+    divider_color = np.random.choice(Color.NOT_BLACK)
+
+    # Randomly determine the number of dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    # Generate divider lines
+    horizontal_divider_indices = randomly_spaced_indices(height, num_horizontal_dividers, border_size=1, padding=1)
+    vertical_divider_indices = randomly_spaced_indices(width, num_vertical_dividers, border_size=1, padding=1)
+
+    # Apply divider lines to the grid
+    for y in horizontal_divider_indices:
+        grid[:, y] = divider_color
+
+    for x in vertical_divider_indices:
+        grid[x, :] = divider_color
+
+    return grid
+```
+
+In this puzzle, the input grid is divided into regions by lines of a specific divider color. The task is to extract these regions as separate subgrids, excluding the dividers themselves. The `generate_input` function creates random grids with divider lines, while the `main` function processes these grids to identify and extract the regions.

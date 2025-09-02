@@ -1,0 +1,84 @@
+Here's the implementation of the new puzzle based on the provided description. The puzzle involves identifying runs of a specific color (cyan) within a grid and applying a transformation to these runs by capping them with another color (yellow).
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# color runs, recolor, bounding box, symmetry
+
+# description:
+# Identify contiguous horizontal or vertical runs of cyan (color=4) in the grid. For each run, compute k 
+# as the minimum of 3 or half the run's length (rounded down). Recolor the first k and last k cells of each run 
+# to yellow (color=3), leaving the interior cells unchanged. This transformation applies symmetrically to both ends 
+# of each cyan run, capping them with yellow while preserving the run's central portion.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    output_grid = np.copy(input_grid)
+    cyan_color = 4
+    yellow_color = 3
+
+    # Process horizontal runs
+    for i in range(output_grid.shape[0]):
+        j = 0
+        while j < output_grid.shape[1]:
+            if output_grid[i, j] == cyan_color:
+                start = j
+                while j < output_grid.shape[1] and output_grid[i, j] == cyan_color:
+                    j += 1
+                end = j
+                length = end - start
+                k = min(3, length // 2)
+                # Color the first k and last k cells of the run yellow
+                output_grid[i, start:start + k] = yellow_color
+                output_grid[i, end - k:end] = yellow_color
+            j += 1
+
+    # Process vertical runs
+    for j in range(output_grid.shape[1]):
+        i = 0
+        while i < output_grid.shape[0]:
+            if output_grid[i, j] == cyan_color:
+                start = i
+                while i < output_grid.shape[0] and output_grid[i, j] == cyan_color:
+                    i += 1
+                end = i
+                length = end - start
+                k = min(3, length // 2)
+                # Color the first k and last k cells of the run yellow
+                output_grid[start:start + k, j] = yellow_color
+                output_grid[end - k:end, j] = yellow_color
+            i += 1
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Define grid dimensions
+    n = np.random.randint(5, 15)
+    m = np.random.randint(5, 15)
+    
+    # Initialize grid with black
+    grid = np.zeros((n, m), dtype=int)
+
+    # Determine number of cyan runs
+    num_runs = np.random.randint(1, 5)
+
+    for _ in range(num_runs):
+        is_horizontal = np.random.choice([True, False])
+        if is_horizontal:
+            row = np.random.randint(0, n)
+            start_col = np.random.randint(0, m - 1)
+            run_length = np.random.randint(2, m - start_col + 1)
+            grid[row, start_col:start_col + run_length] = 4  # Cyan
+        else:
+            col = np.random.randint(0, m)
+            start_row = np.random.randint(0, n - 1)
+            run_length = np.random.randint(2, n - start_row + 1)
+            grid[start_row:start_row + run_length, col] = 4  # Cyan
+
+    return grid
+```
+
+This puzzle involves recognizing and transforming contiguous runs of a designated color (cyan) within a grid. The transformation involves recoloring the ends of these runs symmetrically to yellow, creating visually interesting patterns and emphasizing the contemplation of symmetry and bounding in grids.

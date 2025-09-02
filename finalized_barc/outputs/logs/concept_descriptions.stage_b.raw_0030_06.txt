@@ -1,0 +1,79 @@
+Below is the implementation of a puzzle based on the description provided. The puzzle simulates gravity by moving blocks in a specified direction until they come to rest against obstacles or boundaries.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries. If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact. Maintain block order and shape; stop when further movement would result in collision or leaving the grid. The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_grid, gravity_direction, cohesion_mode):
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Find all connected components (blocks) in the grid
+    blocks = find_connected_components(input_grid, connectivity=4, background=Color.BLACK)
+
+    if cohesion_mode == 'per-column':
+        for col in range(input_grid.shape[1]):
+            column_blocks = [block for block in blocks if np.any(np.any(block[:, col] != Color.BLACK, axis=0))]
+            for block in column_blocks:
+                move_block(block, output_grid, gravity_direction)
+    elif cohesion_mode == 'cohesive':
+        for block in blocks:
+            move_block(block, output_grid, gravity_direction)
+
+    return output_grid
+
+def move_block(block, output_grid, gravity_direction):
+    # Determine the movement vector based on gravity direction
+    if gravity_direction == 'down':
+        move_vector = (1, 0)
+    elif gravity_direction == 'up':
+        move_vector = (-1, 0)
+    elif gravity_direction == 'right':
+        move_vector = (0, 1)
+    elif gravity_direction == 'left':
+        move_vector = (0, -1)
+    else:
+        raise ValueError("Invalid gravity direction")
+
+    # Move blocks in the specified direction until they collide
+    while not collision(object1=translate(block, *move_vector), object2=output_grid):
+        block = translate(block, *move_vector)
+
+    # Blit the final position of the block onto the output grid
+    blit_object(output_grid, block)
+
+def generate_input():
+    # Randomly generate grid size
+    width, height = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Generate random blocks
+    num_blocks = np.random.randint(2, 5)
+    for _ in range(num_blocks):
+        block_width, block_height = np.random.randint(1, 3), np.random.randint(1, 3)
+        block = random_sprite(block_width, block_height, color_palette=Color.NOT_BLACK)
+        x, y = random_free_location_for_sprite(grid, block)
+        blit_sprite(grid, block, x, y)
+    
+    # Randomly choose a gravity direction
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+
+    # Randomly choose a cohesion mode
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    return grid, gravity_direction, cohesion_mode
+```
+
+### Explanation:
+- **Concepts**: This puzzle simulates gravity by moving blocks in specified directions ('down', 'up', 'left', 'right'). It uses cohesion modes to either treat columns independently or blocks as a single unit.
+- **Description**: The function `main` applies gravity to blocks based on the input parameters. Blocks are moved until they collide with obstacles or boundaries. The cohesion mode determines how blocks are grouped during movement.
+- **Functions**:
+  - `move_block`: Moves each block in the specified gravity direction until a collision occurs.
+  - `generate_input`: Randomly generates the input grid, block configurations, gravity direction, and cohesion mode.

@@ -1,0 +1,83 @@
+Below is the puzzle implementation based on the description provided. The puzzle involves identifying divider lines in the input grid and extracting regions as subgrids.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider lines, region extraction, array slicing
+
+# description:
+# The input grid may contain horizontal or vertical divider lines of a specific color. These lines divide the grid into distinct regions.
+# The task is to identify these lines and extract each region as a separate subgrid, excluding the divider lines themselves.
+# The output is a list of these subgrids, preserving their original content and relative order.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Find the divider color, which is the color that forms complete horizontal or vertical lines
+    divider_color_candidates = set(input_grid.flatten())
+    divider_color = None
+    for color in divider_color_candidates:
+        if any(np.all(input_grid[:, col] == color) for col in range(input_grid.shape[1])) or \
+           any(np.all(input_grid[row, :] == color) for row in range(input_grid.shape[0])):
+            divider_color = color
+            break
+
+    assert divider_color is not None, "No divider color found"
+
+    # Identify horizontal and vertical divider lines
+    horizontal_dividers = [row for row in range(input_grid.shape[0]) if np.all(input_grid[row, :] == divider_color)]
+    vertical_dividers = [col for col in range(input_grid.shape[1]) if np.all(input_grid[:, col] == divider_color)]
+
+    # Add borders as dividers to simplify region extraction
+    horizontal_dividers = [-1] + horizontal_dividers + [input_grid.shape[0]]
+    vertical_dividers = [-1] + vertical_dividers + [input_grid.shape[1]]
+
+    # Extract regions as subgrids
+    regions = []
+    for i in range(len(horizontal_dividers) - 1):
+        for j in range(len(vertical_dividers) - 1):
+            top = horizontal_dividers[i] + 1
+            bottom = horizontal_dividers[i + 1]
+            left = vertical_dividers[j] + 1
+            right = vertical_dividers[j + 1]
+            if top < bottom and left < right:
+                region = input_grid[top:bottom, left:right]
+                regions.append(region)
+
+    return regions
+
+def generate_input() -> np.ndarray:
+    # Define grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.ALL_COLORS - {Color.BLACK}), (width, height))
+
+    # Choose a random color for the divider lines
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly decide the number of horizontal and vertical divider lines
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    # Generate positions for divider lines
+    horizontal_positions = randomly_spaced_indices(width, num_horizontal_dividers, border_size=1, padding=1)
+    vertical_positions = randomly_spaced_indices(height, num_vertical_dividers, border_size=1, padding=1)
+
+    # Draw horizontal divider lines
+    for row in horizontal_positions:
+        grid[row, :] = divider_color
+
+    # Draw vertical divider lines
+    for col in vertical_positions:
+        grid[:, col] = divider_color
+
+    return grid
+```
+
+### Explanation:
+- **Main Function**: The function `main` identifies the color used for divider lines by checking which color forms complete horizontal or vertical lines. It then finds the positions of these divider lines and uses them to segment the grid into regions. Each region is extracted as a subgrid without the divider lines, and these subgrids are returned as a list.
+  
+- **Generate Input Function**: The function `generate_input` creates a random grid of a specified size filled with random colors. It then randomly places horizontal and vertical divider lines using a selected color. The positions of the divider lines are chosen to ensure that the regions are not too small.
+
+This puzzle allows students to practice identifying patterns and segmenting grids based on divider lines, a concept frequently found in image processing tasks.

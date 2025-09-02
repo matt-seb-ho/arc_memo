@@ -1,0 +1,59 @@
+Let's create a puzzle based on the given description. We'll design a transformation that involves scanning 2x2 windows in a grid to detect if all cells match a specified target color.
+
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# Given a grid with various colors, for each 2x2 window in the grid, check if all cells match a specified target color.
+# Return a grid of the same size where each 2x2 window is True if every cell in the window matches the target color; otherwise, False.
+# The rest of the grid is marked with Color.BLACK.
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Initialize an output grid of the same size as the input grid, filled with Color.BLACK
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Iterate over each possible 2x2 window in the grid
+    for i in range(input_grid.shape[0] - 1):
+        for j in range(input_grid.shape[1] - 1):
+            # Extract the 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+
+            # Check if all elements in the window are the target color
+            if np.all(window == target_color):
+                # Mark the corresponding area in the output grid as True
+                output_grid[i:i+2, j:j+2] = True
+
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Define grid size, minimum size is 2x2 for a 2x2 window to fit
+    rows, cols = random.randint(5, 10), random.randint(5, 10)
+    
+    # Randomly choose a target color from available colors
+    target_color = random.choice(list(Color.ALL_COLORS))
+
+    # Create a grid with random colors
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(rows, cols))
+
+    # Ensure that there is at least one 2x2 section with the target color
+    if rows > 1 and cols > 1:
+        start_x, start_y = random.randint(0, rows - 2), random.randint(0, cols - 2)
+        grid[start_x:start_x+2, start_y:start_y+2] = target_color
+
+    return grid, target_color
+```
+
+### Explanation
+
+- **Main Function**: The `main` function iterates over each possible 2x2 window in the input grid. If all cells in a 2x2 window match the target color, we mark that area as `True` in the output grid. Otherwise, the area remains `Color.BLACK`.
+  
+- **Generate Input Function**: The `generate_input` function creates a grid with random colors and ensures that there is at least one 2x2 section completely filled with the target color. It also randomly selects the target color from the available colors. 
+
+This puzzle encourages students to think about pattern detection and window scanning, which are useful concepts in image processing and computer vision.

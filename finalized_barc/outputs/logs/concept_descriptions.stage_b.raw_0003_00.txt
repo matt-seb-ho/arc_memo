@@ -1,0 +1,82 @@
+Here's a new puzzle implementation based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# output grid shape, guide object, bounding box, zero-initialized grid
+
+# description:
+# In the input, you will see a grid with various colored objects scattered on a black background. 
+# One of these objects is designated as the "guide object" and is distinguished by having a unique color not shared by any other objects.
+# To generate the output, first determine the guide object's bounding box. 
+# Then create a new grid where the dimensions are based on the bounding box of the guide object, initialized to black (background color).
+# The output grid should be independent of the input's specific content but adhere to the defined shape derived from the guide object's bounding box.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the guide object by detecting the object with the unique color.
+    # 2. Calculate the bounding box of the guide object.
+    # 3. Create an output grid with the dimensions of this bounding box, initialized to black.
+
+    # Step 1: Identify the guide object
+    # Find all colors in the grid except black
+    unique_colors = set(np.unique(input_grid)) - {Color.BLACK}
+    # Assume the guide object is the one with the unique color
+    color_counts = {color: np.sum(input_grid == color) for color in unique_colors}
+    guide_color = min(color_counts, key=color_counts.get)
+
+    # Step 2: Detect the guide object and calculate its bounding box
+    guide_object = detect_objects(input_grid, colors=[guide_color], monochromatic=True)[0]
+    guide_bounding_box = crop(guide_object, background=Color.BLACK)
+
+    # Step 3: Create an output grid with the dimensions of the bounding box, initialized to black
+    output_grid = np.full(guide_bounding_box.shape, Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random objects
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Create several random objects
+    num_objects = np.random.randint(3, 6)
+    colors = list(Color.NOT_BLACK)
+    np.random.shuffle(colors)
+
+    for i in range(num_objects):
+        # Randomly determine the size of the object
+        obj_height, obj_width = np.random.randint(2, 5), np.random.randint(2, 5)
+        sprite = random_sprite(obj_height, obj_width, color_palette=[colors.pop()])
+
+        # Place the object at a random location in the grid
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK)
+        blit_sprite(grid, sprite, x, y)
+
+    # Designate one of the objects as the "guide object" with a unique color
+    guide_color = colors.pop() if colors else np.random.choice(list(Color.NOT_BLACK - set(colors)))
+    guide_sprite = random_sprite(np.random.randint(2, 5), np.random.randint(2, 5), color_palette=[guide_color])
+    x, y = random_free_location_for_sprite(grid, guide_sprite, background=Color.BLACK)
+    blit_sprite(grid, guide_sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**:
+   - The puzzle involves determining the output grid's shape based on the bounding box of a "guide object" within the input grid.
+   - A zero-initialized grid means the new grid is filled with the background color, which is black.
+
+2. **Description**:
+   - The input consists of a grid with multiple objects. One object, the guide object, is distinguished by having a unique color.
+   - The output is a new grid whose dimensions are based on the bounding box of the guide object, initialized to the background color (black).
+
+3. **Implementation**:
+   - `main` function identifies the guide object by detecting the object with a unique color.
+   - It calculates the bounding box of this object and generates the output grid with the same dimensions, initialized to black.
+   - `generate_input` function creates a grid with multiple objects, ensuring one has a unique color to act as the guide object.

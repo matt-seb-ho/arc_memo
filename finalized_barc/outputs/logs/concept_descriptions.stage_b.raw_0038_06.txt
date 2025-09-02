@@ -1,0 +1,91 @@
+Certainly! Let's design a puzzle that focuses on object selection, connected components, and filtering. In this puzzle, we'll identify connected components based on color and filter them by a specific criterion, such as size or shape. Here's how our implementation would look:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connected components, object selection, filtering
+
+# description:
+# The input grid is a square grid with various colored objects scattered across a black background. Each object is a connected component.
+# The output should only include objects that are rectangular in shape. For each selected object, output its bounding box and constituent pixels.
+# Non-selected objects are excluded from the output.
+
+def main(input_grid):
+    # Detect all objects in the input grid
+    all_objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Initialize a list to store selected rectangular objects
+    selected_objects = []
+
+    # Iterate through all detected objects
+    for obj in all_objects:
+        # Crop the object to its bounding box
+        cropped_obj = crop(obj, background=Color.BLACK)
+        
+        # Check if the cropped object is rectangular
+        if is_rectangular(cropped_obj):
+            # Add the rectangular object to the selected list
+            selected_objects.append(cropped_obj)
+
+    # Create the output grid by placing selected objects
+    output_grid = assemble_output_grid(selected_objects, input_grid.shape)
+
+    return output_grid
+
+def is_rectangular(obj):
+    """Helper function to check if an object is rectangular."""
+    # Crop the object to its bounding box
+    cropped = crop(obj, background=Color.BLACK)
+    # Check if all non-black pixels form a filled rectangle
+    return np.all(cropped[cropped != Color.BLACK] == cropped[0, 0])
+
+def assemble_output_grid(objects, grid_shape):
+    """Assemble the output grid from selected objects."""
+    output_grid = np.full(grid_shape, Color.BLACK)
+    for obj in objects:
+        x, y = random_free_location_for_sprite(output_grid, obj, border_size=1, padding=1)
+        blit_sprite(output_grid, obj, x, y, background=Color.BLACK)
+    return output_grid
+
+def generate_input():
+    # Create a random-sized grid with a black background
+    n = random.randint(10, 20)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate random colored objects and place them in the grid
+    n_objects = random.randint(3, 6)
+    for _ in range(n_objects):
+        color = random.choice(list(Color.NOT_BLACK))
+        # Generate a random sprite with a 50% chance of being a rectangle
+        if random.random() > 0.5:
+            sprite = random_rectangular_sprite(color)
+        else:
+            sprite = random_sprite(n=random.randint(2, 5), m=random.randint(2, 5), color_palette=[color])
+
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+        except ValueError:
+            continue
+
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+
+def random_rectangular_sprite(color):
+    """Generate a rectangular sprite of random size."""
+    n, m = random.randint(2, 5), random.randint(2, 5)
+    sprite = np.full((n, m), color)
+    return sprite
+```
+
+### Explanation:
+- **Concepts**: We focus on detecting connected components, then filtering them based on shape (rectangular in this case).
+- **Description**: The input grid contains various colored objects on a black background. The output grid should only include those objects that are rectangular in shape.
+- **`main` Function**: We use `find_connected_components` to extract objects, check each for rectangularity using a helper function, and then assemble the output grid from selected objects.
+- **`generate_input` Function**: It generates a grid with random objects, ensuring some are rectangles and others are not to provide variation.
+
+The puzzle is designed to help students understand how to work with connected components and apply selection criteria based on geometric properties.

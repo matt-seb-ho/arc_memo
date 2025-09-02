@@ -1,0 +1,76 @@
+Here is a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# The input grid consists of various colored objects on a black background. Each object is a connected component of the same color.
+# The task is to extract all connected components and retain only those that fulfill a specific condition.
+# The output should be a list of selected objects, each represented by its bounding box and constituent pixels. Non-selected objects are excluded.
+
+def main(input_grid):
+    # Extract connected components from the input grid
+    connected_components = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Define the selection criterion: Select objects with an area greater than a specific threshold
+    area_threshold = 5  # Example threshold
+
+    selected_objects = []
+    for component in connected_components:
+        # Calculate the area of the component
+        area = np.sum(component != Color.BLACK)
+
+        # Apply the selection criterion
+        if area > area_threshold:
+            # Crop the component to its bounding box
+            cropped_component = crop(component, background=Color.BLACK)
+
+            # Add the cropped component to the list of selected objects
+            selected_objects.append(cropped_component)
+
+    return selected_objects
+
+
+def generate_input():
+    # Create a grid of a random size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random number of objects
+    num_objects = np.random.randint(3, 6)
+
+    for _ in range(num_objects):
+        # Generate a random sprite with random dimensions and color
+        sprite_n, sprite_m = np.random.randint(2, 5), np.random.randint(2, 5)
+        color = random.choice(list(Color.NOT_BLACK))
+        sprite = random_sprite(n=sprite_n, m=sprite_m, color_palette=[color], connectivity=8)
+
+        # Try to find a random free location for the sprite
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            continue  # If no space is found, skip this sprite
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**:
+   - **Object selection**: Each object is a connected component of the same color.
+   - **Connected components**: Treats objects as regions of contiguous non-black pixels.
+   - **Filtering**: Applies a selection criterion to filter objects based on their area.
+
+2. **Description**:
+   - **Input**: A grid with multiple colored objects on a black background.
+   - **Transformation**: Extract connected components, filter them based on a specified criterion (e.g., area > threshold).
+   - **Output**: A list of selected objects, each represented by its bounding box and constituent pixels.
+
+This puzzle challenges students to understand and apply concepts related to connected components, criteria-based filtering, and object representation on a grid.

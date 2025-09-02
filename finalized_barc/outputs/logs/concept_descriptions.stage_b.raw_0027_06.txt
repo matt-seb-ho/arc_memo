@@ -1,0 +1,86 @@
+Sure! Let's implement the puzzle based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# In the input grid, you will see two objects: a reference object and a target object, each represented by a different color.
+# Additionally, there will be a specified side (up/down/left/right) where the target object should be aligned to touch the reference object.
+# The task is to translate the target object such that its nearest edge aligns with the specified edge of the reference object without overlapping.
+# After proper alignment, merge the target object into the reference by painting the target pixels onto the grid, preserving existing reference pixels.
+
+def main(input_grid, side):
+    # Plan:
+    # 1. Detect the reference and target objects using their colors.
+    # 2. Depending on the specified side (up/down/left/right), determine the translation needed to align the target with the reference.
+    # 3. Translate the target object.
+    # 4. Merge the target object into the reference object by painting the target pixels onto the grid.
+
+    output_grid = np.copy(input_grid)
+
+    # Detect the reference and target objects
+    reference_objects = detect_objects(grid=input_grid, colors=[Color.BLUE], monochromatic=True, connectivity=4)
+    target_objects = detect_objects(grid=input_grid, colors=[Color.RED], monochromatic=True, connectivity=4)
+    
+    assert len(reference_objects) == 1
+    assert len(target_objects) == 1
+
+    reference_object = reference_objects[0]
+    target_object = target_objects[0]
+
+    # Crop both objects to get their bounding boxes
+    cropped_reference = crop(reference_object)
+    cropped_target = crop(target_object)
+
+    # Determine the translation needed
+    if side == 'up':
+        x_translation = 0
+        y_translation = np.min(np.where(reference_object)[0]) - np.max(np.where(target_object)[0]) - 1
+    elif side == 'down':
+        x_translation = 0
+        y_translation = np.max(np.where(reference_object)[0]) - np.min(np.where(target_object)[0]) + 1
+    elif side == 'left':
+        x_translation = np.min(np.where(reference_object)[1]) - np.max(np.where(target_object)[1]) - 1
+        y_translation = 0
+    elif side == 'right':
+        x_translation = np.max(np.where(reference_object)[1]) - np.min(np.where(target_object)[1]) + 1
+        y_translation = 0
+    else:
+        raise ValueError("Invalid side specified. Must be 'up', 'down', 'left', or 'right'.")
+
+    # Translate the target object
+    translated_target = translate(target_object, x_translation, y_translation, background=Color.BLACK)
+
+    # Merge target into reference by painting target pixels into the grid
+    blit_object(output_grid, translated_target, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Create a 10x10 grid with a reference object and a target object
+    n = m = 10
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Create a reference object (e.g., a blue square)
+    reference_sprite = random_sprite(n=3, m=3, color_palette=[Color.BLUE], density=0.7)
+    x_ref, y_ref = random_free_location_for_sprite(grid, reference_sprite, background=Color.BLACK, padding=1, border_size=1)
+    blit_sprite(grid, reference_sprite, x_ref, y_ref, background=Color.BLACK)
+
+    # Create a target object (e.g., a red square)
+    target_sprite = random_sprite(n=2, m=2, color_palette=[Color.RED], density=0.7)
+    x_tgt, y_tgt = random_free_location_for_sprite(grid, target_sprite, background=Color.BLACK, padding=1, border_size=1)
+    blit_sprite(grid, target_sprite, x_tgt, y_tgt, background=Color.BLACK)
+
+    # Randomly select a side for the alignment
+    side = random.choice(['up', 'down', 'left', 'right'])
+    
+    return grid, side
+```
+
+This code defines both `main` and `generate_input` functions for the puzzle. The `main` function aligns and merges the target object with the reference object on the specified side, while the `generate_input` function creates a random grid containing the objects and specifies the side for alignment.

@@ -1,0 +1,89 @@
+Here's a puzzle implementation based on the provided description. The task is to draw a straight line connecting two distinct pixels marked as start and end using Bresenham's line algorithm. 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line drawing, pixel connectivity, Bresenham's line algorithm
+
+# description:
+# In the input, you will see a grid with two distinct pixels marked as start and end.
+# To make the output, draw a straight line connecting these two pixels using Bresenham's line algorithm.
+# Update the grid by coloring each pixel along the path with a specified line color. All other pixels in the grid remain unchanged.
+
+def bresenhams_line(x0, y0, x1, y1):
+    """ Bresenham's Line Algorithm to generate points in a line between two points (x0, y0) and (x1, y1). """
+    points = []
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x0 < x1 else -1
+    sy = 1 if y0 < y1 else -1
+    err = dx - dy
+
+    while True:
+        points.append((x0, y0))
+        if x0 == x1 and y0 == y1:
+            break
+        e2 = err * 2
+        if e2 > -dy:
+            err -= dy
+            x0 += sx
+        if e2 < dx:
+            err += dx
+            y0 += sy
+    return points
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+    
+    # Identify the start and end points
+    start = np.where(input_grid == Color.RED)
+    x0, y0 = start[0][0], start[1][0]
+    end = np.where(input_grid == Color.BLUE)
+    x1, y1 = end[0][0], end[1][0]
+    
+    # Use Bresenham's line algorithm to get the points for the line
+    line_points = bresenhams_line(x0, y0, x1, y1)
+    
+    # Draw the line on the output grid
+    for x, y in line_points:
+        output_grid[x, y] = Color.GREEN
+    
+    return output_grid
+
+def generate_input():
+    # Create a grid with random dimensions between 10 and 20
+    n = np.random.randint(10, 20)
+    m = np.random.randint(10, 20)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly place the start pixel (red)
+    x0, y0 = np.random.randint(0, n), np.random.randint(0, m)
+    grid[x0, y0] = Color.RED
+
+    # Randomly place the end pixel (blue) ensuring it's not the same as the start
+    x1, y1 = np.random.randint(0, n), np.random.randint(0, m)
+    while (x1, y1) == (x0, y0):
+        x1, y1 = np.random.randint(0, n), np.random.randint(0, m)
+    grid[x1, y1] = Color.BLUE
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle uses line drawing and pixel connectivity concepts, implementing Bresenham's line algorithm to determine the path of the line.
+
+2. **Description**: The input consists of a grid with two distinct pixels marked as start and end. The transformation involves drawing a straight line connecting these pixels and updating the grid by coloring each pixel along the path.
+
+3. **Bresenham's Line Algorithm**: This algorithm is used for producing a line between two points in an efficient manner without floating-point arithmetic.
+
+4. **Main Function**: The `main` function identifies the start and end points and uses Bresenham's algorithm to determine which pixels to color along the path.
+
+5. **Generate Input**: The `generate_input` function creates a grid with random dimensions and places the start and end pixels randomly ensuring they are distinct.
+
+This puzzle provides a practical application of Bresenham's line algorithm, familiarizing students with the basics of rasterization and pixel manipulation.

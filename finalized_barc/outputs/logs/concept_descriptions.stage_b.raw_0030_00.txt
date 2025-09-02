@@ -1,0 +1,111 @@
+Below is the implementation of the new puzzle based on the provided description. This puzzle simulates gravity and block movement on a 2D grid. The blocks move according to a specified gravity direction and cohesion mode, either as independent columns or a cohesive block structure.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). 
+# Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries. 
+# If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; 
+# if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact.
+# Maintain block order and shape; stop when further movement would result in collision or leaving the grid. 
+# The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, 
+# with empty space opposite the fall direction.
+
+def main(input_grid, gravity_direction, cohesion_mode):
+    # Copy the input grid to begin transformations
+    output_grid = np.copy(input_grid)
+    
+    # Determine the direction vector based on gravity direction
+    if gravity_direction == 'down':
+        direction = (0, 1)
+    elif gravity_direction == 'up':
+        direction = (0, -1)
+    elif gravity_direction == 'left':
+        direction = (-1, 0)
+    elif gravity_direction == 'right':
+        direction = (1, 0)
+    else:
+        raise ValueError("Invalid gravity direction")
+    
+    # Identify unique blocks
+    blocks = find_connected_components(output_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+    
+    # Sort blocks based on their position to handle them in the correct order
+    # Sorting ensures that in per-column mode we process from bottom to top or left to right depending on gravity
+    if gravity_direction in ['down', 'up']:
+        blocks.sort(key=lambda obj: np.min(np.where(obj != Color.BLACK)[1]) if gravity_direction == 'down' else -np.max(np.where(obj != Color.BLACK)[1]))
+    else:
+        blocks.sort(key=lambda obj: np.min(np.where(obj != Color.BLACK)[0]) if gravity_direction == 'right' else -np.max(np.where(obj != Color.BLACK)[0]))
+
+    # Move blocks according to cohesion mode
+    if cohesion_mode == 'per-column':
+        for obj in blocks:
+            move_block_independently(output_grid, obj, direction)
+    elif cohesion_mode == 'cohesive':
+        move_blocks_cohesively(output_grid, blocks, direction)
+    else:
+        raise ValueError("Invalid cohesion mode")
+
+    return output_grid
+
+def move_block_independently(grid, block, direction):
+    # Move each block in the specified direction until collision
+    possible = True
+    while possible:
+        translated_block = translate(block, *direction)
+        if not collision(object1=grid, object2=translated_block):
+            block[:] = translated_block
+        else:
+            possible = False
+    blit_object(grid, block)
+
+def move_blocks_cohesively(grid, blocks, direction):
+    # Create a single composite block from all blocks
+    composite_block = np.full_like(grid, Color.BLACK)
+    for block in blocks:
+        blit_object(composite_block, block)
+    
+    # Move the composite block in the specified direction until collision
+    possible = True
+    while possible:
+        translated_composite = translate(composite_block, *direction)
+        if not collision(object1=grid, object2=translated_composite):
+            composite_block[:] = translated_composite
+        else:
+            possible = False
+    
+    # Clear the grid and blit the final position of the composite block
+    grid[:] = Color.BLACK
+    blit_object(grid, composite_block)
+
+def generate_input():
+    # Randomly determine grid size
+    n, m = np.random.randint(5, 10, size=2)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Create random blocks of different colors
+    num_blocks = np.random.randint(2, 5)
+    for _ in range(num_blocks):
+        color = np.random.choice(list(Color.NOT_BLACK))
+        sprite = random_sprite(np.random.randint(1, 3), np.random.randint(1, 3), color_palette=[color])
+        x, y = random_free_location_for_sprite(grid, sprite)
+        blit_sprite(grid, sprite, x, y)
+    
+    # Randomly choose gravity direction and cohesion mode
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+    
+    return grid, gravity_direction, cohesion_mode
+```
+
+In this implementation:
+- `main` is the function that applies the gravity transformation to the input grid.
+- `generate_input` creates random grids with blocks, randomly setting gravity direction and cohesion mode.
+- Blocks can either fall independently (per-column) or as a single cohesive unit, depending on the cohesion mode.

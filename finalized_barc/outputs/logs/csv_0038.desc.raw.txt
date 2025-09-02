@@ -1,0 +1,4 @@
+```python
+# concepts: object selection, connected components, filtering
+# description: Extract all connected components (objects) from the input grid. Apply a selection criterion to filter these objects, retaining only those that meet the specified condition. The output is a list of the selected objects, each represented by its bounding box and constituent pixels. Non-selected objects are excluded from the output.
+```

@@ -1,0 +1,390 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+parity counting, guide object, color restriction
+
+Description: 
+Input consists of a grid with various colored pixels and a designated guide object. Count the number of pixels within the guide object that have either odd or even color values. If a specific color or set of colors is provided, restrict the count to those colors only; otherwise, consider all colors present in the guide object. The output is the total count of pixels satisfying the chosen parity condition.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def randomly_scatter_points(grid, color, density=0.5, background=Color.BLACK):
+    """
+    Randomly scatter points of the specified color in the grid with specified density.
+
+    Example usage:
+    randomly_scatter_points(grid, color=a_color, density=0.5, background=background_color)
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects, counting, color
+
+# description:
+# In the input you will see grey objects on a black background.
+# To make the output, count the number of pixels in each object and color the object green if it has two pixels, red if it has three pixels, and blue if it has four pixels.
+
+def main(input_grid):
+    # copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # get the objects in the input grid
+    objects = find_connected_components(input_grid)
+
+    # count the number of pixels in each object and color them accordingly
+    for obj in objects:
+        num_pixels = np.sum(obj == Color.GREY)
+        if num_pixels == 2:
+            color = Color.GREEN
+        elif num_pixels == 3:
+            color = Color.RED
+        elif num_pixels == 4:
+            color = Color.BLUE
+        else:
+            color = Color.GREY
+        output_grid[obj == Color.GREY] = color
+
+    return output_grid
+
+def generate_input():
+    # make a black 10x10 grid as the background
+    n = m = 10
+    grid = np.zeros((n, m), dtype=int)
+    
+    # make a random number of sprites
+    num_sprites = np.random.randint(3, 7)
+    for _ in range(num_sprites):
+        sprite = random_sprite(np.random.randint(1, 4), np.random.randint(1, 4), symmetry="not_symmetric", color_palette=[Color.GREY])
+        # make sure the sprite has between 2 and 4 pixels
+        while np.sum(sprite == Color.GREY) < 2 or np.sum(sprite == Color.GREY) > 4:
+            sprite = random_sprite(np.random.randint(1, 4), np.random.randint(1, 4), symmetry="not_symmetric", color_palette=[Color.GREY])
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8)
+            blit_sprite(grid, sprite, x=x, y=y)
+        except:
+            pass
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting, uniqueness, surrounding
+
+# description:
+# In the input, you will see a grid with a black background and colored pixels sprinkled on it. Exactly one color occurs only one time.
+# To make the output, find the cell whose color is unique (color occurs only one time), and surround that cell with red pixels. Make all the other pixels black.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Plan:
+    # 1. Create a blank new canvas (so that the non-unique colors don't get copied)
+    # 2. Find the unique cell
+    # 3. Surround the unique cell with red pixels
+
+    output_grid = np.zeros_like(input_grid)
+
+    # 2. Find the unique cell
+    unique_color = None
+    for color in Color.NOT_BLACK:
+        if np.count_nonzero(input_grid == color) == 1:
+            unique_color = color
+            break
+    
+    # 3. Surround the unique cell with red pixels
+    # First get the coordinates of the unique cell
+    x, y, width, height = bounding_box(input_grid == unique_color)
+    # Copy red over the region around the unique cell (but this will accidentally delete the unique cell, so be copied back)
+    for i in range(x-1, x+2):
+        for j in range(y-1, y+2):
+            if 0 <= i < len(input_grid) and 0 <= j < len(input_grid[0]):
+                output_grid[i, j] = Color.RED
+    # Copy the unique cell back
+    output_grid[x, y] = unique_color
+
+    return output_grid
+
+
+    
+
+
+
+def generate_input() -> np.ndarray:
+    
+    # make a 10x10 black grid first as background
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # randomly select a unique color from Color.NOT_BLACK
+    unique_color = random.choice(Color.NOT_BLACK)
+
+    # randomly choose a non-border cell for the unique color
+    non_border_cells = [ (i, j) for i in range(1, n-1) for j in range(1, m-1) ]
+    unique_cell = random.choice(non_border_cells)
+    grid[unique_cell] = unique_color
+
+    # remove the unique color from the list
+    remaining_colors = [ color for color in Color.NOT_BLACK if color != unique_color ]
+
+    for remaining_color in remaining_colors:
+        # Pick a random frequency but make sure that this colour is not unique (does not have frequency 1)
+        frequency_of_this_color = random.choice([0, 2, 3, 4, 5, 6])
+
+        for _ in range(frequency_of_this_color):
+            # randomly choose an unoccupied cell for the remaining color
+            empty_cells = [ (i, j) for i in range(n) for j in range(m) if grid[i][j] == Color.BLACK ]
+            x, y = random.choice(empty_cells)
+            grid[x, y] = remaining_color
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# symmetry detection, boolean indicator
+
+# description:
+# In the input you will see a 3x3 grid with red pixels scattered randomly.
+# To make the output grid, you should recognize if the input grid has mirror symmetry along the x-axis.
+# If the input grid has mirror symmetry along the x-axis, output a 1x1 grid with a blue pixel.
+# Otherwise, output a 1x1 grid with an orange pixel.
+
+def main(input_grid):
+    # Check if the input grid has mirror symmetry along the middle x-axis.
+    width, height = input_grid.shape
+    middle_x = width // 2
+    
+    # If the input grid has mirror symmetry along the middle x-axis, output a blue pixel.
+    # Otherwise, output an orange pixel.
+    if np.all(input_grid[0: middle_x] == input_grid[middle_x + 1:][::-1]):
+        output_grid = np.full((1,1), Color.BLUE)
+    else:
+        output_grid = np.full((1,1), Color.ORANGE)
+    
+    return output_grid
+
+def generate_input():
+    width, height = 3, 3
+    grid = np.zeros((width, height), dtype=int)
+    
+    # Randomly generate a 3x3 grid with symmetric pattern or not.
+    has_y_axis_symmetry = np.random.choice([True, False])
+    symmetry_type = "horizontal" if has_y_axis_symmetry else "not_symmetric"
+    density = random.choice([0.3, 0.4, 0.5, 0.6])
+    grid = random_sprite(n=3, m=3, density=density, color_palette=[Color.RED], symmetry=symmetry_type)
+    
+    # If the pattern is not symmetric, scatter some black pixels on the grid to make it not symmetric.
+    if not has_y_axis_symmetry:
+        # Randomly 40% colored pixels on the grid
+        target_density = 0.4
+        target_number_of_pixels = int(target_density * height * width)
+        for i in range(target_number_of_pixels):
+            x = np.random.randint(0, width)
+            y = np.random.randint(0, height)
+            grid[x, y] = Color.BLACK
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# draw lines, detect objects
+
+# description:
+# In the input you will see three colors scattered on the grid. One color only have four pixels on the boundary of the grid.
+# To make the output grid, you should connect the four pixels of the color on the boundary of the grid to make two lines.
+
+def main(input_grid):
+    # Find the used color
+    all_color = np.unique(input_grid)
+
+    # Find the color all on the boundary, which is the lines' color
+    def on_boundary(x, y):
+        return x == 0 or x == input_grid.shape[0] - 1 or y == 0 or y == input_grid.shape[1] - 1
+    
+    # Get the color all on the boundary, which is the lines' color
+    for color in all_color:
+        all_on_boundary = all(on_boundary(x, y) for x, y in np.argwhere(input_grid==color))
+        if all_on_boundary:
+            line_color = color
+    output_grid = np.zeros_like(input_grid)
+
+    # Find the boundary pixels of the line_color and then draw a horizontal/vertical line to its matching pair
+    for x, y in np.argwhere(input_grid == line_color):
+        # Check if it's left/right edge or top/bottom edge
+        if x == 0 or x == input_grid.shape[0] - 1:
+            # it's left/right, so draw horizontal
+            draw_line(grid=output_grid, x=x, y=y, color=line_color, direction=(1, 0))
+        elif y == 0 or y == input_grid.shape[1] - 1:
+            # it's top/bottom, so draw vertical
+            draw_line(grid=output_grid, x=x, y=y, color=line_color, direction=(0, 1))
+    
+    return output_grid
+
+def generate_input():
+    # Generate the background grid with size of n x m.
+    n, m = np.random.randint(12, 20), np.random.randint(12, 20)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Generate random three colors on the grid.
+    three_colors = random.sample(Color.NOT_BLACK, k = 3)
+
+    scattered_colors = three_colors[:2]
+    special_color = three_colors[2]
+
+    # Two colors of pixels are scattered on the grid as noise.
+    for scattered_color in scattered_colors:
+        randomly_scatter_points(grid, color=scattered_color, density=0.2)
+
+    # One color of pixels are scattered on the boundary of the grid, and only four pixels
+    # They are guaranteed to form two lines.
+    for _ in range(2):
+        # Choose if the line is horizontal or vertical
+        if_horizonal = np.random.choice([True, False])
+        if if_horizonal:
+            # Choose the position of the line
+            pos = np.random.choice(range(1, m - 1))
+
+            # Draw horizontal line
+            grid[0, pos] = special_color
+            grid[n - 1, pos] = special_color
+        else:
+            # Choose the position of the line
+            pos = np.random.choice(range(1, n - 1))
+
+            # Draw vertical line
+            grid[pos, 0] = special_color
+            grid[pos, m - 1] = special_color
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

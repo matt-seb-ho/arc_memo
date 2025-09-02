@@ -1,0 +1,75 @@
+Sure, let's create a new puzzle based on the description provided. This puzzle will involve identifying a guide object and using its color to fill a predefined tiling pattern across the grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, tiling
+
+# description:
+# In the input grid, you will see a uniquely colored guide object. 
+# The task is to use the color of this guide object to fill a predefined tiling pattern across the grid.
+# The tiling pattern is a checkerboard pattern starting from the top-left corner.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Find the uniquely colored object
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    guide_object = None
+    for obj in objects:
+        colors = np.unique(obj[obj != Color.BLACK])
+        if len(colors) == 1:  # Ensure it's a monochromatic object
+            guide_object = obj
+            break
+    
+    if guide_object is None:
+        raise ValueError("No valid guide object found")
+
+    # Extract the color of the guide object
+    guide_color = np.unique(guide_object[guide_object != Color.BLACK])[0]
+
+    # Create the output grid and apply the tiling pattern
+    output_grid = np.copy(input_grid)
+    n, m = output_grid.shape
+
+    # Create a checkerboard pattern and paint it using the guide color
+    for i in range(n):
+        for j in range(m):
+            if (i + j) % 2 == 0:  # Checkerboard condition
+                output_grid[i, j] = guide_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random background and a uniquely colored guide object
+    n, m = np.random.randint(5, 10, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly choose a unique color for the guide object
+    unique_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Create the guide object with the unique color
+    obj_shape = (np.random.randint(1, 3), np.random.randint(1, 3))  # Size of the guide object
+    obj_position = (np.random.randint(0, n - obj_shape[0]), np.random.randint(0, m - obj_shape[1]))
+
+    for i in range(obj_shape[0]):
+        for j in range(obj_shape[1]):
+            grid[obj_position[0] + i, obj_position[1] + j] = unique_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: This puzzle involves identifying a guide object with a unique color and using this color to fill a checkerboard pattern across the grid.
+
+2. **Description**: The input grid contains various objects, among which there is one uniquely colored guide object. The task is to extract the color of this guide object and apply it to fill a checkerboard tiling pattern over the entire grid. The rest of the grid elements remain unchanged.
+
+3. **Implementation**:
+   - **`main` function**: Detects the uniquely colored guide object, extracts its color, and applies a checkerboard pattern using this color across the grid.
+   - **`generate_input` function**: Generates a stochastic input grid with a randomly placed guide object of a random color and random size, ensuring it is the only occurrence of that color.
+
+This puzzle challenges students to identify and utilize specific elements in the grid to perform a transformation, enhancing their understanding of pattern recognition and color transfer.

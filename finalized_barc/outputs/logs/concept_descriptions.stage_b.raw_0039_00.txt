@@ -1,0 +1,92 @@
+Here's a new puzzle concept:
+
+### Concepts:
+- Obstacles, path blocking, line drawing, pathfinding
+
+### Description:
+In the input grid, there are two distinct points marked with different colors, often at opposite corners of the grid. These points are surrounded by various obstacles of different colors. The task is to draw a path from the start point to the end point. The path must navigate around the obstacles without passing through them. The output grid will show the path from the start point to the end point, avoiding obstacles, while all other content remains unchanged.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, pathfinding
+
+# description:
+# Identify obstacles as distinct objects in the grid that block the path of line drawing. When drawing a line between two points,
+# the line must navigate around these obstacles, ensuring no part of the line overlaps with any obstacle. The output grid shows
+# the line drawn from start to end, avoiding obstacles, while all other grid content remains unchanged.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = input_grid.copy()
+
+    # Get the start and end points, which are the only two non-black pixels
+    start_point = None
+    end_point = None
+
+    for x, y in np.argwhere(input_grid != Color.BLACK):
+        if start_point is None:
+            start_point = (x, y)
+        else:
+            end_point = (x, y)
+            break  # We found both start and end points
+
+    # Check for obstacles and define the blocked regions
+    obstacles = (input_grid != Color.BLACK) & (input_grid != input_grid[start_point]) & (input_grid != input_grid[end_point])
+
+    # Perform a simple BFS to find a path from start to end avoiding obstacles
+    queue = [(start_point, [start_point])]
+    visited = set([start_point])
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # right, down, left, up
+
+    while queue:
+        (current, path) = queue.pop(0)
+
+        if current == end_point:
+            # Draw the path on the output grid
+            for x, y in path:
+                output_grid[x, y] = input_grid[start_point]
+            break
+
+        for direction in directions:
+            next_x, next_y = current[0] + direction[0], current[1] + direction[1]
+            if (0 <= next_x < output_grid.shape[0] and 0 <= next_y < output_grid.shape[1] and
+                    not obstacles[next_x, next_y] and (next_x, next_y) not in visited):
+                visited.add((next_x, next_y))
+                queue.append(((next_x, next_y), path + [(next_x, next_y)]))
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size 10x10
+    grid_size = 10
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Randomly place a start and end point
+    start_color = random.choice(list(Color.NOT_BLACK))
+    end_color = random.choice([color for color in Color.NOT_BLACK if color != start_color])
+
+    grid[0, 0] = start_color
+    grid[-1, -1] = end_color
+
+    # Scatter obstacle blocks randomly
+    num_obstacles = random.randint(10, 20)
+    obstacle_color = random.choice([color for color in Color.NOT_BLACK if color not in [start_color, end_color]])
+
+    for _ in range(num_obstacles):
+        x, y = np.random.randint(0, grid_size, size=2)
+        if (x, y) not in [(0, 0), (grid_size - 1, grid_size - 1)]:
+            grid[x, y] = obstacle_color
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function:** The main function handles the pathfinding logic using BFS to find a path from the start point to the endpoint while avoiding obstacles. It then draws the path on the grid.
+- **`generate_input` Function:** This function generates random inputs by placing a start and end point at opposite corners and scattering obstacles randomly on the grid.
+- **Puzzle Transformation:** The path is drawn based on the BFS search, ensuring that the line navigates around obstacles, adhering to the grid's constraints.

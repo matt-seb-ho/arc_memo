@@ -1,0 +1,97 @@
+To implement the puzzle that involves identifying obstacles and navigating around them to complete a planned path, we will create two functions: `generate_input` and `main`. The `generate_input` function will create random examples of grids with obstacles and paths, while the `main` function will implement the deterministic logic to transform the input grid into the desired output by navigating around obstacles.
+
+# Puzzle Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input you will see a grid with a background color and various colored pixels representing obstacles.
+# A planned path is indicated by a line of a specific color, starting from the top left, intended to reach the bottom right.
+# The transformation involves navigating this path while avoiding obstacles, drawing the path around them without overwriting any obstacles.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the background and obstacle colors.
+    # 2. Start from the top left and attempt to draw a line to the bottom right.
+    # 3. Whenever an obstacle is encountered, navigate around it without overwriting it.
+    # 4. Produce the output grid with the path.
+
+    # 1. Identify background and obstacle colors
+    background = Color.BLACK
+    path_color = Color.RED  # The color of the planned path
+    obstacle_colors = set(np.unique(input_grid)) - {background, path_color}
+
+    # Initialize the output grid
+    output_grid = input_grid.copy()
+
+    # Start from the top left
+    current_x, current_y = 0, 0
+    target_x, target_y = output_grid.shape[0] - 1, output_grid.shape[1] - 1
+
+    # 2. Function to move towards target, bypassing obstacles
+    def move_towards_target(x, y, target_x, target_y):
+        while (x, y) != (target_x, target_y):
+            # Check possible movements
+            if x < target_x and output_grid[x + 1, y] not in obstacle_colors:
+                x += 1
+            elif y < target_y and output_grid[x, y + 1] not in obstacle_colors:
+                y += 1
+            else:
+                # Detour: try alternate pathways
+                if y < target_y and output_grid[x, y + 1] not in obstacle_colors:
+                    y += 1
+                elif x < target_x and output_grid[x + 1, y] not in obstacle_colors:
+                    x += 1
+                else:
+                    # If stuck, attempt to navigate around the obstacle
+                    if x < target_x - 1 and output_grid[x + 2, y] not in obstacle_colors:
+                        x += 2
+                    elif y < target_y - 1 and output_grid[x, y + 2] not in obstacle_colors:
+                        y += 2
+                    else:
+                        # No path forward; need more sophisticated pathfinding
+                        break
+            output_grid[x, y] = path_color
+        return x, y
+
+    # 3. Draw the path while avoiding obstacles
+    end_x, end_y = move_towards_target(current_x, current_y, target_x, target_y)
+
+    # 4. Return the output grid with the path
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random obstacles and a planned path
+    n = random.randint(10, 15)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Randomly choose colors for obstacles
+    obstacle_colors = list(Color.NOT_BLACK)
+    random.shuffle(obstacle_colors)
+    obstacles = random.choice(obstacle_colors, size=random.randint(2, 5), replace=False)
+
+    # Place obstacles randomly
+    for _ in range(random.randint(n // 2, n)):
+        x, y = random.randint(0, n - 1), random.randint(0, n - 1)
+        grid[x, y] = random.choice(obstacles)
+
+    # Define the path color
+    path_color = Color.RED
+
+    # Start the path from the top left
+    grid[0, 0] = path_color
+
+    # Place path indicator at bottom right
+    grid[n - 1, n - 1] = path_color
+
+    return grid
+```
+
+This implementation uses a simple approach to move from the top left to the bottom right, avoiding obstacles by choosing alternate paths when necessary. The grid is randomly populated with obstacles, and the path color is distinguished from these obstacles. The main function executes the transformation according to the described behavior.

@@ -1,0 +1,102 @@
+Here's a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# dynamic pattern evolution, prediction, sequence analysis
+
+# description:
+# In the input you will see a sequence of grids representing consecutive time steps, 
+# where objects exhibit a consistent transformation pattern in terms of position, size, or color.
+# The task is to analyze the sequence to identify the evolving pattern, such as linear movement, size change, or color shift.
+# Extrapolate the identified pattern to predict and generate the next grid in the sequence. The output is a single grid that continues the detected pattern logically from the last input grid.
+
+def main(input_sequence):
+    # Analyze the input sequence to detect the pattern
+    num_steps = len(input_sequence)
+    last_grid = input_sequence[-1]
+    
+    # Find the connected components (assumed to be moving objects) in the last grid
+    objects = find_connected_components(last_grid, monochromatic=True, connectivity=8, background=Color.BLACK)
+    
+    # Prepare the output grid with the same size as the input grids
+    n, m = last_grid.shape
+    output_grid = np.zeros((n, m), dtype=int)
+    
+    # Process each object to predict its next position
+    for obj in objects:
+        # Get the object's position and color
+        x, y = object_position(obj, background=Color.BLACK)
+        color = object_colors(obj)[0]
+        
+        # Assume a linear movement pattern: calculate the velocity of the object between first and last grid
+        first_obj = find_connected_components(input_sequence[0], monochromatic=True, connectivity=8, background=Color.BLACK)
+        initial_position = None
+        for init_obj in first_obj:
+            if object_colors(init_obj)[0] == color:
+                initial_position = object_position(init_obj, background=Color.BLACK)
+                break
+        
+        dx = (x - initial_position[0]) // (num_steps - 1)
+        dy = (y - initial_position[1]) // (num_steps - 1)
+        
+        # Predict the next position of the object
+        new_x = x + dx
+        new_y = y + dy
+        
+        # Blit the object in the new position on the output grid
+        sprite = crop(obj)
+        if 0 <= new_x < n and 0 <= new_y < m:
+            blit_sprite(output_grid, sprite, x=new_x, y=new_y, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size
+    n, m = np.random.randint(5, 10, size=2)
+    
+    # Generate a sequence of grids
+    num_steps = np.random.randint(3, 6)
+    sequence = []
+    
+    # Initialize a random starting position and direction for each object
+    num_objects = np.random.randint(1, 4)
+    directions = [(np.random.choice([-1, 0, 1]), np.random.choice([-1, 0, 1])) for _ in range(num_objects)]
+    positions = [random_free_location_for_sprite(np.zeros((n, m), dtype=int), np.array([[Color.BLACK]]), border_size=1) for _ in range(num_objects)]
+    colors = np.random.choice(Color.NOT_BLACK, size=num_objects, replace=False)
+    
+    for step in range(num_steps):
+        grid = np.zeros((n, m), dtype=int)
+        
+        for i, (direction, position, color) in enumerate(zip(directions, positions, colors)):
+            # Calculate the new position
+            new_x = position[0] + direction[0] * step
+            new_y = position[1] + direction[1] * step
+            
+            # Ensure the object stays within the bounds
+            new_x = max(0, min(n - 1, new_x))
+            new_y = max(0, min(m - 1, new_y))
+            
+            # Draw the object at the new position
+            grid[new_x, new_y] = color
+        
+        sequence.append(grid)
+    
+    return sequence
+```
+
+### Explanation:
+1. **`main` Function**:
+   - The `main` function processes a sequence of grids.
+   - It calculates the movement pattern of each object by finding its position change per time step.
+   - It predicts the next position of the object based on the detected pattern and generates a new grid with updated positions.
+
+2. **`generate_input` Function**:
+   - This function generates a sequence of grids representing time steps.
+   - Each grid contains several objects that move linearly over time.
+   - The movement direction and color for each object are randomly selected.
+   - The function ensures that the generated sequence is consistent with the description of evolving patterns.

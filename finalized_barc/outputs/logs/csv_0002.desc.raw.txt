@@ -1,0 +1,4 @@
+```python
+# concepts: parity counting, guide object, color restriction
+# description: Input consists of a grid with various colored pixels and a designated guide object. Count the number of pixels within the guide object that have either odd or even color values. If a specific color or set of colors is provided, restrict the count to those colors only; otherwise, consider all colors present in the guide object. The output is the total count of pixels satisfying the chosen parity condition.
+```

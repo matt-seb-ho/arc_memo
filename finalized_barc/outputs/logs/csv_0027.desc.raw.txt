@@ -1,0 +1,4 @@
+```python
+# concepts: translation, alignment, merging, connected components
+# description: Given a grid with a reference object and a target object, translate the target so it touches the reference on a specified side (up/down/left/right). Align the nearest edge of the target to the contact edge of the reference without overlap. Merge the target into the reference by painting target pixels into the grid, preserving existing reference pixels. The output grid shows the target object aligned and merged with the reference object on the specified side.
+```

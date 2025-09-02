@@ -1,0 +1,95 @@
+Here’s an implementation of a puzzle that involves identifying obstacles along a planned path and navigating around them to ensure the path reaches its intended destination without overwriting existing objects.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input, you will find a black grid with a path of colored pixels. Some pixels are obstacles.
+# The path should extend from a start pixel to an end pixel.
+# If the path encounters an obstacle, it must take a detour around it without overwriting the obstacle.
+# The output should be a grid where the path is extended from start to end, avoiding obstacles.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify start, end, and obstacles
+    # 2. Extend the path step by step, navigating around obstacles as necessary
+    # 3. Ensure the path reaches the destination without altering obstacles
+
+    background = Color.BLACK
+    # Identify start, end, and obstacles
+    colors = np.unique(input_grid)
+    colors = colors[colors != background]
+    
+    start_color = np.random.choice(colors)
+    end_color = np.random.choice(colors[colors != start_color])
+    obstacle_colors = set(colors) - {start_color, end_color}
+    
+    start_positions = np.argwhere(input_grid == start_color)
+    end_positions = np.argwhere(input_grid == end_color)
+    obstacle_positions = np.argwhere(np.isin(input_grid, list(obstacle_colors)))
+
+    output_grid = input_grid.copy()
+
+    # Determine path directions
+    for start_pos in start_positions:
+        for end_pos in end_positions:
+            path = find_path(output_grid, start_pos, end_pos, obstacle_positions)
+            if path:
+                for x, y in path:
+                    output_grid[x, y] = start_color
+                break
+
+    return output_grid
+
+def find_path(grid, start, end, obstacles):
+    # Simple pathfinding with detours around obstacles
+    from collections import deque
+
+    queue = deque([(start, [])])
+    visited = set()
+
+    while queue:
+        (x, y), path = queue.popleft()
+        if (x, y) == tuple(end):
+            return path
+
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < grid.shape[0] and 0 <= ny < grid.shape[1]:
+                if (nx, ny) not in visited and grid[nx, ny] == Color.BLACK and (nx, ny) not in obstacles:
+                    queue.append(((nx, ny), path + [(nx, ny)]))
+                    visited.add((nx, ny))
+
+    return None
+
+def generate_input():
+    # Generate a grid with a start and end point and random obstacles
+    width, height = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((width, height), Color.BLACK)
+
+    start_color = np.random.choice(Color.NOT_BLACK)
+    end_color = np.random.choice([c for c in Color.NOT_BLACK if c != start_color])
+    obstacle_colors = np.random.choice([c for c in Color.NOT_BLACK if c not in (start_color, end_color)], size=3, replace=False)
+
+    start_x, start_y = np.random.randint(0, width), np.random.randint(0, height)
+    end_x, end_y = np.random.randint(0, width), np.random.randint(0, height)
+
+    grid[start_x, start_y] = start_color
+    grid[end_x, end_y] = end_color
+
+    num_obstacles = np.random.randint(5, 10)
+    for _ in range(num_obstacles):
+        obstacle_color = np.random.choice(obstacle_colors)
+        obstacle_x, obstacle_y = np.random.randint(0, width), np.random.randint(0, height)
+        grid[obstacle_x, obstacle_y] = obstacle_color
+
+    return grid
+```
+
+This implementation uses a simple pathfinding algorithm to extend a path from a start point to an end point, while avoiding obstacles. The `generate_input` function creates a randomized grid with a start and end point, along with obstacles of different colors, ensuring that the grid provides an interesting challenge for the middle-schoolers to solve.

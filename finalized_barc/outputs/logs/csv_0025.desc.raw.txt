@@ -1,0 +1,4 @@
+```python
+# concepts: grid partitioning, divider lines, color-based regions
+# description: The input grid is divided into distinct regions by divider lines that span the grid. Each region contains pixels of specific colors that do not appear in other regions. The task is to identify these regions and treat them as separate entities for further processing. The output maintains the structure of these regions without altering the internal arrangement of pixels within each region.
+```

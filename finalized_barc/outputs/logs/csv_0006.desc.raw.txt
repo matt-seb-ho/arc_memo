@@ -1,0 +1,4 @@
+```python
+# concepts: line drawing, pixel connectivity, grid update
+# description: Given a grid with two distinct pixels marked as start and end, draw a straight line connecting these two pixels using a specified color. The line is drawn using pixel connectivity, updating the grid by coloring each pixel along the path with the given color. The rest of the grid remains unchanged.
+```

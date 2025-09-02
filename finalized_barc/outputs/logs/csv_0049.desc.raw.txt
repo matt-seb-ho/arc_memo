@@ -1,0 +1,4 @@
+```python
+# concepts: stripe detection, 2x2 block search, color matching, index retrieval
+# description: Input consists of multiple horizontal stripes separated by black rows. Each stripe may contain various colored blocks. Identify the stripe containing a 2x2 block of a specific target color (magenta). Return the index of this stripe (0-based) that contains the target 2x2 block. Only one stripe will contain the target block, ensuring a unique index is returned.
+```

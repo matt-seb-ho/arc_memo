@@ -1,0 +1,4 @@
+```python
+# concepts: unique color selection, connected components, guide object identification
+# description: Extract all connected components from the grid. Identify the guide object as the one whose color is unique among all components. The guide object is the only one with a color that no other object shares. All other objects are ignored in the output.
+```

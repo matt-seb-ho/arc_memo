@@ -1,0 +1,119 @@
+Certainly! Let's implement a puzzle based on the given description:
+
+### Puzzle Overview:
+
+**Concepts:**
+- Obstacles
+- Path blocking
+- Line drawing
+- Detours
+
+**Description:**
+In the input grid, you will see a series of non-background pixels (obstacles) that may block a planned line or replication path. Your task is to draw a line between two points (start and end) without overwriting these obstacles. The line should navigate around these obstacles using detours when necessary to reach the destination.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input you will see a grid with a start point (green), an end point (red), and various obstacles (grey).
+# Draw a line from the start to the end, avoiding the obstacles.
+# The line should navigate around the obstacles when necessary and should be colored blue.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start (green) and end (red) points
+    # 2. Identify the obstacles (grey)
+    # 3. Implement a pathfinding algorithm (e.g., BFS or A*) to find a path from start to end while avoiding obstacles
+    # 4. Draw the path in blue
+
+    # Identify colors
+    start_color = Color.GREEN
+    end_color = Color.RED
+    obstacle_color = Color.GREY
+    path_color = Color.BLUE
+    background = Color.BLACK
+
+    # Find the start and end points
+    start_points = np.argwhere(input_grid == start_color)
+    end_points = np.argwhere(input_grid == end_color)
+    assert len(start_points) == 1 and len(end_points) == 1, "There should be exactly one start and one end point."
+
+    start = tuple(start_points[0])
+    end = tuple(end_points[0])
+
+    # Obstacles mask
+    obstacles = (input_grid == obstacle_color)
+
+    # Implement BFS to find the shortest path avoiding obstacles
+    from collections import deque
+
+    def is_valid(x, y):
+        return 0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1] and not obstacles[x, y] and input_grid[x, y] != path_color
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Right, Down, Left, Up
+
+    queue = deque([start])
+    parent = {start: None}
+
+    while queue:
+        current = queue.popleft()
+        if current == end:
+            break
+        for dx, dy in directions:
+            neighbor = (current[0] + dx, current[1] + dy)
+            if is_valid(*neighbor) and neighbor not in parent:
+                parent[neighbor] = current
+                queue.append(neighbor)
+
+    # Reconstruct the path and draw it on the grid
+    if end in parent:
+        path = []
+        current = end
+        while current is not None:
+            path.append(current)
+            current = parent[current]
+
+        for x, y in path:
+            input_grid[x, y] = path_color
+
+    return input_grid
+
+def generate_input():
+    # Generate a grid with a random start and end point, and random obstacles
+
+    width, height = np.random.randint(10, 20, size=2)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Place start and end points
+    start_x, start_y = np.random.randint(0, width), np.random.randint(0, height)
+    end_x, end_y = np.random.randint(0, width), np.random.randint(0, height)
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    # Ensure start and end points are not the same
+    while (start_x, start_y) == (end_x, end_y):
+        end_x, end_y = np.random.randint(0, width), np.random.randint(0, height)
+
+    # Place random obstacles
+    num_obstacles = np.random.randint(5, width * height // 4)
+    for _ in range(num_obstacles):
+        x, y = np.random.randint(0, width), np.random.randint(0, height)
+        if grid[x, y] == Color.BLACK:  # Do not place obstacles on start or end
+            grid[x, y] = Color.GREY
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` function:** This function takes a grid and identifies the start and end points and obstacles. It employs a simple BFS algorithm to find a path from the start to the end, avoiding obstacles. Once the path is found, it colors the path in blue.
+  
+- **`generate_input` function:** This function generates a stochastic grid with a random start and end point, and random obstacles. It ensures that there is only one start and end point and places a reasonable number of obstacles.
+
+This puzzle challenges middle-schoolers to understand pathfinding and navigation around obstacles, which is a fundamental concept in many computational problems.

@@ -1,0 +1,91 @@
+Sure! Let's create a puzzle based on the description provided. We'll use the functions from `common.py` for generating inputs and implementing the transformation logic. The puzzle involves segmenting a grid into regions using divider lines and extracting each region as a subgrid.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider lines, region extraction, array slicing
+
+# description:
+# Input is a grid potentially divided into distinct regions by horizontal or vertical lines of a specific color.
+# Identify these divider lines and use them to segment the grid into separate regions.
+# Each region is extracted as a subgrid, excluding the divider lines themselves.
+# Output is a list of these subgrids, preserving their original content and relative order.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Determine the color of the divider lines by finding lines that extend fully across rows or columns
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            divider_color = input_grid[i, 0]
+            break
+    if divider_color is None:
+        for j in range(input_grid.shape[1]):
+            if np.all(input_grid[:, j] == input_grid[0, j]):
+                divider_color = input_grid[0, j]
+                break
+
+    assert divider_color is not None, "No divider color found"
+
+    # Identify horizontal and vertical divider lines
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == divider_color)]
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == divider_color)]
+
+    # Add grid boundaries to the divider lists
+    vertical_dividers = [-1] + vertical_dividers + [input_grid.shape[0]]
+    horizontal_dividers = [-1] + horizontal_dividers + [input_grid.shape[1]]
+
+    # Extract each region as a subgrid
+    subgrids = []
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            x1, x2 = vertical_dividers[i] + 1, vertical_dividers[i + 1]
+            y1, y2 = horizontal_dividers[j] + 1, horizontal_dividers[j + 1]
+            subgrid = input_grid[x1:x2, y1:y2]
+            if subgrid.size > 0:
+                subgrids.append(subgrid)
+
+    return subgrids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate grid dimensions
+    width, height = np.random.randint(15, 30), np.random.randint(15, 30)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height), replace=True)
+
+    # Select a random color for divider lines
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly choose number of dividers and their positions
+    num_vertical_dividers = np.random.randint(1, 4)
+    num_horizontal_dividers = np.random.randint(1, 4)
+    vertical_positions = randomly_spaced_indices(max_len=width, n_indices=num_vertical_dividers, border_size=1, padding=2)
+    horizontal_positions = randomly_spaced_indices(max_len=height, n_indices=num_horizontal_dividers, border_size=1, padding=2)
+
+    # Draw the divider lines on the grid
+    for x in vertical_positions:
+        grid[x, :] = divider_color
+    for y in horizontal_positions:
+        grid[:, y] = divider_color
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function**: 
+  - First, it detects the divider color by scanning for lines that extend fully across rows or columns.
+  - It identifies vertical and horizontal dividers by checking for complete lines of the divider color.
+  - It then extracts regions between these dividers as subgrids, ensuring not to include the divider lines themselves.
+
+- **`generate_input` Function**:
+  - It generates a grid of random dimensions filled with random colors.
+  - It selects a random color for the divider lines.
+  - It uses functions to randomly place vertical and horizontal dividers, ensuring adequate space between dividers.
+  - The grid is then returned as the input for the puzzle.
+
+This setup creates a fun and educational puzzle where students can understand and implement region extraction from a grid with dividers, using Python's array slicing capabilities.

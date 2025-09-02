@@ -1,0 +1,4 @@
+```python
+# concepts: line drawing, pixel connectivity, grid update
+# description: Given a grid with two distinct pixels marked as start and end, draw a straight line connecting these two pixels. Use Bresenham's line algorithm to determine the path of the line. Update the grid by coloring each pixel along the path with a specified line color. All other pixels in the grid remain unchanged.
+```

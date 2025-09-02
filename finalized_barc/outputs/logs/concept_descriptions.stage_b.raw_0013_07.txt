@@ -1,0 +1,103 @@
+To implement the puzzle, we'll create a function `main` that identifies holes in the given input grid and fills them with a specific color. The `generate_input` function will create random grids with shapes enclosing potential holes. Let's go through the implementation step-by-step.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input consists of a grid with a single object enclosing empty spaces (holes). Identify holes as background-color (0) regions fully enclosed by the object, not touching the grid border. Use flood-fill from the border to exclude non-enclosed regions. Output the grid with holes marked or filled by a target object or color, while preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create a copy of the input grid to work on
+    output_grid = input_grid.copy()
+    
+    # Use flood-fill from the border to mark all background regions connected to the border
+    flood_fill_border(output_grid, Color.BLACK)
+    
+    # Find all connected components, which now include only the enclosed regions
+    enclosed_components = find_connected_components(output_grid, background=Color.BLACK, connectivity=4)
+    
+    # Determine the target color for filling the holes
+    target_color = Color.YELLOW
+    
+    # Fill the enclosed regions (holes) with the target color
+    for component in enclosed_components:
+        if is_fully_enclosed(component, input_grid):
+            component[component == Color.BLACK] = target_color
+            blit_object(output_grid, component, background=Color.BLACK)
+    
+    return output_grid
+
+def flood_fill_border(grid, background):
+    """Flood fill from the border to mark non-enclosed regions."""
+    # Create a working grid to mark the flood-fill
+    fill_grid = np.full(grid.shape, False, dtype=bool)
+    
+    # Flood-fill from the border to mark all reachable regions
+    for x in range(grid.shape[0]):
+        if grid[x, 0] == background:
+            flood_fill(grid, fill_grid, x, 0, background)
+        if grid[x, grid.shape[1] - 1] == background:
+            flood_fill(grid, fill_grid, x, grid.shape[1] - 1, background)
+    for y in range(grid.shape[1]):
+        if grid[0, y] == background:
+            flood_fill(grid, fill_grid, 0, y, background)
+        if grid[grid.shape[0] - 1, y] == background:
+            flood_fill(grid, fill_grid, grid.shape[0] - 1, y, background)
+    
+    # Mark all flood-filled areas in the grid as a different color (e.g., 1)
+    grid[fill_grid] = 1
+
+def flood_fill(grid, fill_grid, x, y, background):
+    """Recursive flood-fill algorithm."""
+    if x < 0 or x >= grid.shape[0] or y < 0 or y >= grid.shape[1]:
+        return
+    if fill_grid[x, y] or grid[x, y] != background:
+        return
+    fill_grid[x, y] = True
+    flood_fill(grid, fill_grid, x + 1, y, background)
+    flood_fill(grid, fill_grid, x - 1, y, background)
+    flood_fill(grid, fill_grid, x, y + 1, background)
+    flood_fill(grid, fill_grid, x, y - 1, background)
+
+def is_fully_enclosed(component, original_grid):
+    """Check if a component is fully enclosed by verifying it's not connected to any border."""
+    x, y, w, h = bounding_box(component)
+    return (x > 0 and x + w < original_grid.shape[0] and 
+            y > 0 and y + h < original_grid.shape[1])
+
+def generate_input():
+    # Create a grid of random size between 10 and 20
+    size = np.random.randint(10, 21)
+    grid = np.full((size, size), Color.BLACK)
+    
+    # Create a random enclosing object
+    object_color = np.random.choice(list(Color.NOT_BLACK))
+    enclosing_object = random_sprite(size // 2, size // 2, color_palette=[object_color], background=Color.BLACK)
+    
+    # Find location for the enclosing object
+    x, y = random_free_location_for_sprite(grid, enclosing_object, border_size=1, padding=1)
+    
+    # Place the enclosing object in the grid
+    blit_sprite(grid, enclosing_object, x, y)
+    
+    # Create random holes within the object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 5)
+        hole = random_sprite(hole_size, hole_size, color_palette=[Color.BLACK], background=Color.BLACK)
+        hole_x, hole_y = random_free_location_for_sprite(enclosing_object, hole, border_size=1, padding=1)
+        blit_sprite(enclosing_object, hole, hole_x, hole_y)
+    
+    # Place the modified enclosing object back into the grid
+    blit_sprite(grid, enclosing_object, x, y)
+    
+    return grid
+```
+
+This code follows the description closely, using flood-fill to identify non-enclosed regions, and `find_connected_components` to identify enclosed regions. The `generate_input` function creates a random grid with an object that may contain holes, which can be filled using the `main` function.

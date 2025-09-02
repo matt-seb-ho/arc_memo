@@ -1,0 +1,92 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# Input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation.
+# Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W).
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Define cardinal directions
+    directions = {
+        (0, -1): 'N',  # North
+        (0, 1): 'S',   # South
+        (-1, 0): 'W',  # West
+        (1, 0): 'E'    # East
+    }
+
+    # Find the pointer object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    assert len(objects) == 1  # Ensure there's exactly one object
+    pointer = objects[0]
+
+    # Get the bounding box of the pointer
+    x, y, w, h = bounding_box(pointer)
+
+    # Crop to get the pointer sprite
+    pointer_sprite = crop(pointer)
+
+    # Calculate the centroid of the pointer
+    centroid = np.mean(np.argwhere(pointer_sprite != Color.BLACK), axis=0)
+
+    # Identify the tip of the pointer (assumed to be the most distant pixel from the centroid)
+    tip_coordinates = None
+    max_distance = 0
+    for tip_candidate in np.argwhere(pointer_sprite != Color.BLACK):
+        distance = np.linalg.norm(tip_candidate - centroid)
+        if distance > max_distance:
+            max_distance = distance
+            tip_coordinates = tip_candidate
+
+    # Calculate the vector from centroid to tip
+    vector = np.sign(tip_coordinates - centroid).astype(int)
+
+    # Quantize the vector to the nearest cardinal direction
+    quantized_direction = min(directions.keys(), key=lambda dir: np.linalg.norm(np.array(dir) - vector))
+
+    # Output the corresponding direction label
+    direction_label = directions[quantized_direction]
+    return direction_label
+
+def generate_input():
+    # Create a grid
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Choose a random color for the pointer
+    pointer_color = np.random.choice(Color.NOT_BLACK)
+
+    # Create a pointer sprite
+    pointer_length = np.random.randint(3, 6)
+    pointer_width = np.random.randint(1, 3)
+    pointer_sprite = np.full((pointer_length, pointer_width), pointer_color)
+
+    # Make one end of the pointer distinct (the tip)
+    tip_index = (np.random.randint(pointer_length), np.random.randint(pointer_width))
+    pointer_sprite[tip_index] = pointer_color
+
+    # Randomly rotate or flip the pointer to vary its orientation
+    pointer_sprite = np.rot90(pointer_sprite, k=np.random.randint(4))
+    if np.random.choice([True, False]):
+        pointer_sprite = np.flipud(pointer_sprite)
+    if np.random.choice([True, False]):
+        pointer_sprite = np.fliplr(pointer_sprite)
+
+    # Place the pointer in a random location on the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, pointer_sprite, padding=1)
+        blit_sprite(grid, pointer_sprite, x, y)
+    except ValueError:
+        # If no location was found, retry (edge case handling)
+        return generate_input()
+
+    return grid
+```
+
+This implementation follows the provided puzzle description closely. The `main` function identifies the pointer's direction by calculating the vector from its centroid to its tip, then quantizes this vector to the nearest cardinal direction. The `generate_input` function creates a random grid with a single pointer-shaped object oriented in a random direction.

@@ -1,0 +1,4 @@
+```python
+# concepts: object identification, translation, erasure, grid manipulation
+# description: Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0). Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates. Redraw the object at the new position, preserving its shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+```

@@ -1,0 +1,104 @@
+Here's an implementation of the puzzle based on the description provided. The puzzle involves identifying obstacles and drawing a line between two points while avoiding these obstacles.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing
+
+# description:
+# In the input, you will see a grid with various colored obstacles scattered across the grid, and two distinct points marked with specific colors (start and end).
+# To make the output grid, you need to draw a path connecting the start and end points, avoiding the obstacles. 
+# The path should navigate around the obstacles, ensuring no part of the line overlaps with any obstacle.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start and end points based on their unique colors.
+    # 2. Identify the obstacles in the grid.
+    # 3. Implement a pathfinding algorithm to draw a line from the start to the end, avoiding obstacles.
+    
+    # Copy the input grid to the output grid to perform operations
+    output_grid = np.copy(input_grid)
+    
+    # 1. Identify start and end points
+    start_color = Color.GREEN
+    end_color = Color.RED
+    start_point = np.argwhere(input_grid == start_color)[0]
+    end_point = np.argwhere(input_grid == end_color)[0]
+    
+    # 2. Identify obstacles
+    obstacles = input_grid != Color.BLACK
+    obstacles[start_point[0], start_point[1]] = False
+    obstacles[end_point[0], end_point[1]] = False
+    
+    # 3. Implement a simple pathfinding algorithm (e.g., BFS) to find a path from start to end
+    from collections import deque
+    
+    # Directions for moving: right, left, down, up
+    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    queue = deque([(*start_point, None)])  # (x, y, direction)
+    visited = set()
+    parents = {}
+    
+    while queue:
+        x, y, direction = queue.popleft()
+        
+        if (x, y) in visited:
+            continue
+        visited.add((x, y))
+        
+        if (x, y) == (end_point[0], end_point[1]):
+            # Reconstruct path
+            path = []
+            current = (x, y)
+            while current is not None:
+                path.append(current)
+                current = parents.get(current)
+            path.reverse()
+            break
+        
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1] and not obstacles[nx, ny]:
+                if (nx, ny) not in visited:
+                    queue.append((nx, ny, (dx, dy)))
+                    parents[(nx, ny)] = (x, y)
+    
+    # Draw the path on the output grid
+    for (x, y) in path:
+        output_grid[x, y] = Color.BLUE  # Path color
+
+    return output_grid
+
+def generate_input():
+    # Generate a stochastic input grid
+    n = m = 10  # Size of the grid
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Randomly place the start (green) and end (red) points on the grid
+    start_position = (np.random.randint(n), np.random.randint(m))
+    end_position = (np.random.randint(n), np.random.randint(m))
+    while end_position == start_position:
+        end_position = (np.random.randint(n), np.random.randint(m))
+    
+    grid[start_position] = Color.GREEN
+    grid[end_position] = Color.RED
+    
+    # Randomly scatter obstacles (colored differently) on the grid
+    obstacle_colors = [Color.YELLOW, Color.GREY, Color.ORANGE, Color.PINK]
+    randomly_scatter_points(grid, color=random.choice(obstacle_colors), density=0.2, background=Color.BLACK)
+    
+    # Ensure start and end positions are not overwritten by obstacles
+    grid[start_position] = Color.GREEN
+    grid[end_position] = Color.RED
+
+    return grid
+```
+
+### Explanation:
+- **Main Function**: This function identifies the start and end points, marks the obstacles, and uses a simple breadth-first search (BFS) algorithm to find a path from the start to the end while avoiding obstacles. It then draws this path on the grid.
+- **Generate Input Function**: This function creates a grid with a start point, an end point, and randomly scattered obstacles. The positions of the start and end points are randomized, and obstacles are placed in random positions with random colors, ensuring the start and end points are not overwritten.
+- **Pathfinding**: The BFS algorithm is used to find a clear path from start to end, avoiding obstacles, and the path is drawn using a distinct color (blue) on the output grid.

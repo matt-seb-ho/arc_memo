@@ -1,0 +1,92 @@
+Here's a puzzle based on the description provided. This puzzle involves partitioning a grid into distinct regions using divider lines and then processing these regions based on their unique colors.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines that span the grid. Each region contains pixels of specific colors that do not appear in other regions.
+# The task is to identify these regions and treat them as separate entities for further processing. The output maintains the structure of these regions without altering the internal arrangement of pixels within each region.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the dividers and regions in the grid.
+    # 2. Extract each region based on unique colors.
+    # 3. Ensure the output grid mimics the structure of regions without altering their internal arrangements.
+
+    # Identify the background (divider) color as the most frequent non-black color
+    divider_color = max(Color.NOT_BLACK, key=lambda color: np.sum(input_grid == color))
+    
+    # Find all dividers, which are lines of the divider color
+    vertical_dividers = np.all(input_grid == divider_color, axis=1)
+    horizontal_dividers = np.all(input_grid == divider_color, axis=0)
+
+    # Calculate x and y positions where dividers exist
+    vertical_indices = np.where(vertical_dividers)[0]
+    horizontal_indices = np.where(horizontal_dividers)[0]
+
+    # Include grid boundaries as potential dividers
+    vertical_indices = np.insert(vertical_indices, [0, len(vertical_indices)], [0, input_grid.shape[0]])
+    horizontal_indices = np.insert(horizontal_indices, [0, len(horizontal_indices)], [0, input_grid.shape[1]])
+
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Iterate over each possible region defined by the dividers
+    for i in range(len(vertical_indices) - 1):
+        for j in range(len(horizontal_indices) - 1):
+            x1, x2 = vertical_indices[i], vertical_indices[i+1]
+            y1, y2 = horizontal_indices[j], horizontal_indices[j+1]
+
+            # Extract the region
+            region = input_grid[x1:x2, y1:y2]
+            
+            # Find the unique color in the region (excluding the divider color)
+            unique_colors = set(np.unique(region)) - {divider_color, Color.BLACK}
+            
+            # If there is exactly one unique color, fill output with that color
+            if len(unique_colors) == 1:
+                color = unique_colors.pop()
+                output_grid[x1:x2, y1:y2] = region
+
+    return output_grid
+
+
+def generate_input():
+    # Create a random grid size
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Randomly choose a divider color
+    divider_color = np.random.choice(Color.NOT_BLACK)
+
+    # Define vertical and horizontal dividers
+    num_vertical_dividers = np.random.randint(1, 4)
+    num_horizontal_dividers = np.random.randint(1, 4)
+
+    vertical_divider_positions = randomly_spaced_indices(grid_size, num_vertical_dividers, border_size=1, padding=2)
+    horizontal_divider_positions = randomly_spaced_indices(grid_size, num_horizontal_dividers, border_size=1, padding=2)
+
+    # Draw dividers on the grid
+    for x in vertical_divider_positions:
+        draw_line(grid, x, 0, direction=(0, 1), color=divider_color)
+    for y in horizontal_divider_positions:
+        draw_line(grid, 0, y, direction=(1, 0), color=divider_color)
+
+    # Fill regions with unique colors
+    for i in range(len(vertical_divider_positions) - 1):
+        for j in range(len(horizontal_divider_positions) - 1):
+            x1, x2 = vertical_divider_positions[i], vertical_divider_positions[i+1]
+            y1, y2 = horizontal_divider_positions[j], horizontal_divider_positions[j+1]
+
+            region_color = np.random.choice(list(Color.NOT_BLACK - {divider_color}))
+            grid[x1+1:x2, y1+1:y2] = region_color
+
+    return grid
+```
+
+This puzzle generates a grid with divider lines and fills each region with unique colors. The task is to preserve these regions in the output grid. Each region is identified by its unique color and the divider lines.

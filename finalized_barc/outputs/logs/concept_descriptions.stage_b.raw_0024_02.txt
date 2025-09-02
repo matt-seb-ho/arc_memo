@@ -1,0 +1,78 @@
+Let's design a new puzzle with the following specifications:
+
+**Concepts:**
+connected components, recoloring, gradient color scheme
+
+**Description:**
+Identify a single connected object in the input grid. Recolor the object using a gradient color scheme starting from the top-left corner of its bounding box, fading towards the bottom-right. The gradient should transition from one color to another, e.g., from blue to green. The rest of the grid should remain unchanged.
+
+Here is the implemented puzzle in Python:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connected components, recoloring, gradient color scheme
+
+# description:
+# Identify a single connected object in the input grid. Recolor the object using a gradient color scheme starting from the top-left corner of its bounding box, fading towards the bottom-right. The gradient should transition from one color to another, e.g., from blue to green. The rest of the grid should remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the input grid
+    objects = find_connected_components(input_grid, connectivity=8)
+
+    # Select the largest object to apply the gradient recolor
+    selected_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    
+    # Get the bounding box coordinates of the selected object
+    x, y, width, height = bounding_box(selected_object)
+    
+    # Create a gradient color map from blue to green
+    gradient_colors = [Color.BLUE, Color.GREEN]
+    gradient = np.linspace(0, 1, max(width, height))
+    
+    # Create a copy of the input grid for transformation
+    output_grid = input_grid.copy()
+
+    # Apply the gradient color transformation
+    for i in range(width):
+        for j in range(height):
+            if selected_object[i + x, j + y] != Color.BLACK:
+                blend_ratio = (i + j) / (width + height - 2)
+                color_index = int(blend_ratio * (len(gradient_colors) - 1))
+                output_grid[i + x, j + y] = gradient_colors[color_index]
+    
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random size and a single connected object
+    n = np.random.randint(10, 15)
+    input_grid = np.full((n, n), Color.BLACK)
+    
+    # Generate a random sprite with a random color
+    sprite_color = np.random.choice(list(Color.NOT_BLACK))
+    sprite = random_sprite(n//2, n//2, color_palette=[sprite_color], connectivity=8)
+    
+    # Place the sprite in the grid
+    x, y = random_free_location_for_sprite(input_grid, sprite, border_size=1)
+    blit_sprite(input_grid, sprite, x, y)
+    
+    return input_grid
+```
+
+### Explanation of the Code
+
+- **Main Function**: 
+  - We first find all connected components in the input grid and select the largest object. This ensures that we're working with a single, significant object.
+  - We calculate the bounding box of this object and create a gradient color map from blue to green.
+  - Using the bounding box dimensions, we apply a gradient transformation to the object within its region on the grid. The gradient is applied diagonally from the top-left to the bottom-right of the object's bounding box.
+
+- **Generate Input Function**: 
+  - The grid size is randomly chosen between 10 and 15 to ensure variability.
+  - A single connected object is generated with a random color from the available palette (excluding black) and placed onto the grid.
+  - The sprite is positioned ensuring it is fully within the bounds of the grid and not overlapping any borders.
+
+This setup ensures that each time the puzzle is generated, it presents a new instance of the input while maintaining the same transformation logic.

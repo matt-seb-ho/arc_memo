@@ -1,0 +1,107 @@
+Certainly! Let's design a new puzzle based on the provided description. The puzzle will involve identifying enclosed "holes" within a single object and highlighting them.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# The input consists of a grid with a single object using one color and a black background (0).
+# The task is to identify holes, which are fully enclosed black regions within the object that are not connected to the grid border.
+# The output grid should highlight these enclosed holes with a different color, such as red, while leaving non-enclosed regions the same.
+
+def main(input_grid):
+    # Create a copy of the input grid for output.
+    output_grid = input_grid.copy()
+
+    # Flood fill from the grid border to identify non-enclosed regions.
+    border_filled = flood_fill_from_border(input_grid)
+
+    # Calculate enclosed regions by finding black areas not connected to the border-filled areas.
+    enclosed_mask = (input_grid == Color.BLACK) & ~border_filled
+
+    # Color enclosed holes with red.
+    output_grid[enclosed_mask] = Color.RED
+
+    return output_grid
+
+def flood_fill_from_border(grid):
+    # Create a mask to track filled areas starting from the border.
+    filled = np.zeros_like(grid, dtype=bool)
+
+    # Add border pixels to the queue to start flood fill.
+    queue = []
+    n, m = grid.shape
+    for i in range(n):
+        if grid[i, 0] == Color.BLACK:
+            queue.append((i, 0))
+        if grid[i, m - 1] == Color.BLACK:
+            queue.append((i, m - 1))
+    
+    for j in range(m):
+        if grid[0, j] == Color.BLACK:
+            queue.append((0, j))
+        if grid[n - 1, j] == Color.BLACK:
+            queue.append((n - 1, j))
+
+    # Perform flood fill to find all black regions connected to the border.
+    while queue:
+        x, y = queue.pop(0)
+        if filled[x, y] or grid[x, y] != Color.BLACK:
+            continue
+        filled[x, y] = True
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < n and 0 <= ny < m and not filled[nx, ny]:
+                queue.append((nx, ny))
+
+    return filled
+
+def generate_input():
+    # Create a grid with a size between 10x10 and 20x20.
+    size = np.random.randint(10, 21)
+    grid = np.full((size, size), Color.BLACK)
+
+    # Generate a single object with a random size.
+    object_size = np.random.randint(5, size - 2)
+    object_color = np.random.choice(list(Color.NOT_BLACK))
+    object_sprite = random_sprite(object_size, object_size, color_palette=[object_color], background=Color.BLACK)
+
+    # Place the object randomly on the grid.
+    try:
+        x, y = random_free_location_for_sprite(grid, object_sprite, background=Color.BLACK, border_size=1)
+    except ValueError:
+        return generate_input()
+
+    blit_sprite(grid, object_sprite, x, y)
+
+    # Introduce holes within the object.
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, object_size // 2)
+        hole_x, hole_y = np.random.randint(1, object_size - hole_size, size=2)
+        grid[x + hole_x:x + hole_x + hole_size, y + hole_y:y + hole_y + hole_size] = Color.BLACK
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**: The puzzle leverages concepts of identifying enclosed regions and flood-filling to differentiate between holes and non-holes.
+  
+- **Main Function** (`main`):
+  - We create a copy of the input grid to modify.
+  - The `flood_fill_from_border` function identifies all black regions connected to the grid's border.
+  - Enclosed holes are identified by checking black regions not connected to the border.
+  - These enclosed holes are then colored red in the output grid.
+
+- **Flood Fill Function** (`flood_fill_from_border`):
+  - This function starts from the grid's border and floods all connected black regions to mark them as filled.
+
+- **Input Generator** (`generate_input`):
+  - It creates a grid with a random size and places a single random-colored object on it.
+  - Random holes are introduced within this object, ensuring they are fully enclosed for the puzzle to work correctly.

@@ -1,0 +1,383 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+pattern matching, boolean mask, predicate evaluation, exact match
+
+Description: 
+Input is a 3x3 grid (window) and a boolean mask (pattern_mask) of the same size. A predicate function is applied to each cell in the window to create a boolean mask. Return True if this generated mask exactly matches the given pattern_mask element-wise, with no rotations or flips allowed. Otherwise, return False.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+
+# concepts:
+# patterns, horizontal bars
+
+# description:
+# In the input you will see a colored pattern in a 3x3 grid.
+# For each row of the input, if that row is a single color, color that row in the output grey. Otherwise, output black.
+
+def main(input_grid):
+    # get input grid shape
+    n, m = input_grid.shape
+
+    # get output grid ready
+    output_grid = np.zeros((n, m), dtype=int)
+
+    # look at each row of the input grid
+    for y in range(m):
+        # check if each pixel in the row is the same color
+        base_color = input_grid[0][y]
+        all_same_color = True
+        for color in input_grid[1:, y]:
+            if color != base_color:
+                all_same_color = False
+
+        # if they are all the same color, change the output row to grey
+        if all_same_color:
+            for x in range(n):
+                output_grid[x][y] = Color.GREY
+
+    return output_grid
+
+def generate_input():
+    # create a 3x3 array of randomly chosen, non-black, colors
+    grid = np.random.choice(Color.NOT_BLACK, size=(3, 3))
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# patterns, positioning, copying
+
+# description:
+# In the input you will see a pattern of pixels in the top left corner of the grid, the top right corner of the grid, the bottom left corner of the grid, and the bottom right corner of the grid. All the pixels are the same color, and the patterns are in square regions.
+# To make the output, copy the pattern in each corner of the input to the corresponding corner of the output. The output grid is one pixel larger in each dimension than the maximum pattern side length.
+
+def main(input_grid):
+    # get the patterns from the input
+    objects = find_connected_components(input_grid, connectivity=8)
+
+    # find the bounding box of each pattern
+    bounding_boxes = [bounding_box(obj) for obj in objects]
+
+    # figure out how big the output grid should be (the pattern is a square and the output should be one pixel larger in each dimension)
+    n = m = max([max(pattern[2], pattern[3]) for pattern in bounding_boxes]) + 1
+
+    # make the output grid
+    output_grid = np.full((n, m), Color.BLACK)
+
+    # copy the patterns to the output grid
+    for obj, (x, y, _, _) in zip(objects, bounding_boxes):
+        # adjust the position of the pattern in the output grid if necessary
+        if x >= n - 1:
+            x = x - input_grid.shape[0] + n
+        if y >= m - 1:
+            y = y - input_grid.shape[1] + m
+        # crop the pattern to remove any extra rows or columns of black pixels
+        sprite = crop(obj)
+        # copy the pattern to the output grid
+        blit_sprite(output_grid, sprite, x=x, y=y, background=Color.BLACK)
+    
+    return output_grid
+    
+
+def generate_input():
+    # make a random sized grid with black background
+    n = np.random.randint(5, 8)
+    m = np.random.randint(5, 8)
+    grid = np.zeros((n, m), dtype=int)
+
+    # select a color for the patterns
+    color = np.random.choice(list(Color.NOT_BLACK))
+
+    # select a size for the patterns so that there will be space between the patterns after they are in their corners
+    size = np.random.randint(2, (min(n, m) + 1) // 2)
+
+
+    # make a random pattern in the top left corner of the specified size
+    grid[:size, :size] = [[np.random.choice([color, Color.BLACK]) for _ in range(size)] for _ in range(size)]
+
+    # make a random pattern in the top right corner of the specified size
+    grid[:size, -size:] = [[np.random.choice([color, Color.BLACK]) for _ in range(size)] for _ in range(size)]
+
+    # make a random pattern in the bottom left corner of the specified size
+    grid[-size:, :size] = [[np.random.choice([color, Color.BLACK]) for _ in range(size)] for _ in range(size)]
+
+    # make a random pattern in the bottom right corner of the specified size
+    grid[-size:, -size:] = [[np.random.choice([color, Color.BLACK]) for _ in range(size)] for _ in range(size)]
+
+    # Check that at least one of the patterns is not all black
+    # If they are all black, try again
+    if np.all(grid == Color.BLACK):
+        return generate_input()
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern reconstruction
+
+# description:
+# In the input you will see 9 squares seperated by 4 lines. The top-left square contains the original pattern.
+# Each square contains either a small portion of pattern or remains empty.
+# To make the output, you should detect the pattern on the top-left square and fill each square 
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Create a copy of the input grid to avoid modifying the original
+    output_grid = np.copy(input_grid)  
+
+    # Detect the color of the lines
+    for x, row in enumerate(output_grid):
+        # Find the line
+        all_equal = np.unique(row).size == 1
+        if all_equal:
+            line_color = row[0]
+            break
+    
+    # Get all the squares seperated by lines in the grid
+    squares = find_connected_components(grid=output_grid, background=line_color, monochromatic=False, connectivity=4)
+
+    # Get all squares' bounding box and cropped pattern
+    cropped_squares  = []
+    for obj in squares:
+        x, y, width, height = bounding_box(grid=obj, background=line_color)
+        square = crop(grid=obj, background=line_color)
+        cropped_squares.append({'x': x, 'y': y, 'len': width, 'pattern': square})
+
+    # Sort the squares by their position
+    cropped_squares = sorted(cropped_squares, key=lambda x: (x['x'], x['y']))
+
+    # The top-left square contains the original pattern
+    template_pattern = cropped_squares[0]['pattern']
+    other_patterns = cropped_squares[1:]
+
+    # Fill the missing pattern compared to template square with line color
+    for square in other_patterns:
+        x, y = square['x'], square['y']
+        square_pattern = square['pattern']
+
+        # Fill the missing pattern compared to template square with line color
+        for i, j in np.argwhere(template_pattern != Color.BLACK):
+            if template_pattern[i, j] != square_pattern[i, j]:
+                square_pattern[i, j] = line_color
+
+        # Place the reconstructed pattern on the output grid
+        output_grid = blit_sprite(grid=output_grid, sprite=square_pattern, x=x, y=y)
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Define the base cofiguration of the grid seperated by chessboard lines
+    # Randomly select the size of the squares, create a 3x3 grid of squares
+    square_len = np.random.choice([5, 7, 9])
+    pattern_len = square_len - 2
+    square_num = 3
+
+    # Size of the grid is grid length plus line length
+    n, m = square_len * square_num + square_num - 1, square_len * square_num + square_num - 1
+    grid = np.zeros((n, m), dtype=int)
+
+    # Select two colors for the lines and the pattern
+    colors = Color.NOT_BLACK.copy()
+    line_color = random.choice(colors)  
+    colors.remove(line_color)
+    pattern_color = random.choice(colors) 
+
+    # Fill specific rows and columns with the line color
+    for i in range(square_len, n, square_len + 1):
+        draw_line(grid=grid, x=i, y=0, color=line_color, direction=(0, 1))
+        draw_line(grid=grid, x=0, y=i, color=line_color, direction=(1, 0))
+
+    # Create the pattern in the top-left square with the pattern color
+    template_sprite = random_sprite(n=pattern_len, m=pattern_len, color_palette=[pattern_color], connectivity=8, density=0.5)
+
+    # Fill the top-left square with the original pattern
+    # Fill the other regions with corrupted versions that have pixels randomly set to black
+    for i in range(0, n, square_len + 1):
+        for j in range(0, m, square_len + 1):
+            # are we the top-left region?
+            if i == 0 and j == 0:
+                blit_sprite(grid, template_sprite, i + 1, j + 1)
+                continue
+
+            # otherwise: Create a corrupted version of the pattern; randomly set some pixels to black
+            corrupted_sprite = template_sprite.copy()
+            for x, y in np.argwhere(corrupted_sprite != Color.BLACK):
+                if random.choice([0, 1]) == 0:
+                    corrupted_sprite[x, y] = Color.BLACK
+            # Place the sprite on the grid, remain a black border around the sprite
+            blit_sprite(grid, corrupted_sprite, i + 1, j + 1)  
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# symmetry detection, boolean indicator
+
+# description:
+# In the input you will see a 3x3 grid with red pixels scattered randomly.
+# To make the output grid, you should recognize if the input grid has mirror symmetry along the x-axis.
+# If the input grid has mirror symmetry along the x-axis, output a 1x1 grid with a blue pixel.
+# Otherwise, output a 1x1 grid with an orange pixel.
+
+def main(input_grid):
+    # Check if the input grid has mirror symmetry along the middle x-axis.
+    width, height = input_grid.shape
+    middle_x = width // 2
+    
+    # If the input grid has mirror symmetry along the middle x-axis, output a blue pixel.
+    # Otherwise, output an orange pixel.
+    if np.all(input_grid[0: middle_x] == input_grid[middle_x + 1:][::-1]):
+        output_grid = np.full((1,1), Color.BLUE)
+    else:
+        output_grid = np.full((1,1), Color.ORANGE)
+    
+    return output_grid
+
+def generate_input():
+    width, height = 3, 3
+    grid = np.zeros((width, height), dtype=int)
+    
+    # Randomly generate a 3x3 grid with symmetric pattern or not.
+    has_y_axis_symmetry = np.random.choice([True, False])
+    symmetry_type = "horizontal" if has_y_axis_symmetry else "not_symmetric"
+    density = random.choice([0.3, 0.4, 0.5, 0.6])
+    grid = random_sprite(n=3, m=3, density=density, color_palette=[Color.RED], symmetry=symmetry_type)
+    
+    # If the pattern is not symmetric, scatter some black pixels on the grid to make it not symmetric.
+    if not has_y_axis_symmetry:
+        # Randomly 40% colored pixels on the grid
+        target_density = 0.4
+        target_number_of_pixels = int(target_density * height * width)
+        for i in range(target_number_of_pixels):
+            x = np.random.randint(0, width)
+            y = np.random.randint(0, height)
+            grid[x, y] = Color.BLACK
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

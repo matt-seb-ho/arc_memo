@@ -1,0 +1,87 @@
+Here is the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider detection, grid slicing, connected components, sub-grid extraction
+
+# description:
+# The input is a grid potentially divided by uninterrupted full rows or columns of a single color (e.g., grey).
+# Identify these divider lines and use them to split the grid into contiguous sub-grids. Each sub-grid is extracted as a separate region between dividers.
+# Discard any empty sub-grids. The output is a list of these non-empty sub-grids, preserving their original order and content.
+
+def main(input_grid):
+    # Identify the divider color by finding any row or column that is completely a single color
+    divider_color = None
+    n_rows, n_cols = input_grid.shape
+
+    # Find divider color
+    for row in range(n_rows):
+        if np.all(input_grid[row, :] == input_grid[row, 0]):
+            divider_color = input_grid[row, 0]
+            break
+
+    if divider_color is None:
+        for col in range(n_cols):
+            if np.all(input_grid[:, col] == input_grid[0, col]):
+                divider_color = input_grid[0, col]
+                break
+
+    assert divider_color is not None, "No divider line found"
+
+    # Find all the dividers and extract sub-grids
+    horizontal_dividers = [row for row in range(n_rows) if np.all(input_grid[row, :] == divider_color)]
+    vertical_dividers = [col for col in range(n_cols) if np.all(input_grid[:, col] == divider_color)]
+    
+    # Include the edges
+    horizontal_dividers = [0] + horizontal_dividers + [n_rows]
+    vertical_dividers = [0] + vertical_dividers + [n_cols]
+
+    sub_grids = []
+
+    # Extract sub-grids
+    for i in range(len(horizontal_dividers) - 1):
+        for j in range(len(vertical_dividers) - 1):
+            top, bottom = horizontal_dividers[i], horizontal_dividers[i + 1]
+            left, right = vertical_dividers[j], vertical_dividers[j + 1]
+
+            sub_grid = input_grid[top:bottom, left:right]
+            if np.any(sub_grid != divider_color):
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Randomly select divider color
+    divider_color = np.random.choice(list(Color.ALL_COLORS))
+
+    # Randomly select the number of dividers
+    n_horizontal_dividers = np.random.randint(2, 5)
+    n_vertical_dividers = np.random.randint(2, 5)
+
+    # Randomly place dividers
+    horizontal_indices = randomly_spaced_indices(width, n_horizontal_dividers, border_size=1, padding=2)
+    vertical_indices = randomly_spaced_indices(height, n_vertical_dividers, border_size=1, padding=2)
+
+    for row in horizontal_indices:
+        grid[row, :] = divider_color
+
+    for col in vertical_indices:
+        grid[:, col] = divider_color
+
+    # Randomly scatter some points in the regions to ensure they are not empty
+    for _ in range(5):
+        randomly_scatter_points(grid, color=np.random.choice(list(Color.NOT_BLACK - {divider_color})), density=0.1)
+
+    return grid
+```
+
+This code implements the specified puzzle using functions from the `common.py` library. The `generate_input` function stochastically creates grids with random dividers, ensuring a variety of inputs for the `main` function to process. The `main` function deterministically identifies these dividers, extracts sub-grids, and outputs non-empty ones.

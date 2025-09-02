@@ -1,0 +1,93 @@
+Here's the implementation for your puzzle involving drawing a line between two distinct pixels using Bresenham's line algorithm. The `generate_input` function will create a grid with two distinct colored pixels marking the start and end points for the line. The `main` function will transform the grid by drawing a line between these points.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line drawing, pixel connectivity, grid update
+
+# description:
+# Given a grid with two distinct pixels marked as start and end, draw a straight line connecting these two pixels.
+# Use Bresenham's line algorithm to determine the path of the line. Update the grid by coloring each pixel along the path with a specified line color.
+# All other pixels in the grid remain unchanged.
+
+def main(input_grid):
+    # Copy input grid to the output grid
+    output_grid = np.copy(input_grid)
+    
+    # Find start and end points marked by distinct colors
+    start_color, end_color = None, None
+    start_pos, end_pos = None, None
+    
+    for color in Color.NOT_BLACK:
+        positions = np.argwhere(input_grid == color)
+        if len(positions) == 1:
+            if start_pos is None:
+                start_pos = positions[0]
+                start_color = color
+            else:
+                end_pos = positions[0]
+                end_color = color
+                break
+    
+    assert start_pos is not None and end_pos is not None, "Start or end point not found"
+
+    # Use Bresenham's line algorithm to draw a line between start_pos and end_pos
+    def bresenham_line(x0, y0, x1, y1):
+        points = []
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while True:
+            points.append((x0, y0))
+            if x0 == x1 and y0 == y1:
+                break
+            e2 = err * 2
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+        return points
+
+    line_points = bresenham_line(start_pos[0], start_pos[1], end_pos[0], end_pos[1])
+    
+    # Choose a line color different from the start and end colors
+    line_color = next(color for color in Color.NOT_BLACK if color not in [start_color, end_color])
+
+    # Update the grid with the line color
+    for x, y in line_points:
+        output_grid[x, y] = line_color
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size between 10 and 20
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly choose two different colors for start and end points
+    start_color, end_color = np.random.choice([color for color in Color.NOT_BLACK], size=2, replace=False)
+
+    # Place start and end points at random positions
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    # Ensure start and end points are not the same
+    while (start_x, start_y) == (end_x, end_y):
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    grid[start_x, start_y] = start_color
+    grid[end_x, end_y] = end_color
+
+    return grid
+```
+
+This implementation uses Bresenham's line algorithm to draw a line between two distinct points on a grid. The `generate_input` function creates a new grid with two distinct colored pixels representing the start and end points for the line. The `main` function then draws the line on the grid using a line color that is different from the start and end colors.

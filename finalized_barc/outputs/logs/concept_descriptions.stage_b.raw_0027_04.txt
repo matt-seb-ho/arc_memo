@@ -1,0 +1,92 @@
+Certainly! Here's a puzzle based on the provided description that involves translation, alignment, merging, and connected components:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# Given a grid with a reference object and a target object, translate the target so it touches the reference on a specified side (up/down/left/right).
+# Align the nearest edge of the target to the contact edge of the reference without overlap. 
+# Merge the target into the reference by painting target pixels into the grid, preserving existing reference pixels.
+# The output grid shows the target object aligned and merged with the reference object on the specified side.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the reference object and target object.
+    # 2. Determine the side of the reference where the target should be aligned.
+    # 3. Translate the target so it touches the reference on the specified side.
+    # 4. Align the nearest edge of the target to the contact edge of the reference.
+    # 5. Merge objects by painting target pixels onto the reference without overlap.
+
+    output_grid = np.copy(input_grid)
+
+    # Detect objects
+    objects = detect_objects(grid=input_grid, monochromatic=False, connectivity=8)
+    assert len(objects) == 2
+
+    # Assume the first object detected is the reference and the second is the target
+    reference, target = objects
+
+    # Randomly choose a side for alignment: up, down, left, or right
+    sides = ['up', 'down', 'left', 'right']
+    side = np.random.choice(sides)
+
+    # Calculate translation based on the chosen side
+    if side == 'up':
+        # Align target below the top edge of reference
+        x_translation = 0
+        y_translation = -(target.shape[0] - 1) - 1
+    elif side == 'down':
+        # Align target above the bottom edge of reference
+        x_translation = 0
+        y_translation = reference.shape[0] - 1
+    elif side == 'left':
+        # Align target to the right of the left edge of reference
+        x_translation = -(target.shape[1] - 1) - 1
+        y_translation = 0
+    elif side == 'right':
+        # Align target to the left of the right edge of reference
+        x_translation = reference.shape[1] - 1
+        y_translation = 0
+
+    # Translate the target to align it properly
+    aligned_target = translate(target, x_translation, y_translation, background=Color.BLACK)
+
+    # Merge the target into the reference
+    blit_object(output_grid, aligned_target, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a 10x10 grid
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # Generate a reference object (random shape and color)
+    ref_height, ref_width = np.random.randint(2, 4), np.random.randint(2, 4)
+    ref_color = random.choice(list(Color.NOT_BLACK))
+    reference = np.full((ref_height, ref_width), ref_color)
+    
+    # Place the reference object randomly on the grid
+    ref_x, ref_y = random_free_location_for_sprite(grid, reference, padding=1, border_size=1)
+    blit_sprite(grid, reference, ref_x, ref_y)
+
+    # Generate a target object (random shape and color)
+    tgt_height, tgt_width = np.random.randint(2, 4), np.random.randint(2, 4)
+    tgt_color = random.choice([c for c in Color.NOT_BLACK if c != ref_color])
+    target = np.full((tgt_height, tgt_width), tgt_color)
+
+    # Place the target object randomly on the grid
+    tgt_x, tgt_y = random_free_location_for_sprite(grid, target, padding=1, border_size=1)
+    blit_sprite(grid, target, tgt_x, tgt_y)
+
+    return grid
+```
+
+This puzzle involves detecting two objects on a grid, choosing a side to align the target to the reference, and merging them by adjusting the target's position. The `generate_input` function creates a grid with two random objects, ensuring they don't overlap initially.

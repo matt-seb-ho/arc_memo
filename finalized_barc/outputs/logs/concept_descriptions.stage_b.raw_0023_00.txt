@@ -1,0 +1,84 @@
+Certainly! Let's implement the puzzle based on the given description, which involves moving an object from its original position to a target position on a grid. The task requires us to erase the object from its original location and redraw it at the new location without overlapping with non-background pixels.
+
+Here's how we can approach the puzzle:
+
+1. **Identify Objects**: Use connected components to detect objects in the grid.
+2. **Determine Target Position**: Randomly choose a target position that is free for the object.
+3. **Move Object**: Erase the object from its current location and redraw it at the target location.
+4. **Ensure No Overlap**: Ensure the new position does not overlap with existing non-background pixels.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# Identify a single object within the grid and a target position. Remove the object from its original location by erasing its pixels.
+# Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels. 
+# The grid is updated to reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the objects in the input grid.
+    # 2. Select one object to move.
+    # 3. Determine a new target position for the object that does not overlap with other objects.
+    # 4. Erase the object from its current location and redraw it at the target location.
+
+    # Detect all objects in the grid, assuming they are monochromatic (single-colored).
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Select the first object to move (for simplicity in this example).
+    obj_to_move = objects[0]
+
+    # Get the object's current position.
+    x, y = object_position(obj_to_move, background=Color.BLACK)
+
+    # Crop the object to work with it as a sprite.
+    sprite = crop(obj_to_move, background=Color.BLACK)
+
+    # Create a copy of the input grid to modify it.
+    output_grid = np.copy(input_grid)
+
+    # Erase the object from its current position in the grid.
+    blit_sprite(output_grid, np.full(sprite.shape, Color.BLACK), x, y, background=Color.BLACK)
+
+    # Determine a random new position for the object that is free.
+    new_x, new_y = random_free_location_for_sprite(output_grid, sprite, background=Color.BLACK, padding=1)
+
+    # Draw the object at the new position.
+    blit_sprite(output_grid, sprite, new_x, new_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid of random dimensions between 10x10 and 15x15.
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly generate a few objects to place on the grid.
+    num_objects = np.random.randint(3, 5)
+    for _ in range(num_objects):
+        # Generate an object with random size and color.
+        obj_width, obj_height = np.random.randint(2, 4), np.random.randint(2, 4)
+        color = random.choice(Color.NOT_BLACK)
+        obj_sprite = np.full((obj_width, obj_height), color)
+        
+        # Find a free location in the grid for this object.
+        x, y = random_free_location_for_sprite(grid, obj_sprite, background=Color.BLACK, padding=1)
+        
+        # Place the object on the grid.
+        blit_sprite(grid, obj_sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function**: This function detects all objects in the grid and selects one object to move. It erases the object from its current position, finds a new valid position where the object can fit without overlapping existing objects, and redraws the object at the new position.
+- **`generate_input` Function**: This generates stochastic grid inputs by creating a grid and placing a random number of objects in it. Each object is a random size and color, and is placed at a random location in the grid.
+
+This setup allows middle-schoolers to explore how object movement and grid updates work in a structured puzzle format, engaging them with concepts of object detection, free space calculation, and spatial transformation.

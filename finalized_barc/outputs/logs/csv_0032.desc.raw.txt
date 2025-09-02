@@ -1,0 +1,4 @@
+```python
+# concepts: L-shape detection, corner identification, orientation classification
+# description: Input is a 3-pixel L-shaped triomino on a 2x2 grid. Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape. Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner. The grid may contain noise, but the L-shape is dominant.
+```

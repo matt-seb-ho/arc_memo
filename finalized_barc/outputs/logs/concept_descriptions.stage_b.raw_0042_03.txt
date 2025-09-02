@@ -1,0 +1,85 @@
+To design the puzzle based on the given description, we will create a function `main` to implement the transformation, and a function `generate_input` to provide stochastic inputs. The puzzle involves identifying a guide object with a unique color and using it to draw a line between two specified points, overwriting the background cells with the guide object's color while leaving other colored cells unchanged.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, line drawing
+
+# description:
+# In the input grid, you will see a guide object colored in a unique color and two points marked with different colors.
+# Use the guide object's color to draw a straight line connecting the two points, overwriting the background cells.
+# Ensure that the line only passes through background cells and does not overwrite any non-background colored cells.
+
+def main(input_grid):
+    # Identify the unique guide object color
+    unique_colors = set(np.unique(input_grid))
+    guide_color = next((color for color in unique_colors if np.sum(input_grid == color) == 1), None)
+
+    # Ensure guide color is identified
+    assert guide_color is not None, "Guide object color not found"
+
+    # Find the positions of the two points (assuming they are marked with different colors)
+    point_positions = [(x, y) for x, y in np.argwhere(input_grid != Color.BLACK) if input_grid[x, y] != guide_color]
+
+    # Ensure exactly two points are identified
+    assert len(point_positions) == 2, "Exactly two points must be marked with different colors"
+
+    # Extract the start and end points
+    (start_x, start_y), (end_x, end_y) = point_positions
+
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Draw the line between the two points using the guide object's color
+    draw_line(output_grid, start_x, start_y, end_x=end_x, end_y=end_y, color=guide_color, stop_at_color=list(Color.NOT_BLACK))
+
+    return output_grid
+
+def generate_input():
+    # Define grid dimensions
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Randomly choose a unique guide color
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Place the guide object (single pixel) at a random location
+    guide_x, guide_y = np.random.randint(0, grid_size, size=2)
+    grid[guide_x, guide_y] = guide_color
+
+    # Randomly choose two distinct colors for the points
+    point_colors = np.random.choice(list(Color.NOT_BLACK - {guide_color}), size=2, replace=False)
+
+    # Select random locations for the two points ensuring they are not the same or on the guide object
+    point1_x, point1_y = guide_x, guide_y
+    point2_x, point2_y = guide_x, guide_y
+    while (point1_x == guide_x and point1_y == guide_y) or (point2_x == guide_x and point2_y == guide_y) or (point1_x == point2_x and point1_y == point2_y):
+        point1_x, point1_y = np.random.randint(0, grid_size, size=2)
+        point2_x, point2_y = np.random.randint(0, grid_size, size=2)
+
+    # Place the points on the grid
+    grid[point1_x, point1_y] = point_colors[0]
+    grid[point2_x, point2_y] = point_colors[1]
+
+    return grid
+```
+
+### Explanation
+
+- **`main` Function**: 
+  - Identifies the unique guide object color by checking for a color that appears exactly once in the grid.
+  - Locates the two points with different colors.
+  - Uses `draw_line` to draw a line between the two points using the guide object's color, ensuring the line only passes through background cells.
+  
+- **`generate_input` Function**:
+  - Creates a grid of random size filled with the background color.
+  - Randomly places a guide object with a unique color.
+  - Randomly selects two points with different colors, ensuring they are not positioned on the guide object and are distinct from each other.
+
+This puzzle challenges middle-schoolers to recognize and utilize color-based cues to perform a specific transformation while adhering to constraints about which cells can be overwritten.

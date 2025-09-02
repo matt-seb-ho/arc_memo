@@ -1,0 +1,70 @@
+Here is an implementation of the puzzle based on your description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, line drawing
+
+# description:
+# In the input grid, you will find a unique guide object colored with a distinct color. The task is to use this guide object's color to draw a line between two specified points or along a specified path on the grid. The line should overwrite the background cells with the guide object's color, while all other non-background cells remain unchanged.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Find the connected components in the grid, assuming one of them is the guide object
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+
+    # Identify the guide object by its unique color
+    guide_object = None
+    guide_color = None
+    for obj in objects:
+        # Extract the unique color in the object
+        unique_color = np.unique(obj[obj != Color.BLACK])
+        if len(unique_color) == 1:
+            guide_object = obj
+            guide_color = unique_color[0]
+            break
+
+    if guide_object is None or guide_color is None:
+        raise ValueError("No unique guide object found.")
+
+    # Define the start and end points of the line to be drawn
+    # For the sake of this puzzle, let's assume a specific start and end point
+    start_point = (1, 1)
+    end_point = (output_grid.shape[0] - 2, output_grid.shape[1] - 2)
+
+    # Draw the line using the guide object's color
+    draw_line(output_grid, x=start_point[0], y=start_point[1], end_x=end_point[0], end_y=end_point[1], color=guide_color)
+
+    return output_grid
+
+def generate_input():
+    # Create a random size grid
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    # Create a unique guide object with a random color
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    guide_object = random_sprite(n=3, m=3, density=1, color_palette=[guide_color])
+
+    # Place the guide object in a random location on the grid
+    x, y = random_free_location_for_sprite(input_grid, guide_object, border_size=1, padding=1)
+    blit_sprite(input_grid, guide_object, x=x, y=y)
+
+    return input_grid
+```
+
+### Explanation:
+
+- **Concepts and Description**: The puzzle involves identifying a guide object with a unique color and using that color to draw a line between two specified points on the grid. The line overwrites background cells while leaving other cells unchanged.
+  
+- **Main Function**: The `main` function identifies the guide object by finding a connected component with a unique color. It then uses this color to draw a line from a start point to an end point on the grid.
+
+- **Generate Input Function**: The `generate_input` function creates a grid with a random size and places a guide object with a unique color at a random location. This sets up the input for the puzzle.
+
+This implementation follows the provided description and example puzzle structures, utilizing the functions from `common.py` to handle grid operations and drawing.

@@ -1,0 +1,71 @@
+Here's the implementation for the described puzzle: 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# Identify a single connected component (object) within the grid. Apply a given color scheme to recolor the entire object. 
+# The color scheme may be a single color or a function that determines the color based on object properties.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all the objects in the grid
+    objects = find_connected_components(input_grid, monochromatic=False, connectivity=8)
+    
+    # Choose a random object to recolor
+    target_object = np.random.choice(objects)
+
+    # Determine the color scheme based on object properties
+    # Here, we simply choose a random color from the available colors except black
+    new_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Apply the color scheme to the entire object
+    target_object[target_object != Color.BLACK] = new_color
+
+    # Create the output grid by placing the modified object onto the original grid
+    output_grid = input_grid.copy()
+    blit_object(output_grid, target_object, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid of size 10x10 to 20x20
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate and place random objects in the grid until it is somewhat full
+    for _ in range(np.random.randint(3, 6)):
+        # Generate a random colored object
+        obj = random_sprite(list(range(3, 6)), list(range(3, 6)), color_palette=list(Color.NOT_BLACK), connectivity=8)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            break
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: The puzzle involves recoloring a single connected component within a grid. This requires identifying connected components, determining a color scheme, and applying it.
+   
+2. **Description**: The puzzle takes a grid as input, identifies a connected component, and recolors it using a predetermined scheme. The rest of the grid remains unchanged.
+
+3. **`main` Function**: 
+   - Detects all connected objects in the grid.
+   - Chooses one object randomly and determines a new color scheme.
+   - Recolors the chosen object and places it back into the grid to form the output.
+
+4. **`generate_input` Function**:
+   - Creates a grid with random size between 10x10 and 20x20.
+   - Randomly generates colored objects and places them on the grid.
+   - Ensures a variety of objects are present for the transformation.
+
+This implementation is designed to be both educational and engaging for middle-schoolers, encouraging them to think about color patterns and object properties within a grid.

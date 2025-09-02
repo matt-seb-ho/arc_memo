@@ -1,0 +1,65 @@
+Here is an implementation of the new puzzle, following the steps and guidelines provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern matching, boolean mask, predicate evaluation, exact match
+
+# description:
+# You are given a 3x3 grid (window) and a boolean mask (pattern_mask) of the same size.
+# A predicate function is applied to each cell in the window to create a boolean mask.
+# Return True if this generated mask exactly matches the given pattern_mask element-wise, with no rotations or flips allowed.
+# Otherwise, return False.
+
+def main(input_data):
+    window, pattern_mask = input_data
+
+    # Define the predicate function
+    def predicate(cell_value):
+        # Example predicate: checking if the cell is a non-black color
+        return cell_value != Color.BLACK
+    
+    # Apply the predicate to the window to create a boolean mask
+    generated_mask = np.array([[predicate(cell) for cell in row] for row in window])
+
+    # Compare the generated mask with the pattern mask
+    match = np.array_equal(generated_mask, pattern_mask)
+
+    return match
+
+def generate_input():
+    # Create a 3x3 window with random colors
+    window = np.random.choice(list(Color.NOT_BLACK), size=(3, 3))
+    
+    # Randomly generate a boolean pattern_mask
+    pattern_mask = np.random.choice([True, False], size=(3, 3))
+
+    # Adjust the mask to include at least one True value to ensure variability
+    if not np.any(pattern_mask):
+        x, y = np.random.randint(0, 3), np.random.randint(0, 3)
+        pattern_mask[x, y] = True
+
+    return window, pattern_mask
+```
+
+### Explanation:
+
+1. **Concepts and Description**: The puzzle involves pattern matching using a boolean mask. A predicate function is applied to each cell in a 3x3 grid to generate a boolean mask. The task is to check if this generated mask matches a given pattern mask exactly.
+
+2. **`main` function**: 
+   - Receives a 3x3 grid (`window`) and a boolean mask (`pattern_mask`).
+   - Defines a predicate function that returns `True` if a cell is non-black.
+   - Generates a boolean mask by applying the predicate over each cell in the window.
+   - Compares the generated mask with the pattern mask using `np.array_equal`.
+   - Returns `True` if they match exactly; otherwise, returns `False`.
+
+3. **`generate_input` function**: 
+   - Creates a 3x3 grid (`window`) with random non-black colors.
+   - Generates a random boolean `pattern_mask`.
+   - Ensures that the `pattern_mask` has at least one `True` value to maintain variability and interest in the puzzle.
+
+This implementation is consistent with the provided description and uses the `common.py` functions effectively to create a deterministic transformation.

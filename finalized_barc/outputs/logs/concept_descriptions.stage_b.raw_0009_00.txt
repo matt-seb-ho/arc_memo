@@ -1,0 +1,86 @@
+Here is the implementation of the described puzzle that involves extracting connected components, identifying a guide object with a unique color, and outputting only that object:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, guide object identification
+
+# description:
+# Extract all connected components from the grid. Identify the guide object as the one whose color is unique among all components. 
+# The guide object is the only one with a color that no other object shares. All other objects are ignored in the output.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    components = find_connected_components(input_grid, connectivity=4, monochromatic=True)
+
+    # Create a dictionary to count occurrences of each color in different components
+    color_count = {}
+    for component in components:
+        color = np.unique(component[component != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    # Identify the guide object with a unique color
+    guide_object = None
+    for component in components:
+        color = np.unique(component[component != Color.BLACK])[0]
+        if color_count[color] == 1:
+            guide_object = component
+            break
+
+    # Create the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+    
+    if guide_object is not None:
+        # Blit the guide object onto the output grid
+        blit_object(output_grid, guide_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Randomly define grid size
+    n = np.random.randint(5, 10)
+    grid = np.full((n, n), Color.BLACK)
+    
+    # Create random objects with random colors
+    num_objects = np.random.randint(3, 6)
+    all_colors = list(Color.NOT_BLACK)
+    np.random.shuffle(all_colors)
+    
+    used_colors = []
+    for _ in range(num_objects):
+        # Generate a random sprite
+        sprite = random_sprite(n=np.random.randint(1, 4), m=np.random.randint(1, 4), color_palette=all_colors, connectivity=4)
+        
+        # Randomly choose a free location to place the sprite
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+            used_colors.append(np.unique(sprite[sprite != Color.BLACK])[0])
+        except ValueError:
+            continue
+
+    # Ensure at least one color is unique
+    if len(set(used_colors)) == len(used_colors):
+        return generate_input()
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function:**
+  - This function extracts all connected components from the input grid.
+  - It counts the occurrences of each color among the components to determine which color is unique.
+  - The guide object is identified as the component with the unique color.
+  - The output grid is prepared by blitting only the guide object.
+
+- **`generate_input` Function:**
+  - This function generates a stochastic input grid.
+  - It creates multiple random sprites with different colors, ensuring that at least one color is unique among the components.
+  - It ensures there are enough components with non-unique colors to guarantee a unique guide object. It retries if all colors are unique.

@@ -1,0 +1,4 @@
+```python
+# concepts: orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+# description: Input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation. Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W). Output the determined direction as a label.
+```

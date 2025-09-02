@@ -1,0 +1,110 @@
+Here's an implementation of the puzzle involving gravity simulation, directional movement, cohesion modes, and collision detection:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right').
+# Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries.
+# If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers;
+# if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact.
+# Maintain block order and shape; stop when further movement would result in collision or leaving the grid.
+# The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_grid):
+    # Extract grid size
+    height, width = input_grid.shape
+    
+    # Determine gravity direction and cohesion mode
+    gravity_direction = input_grid[0, 0]
+    cohesion_mode = input_grid[0, 1]
+    assert gravity_direction in ['down', 'up', 'left', 'right'], "Invalid gravity direction"
+    assert cohesion_mode in ['per-column', 'cohesive'], "Invalid cohesion mode"
+    
+    # Clear gravity direction and cohesion mode from the grid
+    input_grid[0, 0] = Color.BLACK
+    input_grid[0, 1] = Color.BLACK
+
+    # Create output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+    
+    # Find connected components (blocks) in the grid
+    blocks = find_connected_components(input_grid, background=Color.BLACK)
+
+    if cohesion_mode == 'cohesive':
+        # Apply cohesive gravity: treat all blocks as one rigid shape
+        apply_cohesive_gravity(output_grid, blocks, gravity_direction)
+    else:
+        # Apply per-column gravity: move blocks independently
+        apply_per_column_gravity(output_grid, blocks, gravity_direction)
+    
+    return output_grid
+
+def apply_cohesive_gravity(grid, blocks, direction):
+    # Determine translation vector based on gravity direction
+    translation = {
+        'down': (0, 1),
+        'up': (0, -1),
+        'left': (-1, 0),
+        'right': (1, 0)
+    }[direction]
+    
+    # Move each block as a single unit until collision
+    for block in blocks:
+        while not collision(object1=translate(block, *translation), object2=grid):
+            block = translate(block, *translation)
+        blit_object(grid, block)
+
+def apply_per_column_gravity(grid, blocks, direction):
+    # Determine translation vector based on gravity direction
+    translation = {
+        'down': (0, 1),
+        'up': (0, -1),
+        'left': (-1, 0),
+        'right': (1, 0)
+    }[direction]
+    
+    # Move each block independently
+    for block in blocks:
+        while not collision(object1=translate(block, *translation), object2=grid):
+            block = translate(block, *translation)
+        blit_object(grid, block)
+
+def generate_input():
+    # Random grid size
+    height = np.random.randint(8, 15)
+    width = np.random.randint(8, 15)
+    grid = np.full((height, width), Color.BLACK, dtype=int)
+
+    # Randomly choose gravity direction and cohesion mode
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    # Place gravity direction and cohesion mode in the grid
+    grid[0, 0] = gravity_direction
+    grid[0, 1] = cohesion_mode
+
+    # Randomly generate blocks and place in the grid
+    num_blocks = np.random.randint(2, 5)
+    for _ in range(num_blocks):
+        block_size = np.random.randint(2, 4)
+        block = random_sprite(block_size, block_size, color_palette=Color.NOT_BLACK)
+        x, y = random_free_location_for_sprite(grid, block)
+        blit_sprite(grid, block, x, y)
+
+    return grid
+```
+
+### Explanation:
+- **Gravity Direction and Cohesion Mode**: The first two spots of the input grid are used to specify the gravity direction and cohesion mode.
+- **Connected Components**: Blocks are identified as connected components (ignoring black).
+- **Cohesion Modes**: The algorithm applies gravity either to the entire structure as one (`cohesive`) or to each piece individually (`per-column`).
+- **Translation Vector**: Determines how blocks move based on gravity direction.
+- **Collision Detection**: Blocks continue to move until they collide with another block or the grid boundary.
+- **Stochastic Input Generation**: Generates random grid sizes, gravity directions, cohesion modes, and block arrangements.

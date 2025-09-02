@@ -1,0 +1,105 @@
+Here's how you can implement the puzzle with the given concepts and description:
+
+```python
+from common import *
+import numpy as np
+import random
+
+# concepts:
+# color runs, recolor, bounding box, symmetry
+
+# description:
+# Identify contiguous horizontal or vertical runs of cyan (color=4) in the grid. For each run, compute k as the minimum of 3 or half the
+# run's length (rounded down). Recolor the first k and last k cells of each run to yellow (color=3), leaving the interior cells unchanged.
+# This transformation applies symmetrically to both ends of each cyan run, capping them with yellow while preserving the run's central portion.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Copy the input grid to output grid
+    output_grid = np.copy(input_grid)
+
+    # Function to recolor the ends of a run
+    def recolor_run(run: np.ndarray, start: int, end: int):
+        run_length = end - start + 1
+        k = min(3, run_length // 2)
+        if k > 0:
+            # Recolor first k and last k cells of the run
+            run[start:start+k] = Color.YELLOW
+            run[end-k+1:end+1] = Color.YELLOW
+
+    # Process horizontal runs
+    for y in range(input_grid.shape[0]):
+        x = 0
+        while x < input_grid.shape[1]:
+            if input_grid[y, x] == Color.TEAL:
+                # Start of a run
+                start_x = x
+                while x < input_grid.shape[1] and input_grid[y, x] == Color.TEAL:
+                    x += 1
+                # End of a run
+                end_x = x - 1
+                recolor_run(output_grid[y], start_x, end_x)
+            else:
+                x += 1
+
+    # Process vertical runs
+    for x in range(input_grid.shape[1]):
+        y = 0
+        while y < input_grid.shape[0]:
+            if input_grid[y, x] == Color.TEAL:
+                # Start of a run
+                start_y = y
+                while y < input_grid.shape[0] and input_grid[y, x] == Color.TEAL:
+                    y += 1
+                # End of a run
+                end_y = y - 1
+                recolor_run(output_grid[:, x], start_y, end_y)
+            else:
+                y += 1
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Randomly choose dimensions for the grid
+    height = random.randint(5, 10)
+    width = random.randint(5, 10)
+
+    # Create an empty grid
+    grid = np.full((height, width), Color.BLACK)
+
+    # Randomly create horizontal and vertical runs of cyan
+    num_runs = random.randint(1, 5)
+    for _ in range(num_runs):
+        # Decide if the run is horizontal or vertical
+        if random.choice([True, False]):
+            # Horizontal run
+            y = random.randint(0, height - 1)
+            start_x = random.randint(0, width - 1)
+            end_x = random.randint(start_x, width - 1)
+            grid[y, start_x:end_x+1] = Color.TEAL
+        else:
+            # Vertical run
+            x = random.randint(0, width - 1)
+            start_y = random.randint(0, height - 1)
+            end_y = random.randint(start_y, height - 1)
+            grid[start_y:end_y+1, x] = Color.TEAL
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle revolves around identifying color runs, recoloring parts of them, and applying symmetry to transformations.
+
+2. **Description**: 
+   - **Input**: A 2D grid that contains horizontal and vertical runs of cyan (Color.TEAL).
+   - **Transformation**: For each cyan run, calculate `k` as the smaller between 3 or half the run's length. Recolor the first and last `k` cells of the run to yellow (Color.YELLOW).
+   - **Output**: The transformed grid with cyan runs capped symmetrically by yellow at both ends.
+
+3. **Implementation**:
+   - **`main` function**: 
+     - Traverse the grid to identify contiguous runs of cyan both horizontally and vertically.
+     - For each run, compute the value of `k` and apply the recoloring transformation.
+   - **`generate_input` function**: 
+     - Randomly generate grids with specified dimensions and populate them with random horizontal or vertical runs of cyan.
+
+This puzzle encourages students to think about identifying patterns and applying symmetric transformations.

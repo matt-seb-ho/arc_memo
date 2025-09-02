@@ -1,0 +1,89 @@
+To implement the puzzle where you identify a unique guide object based on a distinct attribute, use its anchor point to count the number of enclosed regions (holes) in the grid, we'll follow these steps:
+
+1. **Identify the Guide Object**: We will identify the guide object based on a unique attribute such as color. For simplicity, let's assume the guide object has a unique color compared to other objects.
+
+2. **Determine the Anchor Point**: The anchor point could be the centroid or the top-left corner of the guide object. We will extract this position using the `object_position` function.
+
+3. **Count Enclosed Regions (Holes)**: From the anchor point, count the number of enclosed regions (holes) in the grid. We can use the connectivity of the grid to determine these regions.
+
+4. **Output the Count**: Return the count of these enclosed regions.
+
+Below is the code implementation for this puzzle using the `common.py` functions:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# In the input grid, identify a unique guide object based on a distinct attribute (e.g., color or size).
+# Use the guide's anchor point, such as its centroid or top-left corner, as the starting point.
+# From this anchor, count the number of enclosed regions (holes) in the grid.
+# The output is a count of these holes, originating from the guide's position.
+
+def main(input_grid):
+    # find the guide object based on a unique color
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+    
+    # assume the guide is the object with a unique color
+    guide_object = None
+    for obj in objects:
+        unique_colors = np.unique(obj[obj != Color.BLACK])
+        if len(unique_colors) == 1:
+            guide_object = obj
+            break
+
+    if guide_object is None:
+        return 0  # no guide object found
+
+    # determine the anchor point of the guide object
+    anchor_x, anchor_y = object_position(guide_object, background=Color.BLACK, anchor="upper left")
+
+    # count the number of enclosed regions (holes) from the anchor point
+    # find all connected components excluding the guide object
+    holes = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+    
+    # count enclosed regions
+    hole_count = 0
+    for hole in holes:
+        if is_enclosed(hole, guide_object):
+            hole_count += 1
+
+    return hole_count
+
+def is_enclosed(hole, guide_object):
+    # simple check to see if the hole is fully enclosed by the guide object
+    guide_mask = guide_object != Color.BLACK
+    hole_mask = hole != Color.BLACK
+    return np.all(guide_mask[hole_mask])
+
+def generate_input():
+    n = m = 20
+    grid = np.full((n, m), Color.BLACK)
+
+    # create a guide object with a unique color
+    guide_color = Color.RED
+    guide_sprite = random_sprite(3, 3, color_palette=[guide_color], background=Color.BLACK)
+    x, y = random_free_location_for_sprite(grid, guide_sprite, padding=1)
+    blit_sprite(grid, guide_sprite, x, y)
+    
+    # create random enclosed regions (holes)
+    num_holes = np.random.randint(1, 5)
+    for _ in range(num_holes):
+        hole_sprite = random_sprite(np.random.randint(1, 3), np.random.randint(1, 3), color_palette=[Color.BLACK], background=Color.BLACK)
+        hole_x, hole_y = random_free_location_for_sprite(grid, hole_sprite, border_size=1)
+        blit_sprite(grid, hole_sprite, hole_x, hole_y)
+
+    return grid
+```
+
+### Explanation
+
+- **Guide Object Identification**: We identify the guide object as one with a unique color in the grid. This simplifies our problem of selection.
+- **Anchor Point**: The anchor point of the guide object is its top-left corner, obtained using `object_position`.
+- **Hole Counting**: The function `is_enclosed` checks if a hole is fully enclosed by using masks derived from the guide object and the hole itself.
+- **Random Input Generation**: We generate a grid of size `20x20`, place a guide object with a unique color, and randomly add enclosed regions (holes) to create variability in input.

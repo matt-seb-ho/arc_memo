@@ -1,0 +1,83 @@
+Here's an implementation of the puzzle based on the provided description. The goal is to fill the holes in the guide object with the target object in a way that optimizes fit. 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, filling, guide object, target object, optimization
+
+# description:
+# The input consists of a grid containing a guide object (in grey) with black holes and a target object (in a random color).
+# The task is to fill the holes in the guide object with parts or the entirety of the target object.
+# The aim is to maximize the filled area within the guide object without altering its boundaries or structure.
+
+def main(input_grid):
+    # Process the input grid to identify the guide object, holes, and target object
+    guide_input = input_grid.copy()
+    guide_input[input_grid != Color.GREY] = Color.BLACK
+    guide_objects = find_connected_components(guide_input, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    target_input = input_grid.copy()
+    target_input[input_grid == Color.GREY] = Color.BLACK
+    target_objects = find_connected_components(target_input, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Assume there's only one target object
+    target_object = target_objects[0]
+    target_sprite = crop(target_object, background=Color.BLACK)
+    target_color = np.unique(target_sprite[target_sprite != Color.BLACK])[0]
+
+    # Identify holes in the guide object
+    guide_object = guide_objects[0]
+    interior_mask = object_interior(guide_object, background=Color.BLACK)
+    holes_mask = interior_mask & (guide_object == Color.BLACK)
+
+    output_grid = input_grid.copy()
+
+    # Attempt to fill the holes with the target object
+    for x, y in np.argwhere(holes_mask):
+        if np.any(target_sprite != Color.BLACK):
+            output_grid[x, y] = target_color
+            # Remove the used part of the target object
+            target_sprite[target_sprite != Color.BLACK] = Color.BLACK
+
+    return output_grid
+
+
+def generate_input():
+    n, m = np.random.randint(10, 20, size=2)
+    input_grid = np.full((n, m), Color.BLACK)
+
+    # Create guide object with holes
+    guide_width, guide_height = np.random.randint(5, 8, size=2)
+    guide_sprite = np.full((guide_width, guide_height), Color.GREY)
+
+    # Create holes in the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_width, hole_height = np.random.randint(1, guide_width - 2), np.random.randint(1, guide_height - 2)
+        hole_sprite = np.full((hole_width, hole_height), Color.BLACK)
+        hole_x, hole_y = random_free_location_for_sprite(guide_sprite, hole_sprite, border_size=1, background=Color.GREY)
+        blit_sprite(guide_sprite, hole_sprite, hole_x, hole_y, background=Color.GREY)
+
+    # Place the guide object on the grid
+    x, y = random_free_location_for_sprite(input_grid, guide_sprite, padding=1, border_size=1)
+    blit_sprite(input_grid, guide_sprite, x, y, background=Color.BLACK)
+
+    # Create a target object
+    target_width, target_height = np.random.randint(2, 5, size=2)
+    target_color = np.random.choice([c for c in Color.NOT_BLACK if c != Color.GREY])
+    target_sprite = np.full((target_width, target_height), target_color)
+
+    # Place the target object on the grid
+    x, y = random_free_location_for_sprite(input_grid, target_sprite, padding=1, border_size=1)
+    blit_sprite(input_grid, target_sprite, x, y, background=Color.BLACK)
+
+    return input_grid
+```
+
+### Explanation:
+- **`main` Function**: This function processes the input grid to identify guide objects, holes, and target objects. It then attempts to fill the holes in the guide object by using parts of the target object, aiming for an optimal fit.
+- **`generate_input` Function**: This function creates a random grid with a guide object containing holes and a target object. The guide object is filled with holes, and a separate colored target object is placed randomly on the grid.

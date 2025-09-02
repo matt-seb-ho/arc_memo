@@ -1,0 +1,79 @@
+Here's a code block that implements the puzzle described, following the format of the examples you provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# The input is a grid containing a single pointer-shaped object on a background. 
+# The goal is to normalize the pointer by rotating and/or flipping it to match a canonical orientation. 
+# Then, determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W). 
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Find the object in the input grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    
+    # Assuming there is exactly one pointer object
+    pointer = objects[0]
+
+    # Determine the bounding box and crop the object
+    x, y, w, h = bounding_box(pointer)
+    cropped_pointer = crop(pointer)
+
+    # Compute the centroid of the pointer
+    centroid = np.mean(np.argwhere(cropped_pointer != Color.BLACK), axis=0)
+
+    # Determine the tip of the pointer (farthest point from the centroid)
+    tip = max(np.argwhere(cropped_pointer != Color.BLACK), key=lambda p: np.linalg.norm(p - centroid))
+
+    # Compute the vector from the centroid to the tip
+    vector = np.array(tip) - centroid
+
+    # Quantize the vector to one of the cardinal directions
+    if abs(vector[0]) > abs(vector[1]):  # More horizontal
+        direction = "E" if vector[0] > 0 else "W"
+    else:  # More vertical
+        direction = "S" if vector[1] > 0 else "N"
+
+    return direction
+
+def generate_input():
+    # Create a blank grid with a random background color
+    background_color = np.random.choice(Color.NOT_BLACK)
+    grid_size = np.random.randint(5, 15)
+    grid = np.full((grid_size, grid_size), background_color)
+
+    # Generate a random pointer-shaped object
+    pointer_length = np.random.randint(3, grid_size - 1)
+    pointer = np.full((pointer_length, pointer_length), Color.BLACK)
+
+    # Randomly choose the tip position and draw the pointer
+    tip_x, tip_y = np.random.randint(0, pointer_length, size=2)
+    draw_line(pointer, tip_x, tip_y, length=pointer_length, direction=(1 if tip_x < pointer_length / 2 else -1, 1 if tip_y < pointer_length / 2 else -1), color=np.random.choice(Color.NOT_BLACK))
+
+    # Place the pointer randomly on the grid
+    x, y = random_free_location_for_sprite(grid, pointer, padding=1)
+    blit_sprite(grid, pointer, x, y)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Main Function**:
+   - Finds the pointer-shaped object in the grid using `find_connected_components`.
+   - Calculates the centroid and the tip of the pointer to determine the direction vector.
+   - Quantizes this direction vector to one of the four cardinal directions (N, S, E, W).
+
+2. **Generate Input**:
+   - Generates a grid of random size and a random background color.
+   - Creates a pointer-shaped object by drawing a line with a random direction and color.
+   - Places the pointer randomly on the grid.
+
+This code provides a deterministic transformation (`main`) and a stochastic input generation (`generate_input`) as required for the puzzle.

@@ -1,0 +1,48 @@
+Below is the implementation of the puzzle based on the provided description and the functions available in `common.py`:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern matching, boolean mask, predicate evaluation, exact match
+
+# description:
+# Input is a 3x3 grid (window) and a boolean mask (pattern_mask) of the same size. 
+# A predicate function is applied to each cell in the window to create a boolean mask. 
+# Return True if this generated mask exactly matches the given pattern_mask element-wise, 
+# with no rotations or flips allowed. Otherwise, return False.
+
+def main(input_data: Tuple[np.ndarray, np.ndarray]) -> bool:
+    window, pattern_mask = input_data
+    
+    # Define the predicate function. For this example, we will consider non-black pixels as True.
+    predicate = lambda color: color != Color.BLACK
+    
+    # Apply the predicate function to the window to generate the boolean mask
+    generated_mask = np.vectorize(predicate)(window)
+    
+    # Compare the generated mask with the pattern_mask
+    return np.array_equal(generated_mask, pattern_mask)
+
+def generate_input() -> Tuple[np.ndarray, np.ndarray]:
+    # Create a 3x3 grid (window) with random colors
+    window = np.random.choice(list(Color.ALL_COLORS), size=(3, 3))
+
+    # Create a pattern_mask of the same size, with True for non-black colors
+    pattern_mask = np.vectorize(lambda color: color != Color.BLACK)(window)
+    
+    # Randomly flip some of the True/False values in the pattern_mask to create variability
+    random_mask = np.random.choice([True, False], size=(3, 3), p=[0.8, 0.2])
+    pattern_mask = np.logical_and(pattern_mask, random_mask)
+    
+    return window, pattern_mask
+```
+
+### Explanation:
+- **Concepts**: The puzzle focuses on pattern matching using a boolean mask and predicate evaluation, where the goal is to check if a generated boolean mask from an input grid matches a given pattern mask exactly.
+- **Description**:
+  - `main`: This function takes a 3x3 input grid and a pattern mask. It applies a predicate function to determine which cells are considered "active" (in this case, non-black) and generates a boolean mask. It compares this mask to the provided pattern mask and returns `True` if they match exactly, otherwise `False`.
+  - `generate_input`: This function generates a random 3x3 grid and creates a pattern mask by applying a predicate function to each element. It introduces some variability by randomly flipping some of the mask's values, ensuring diverse test cases.

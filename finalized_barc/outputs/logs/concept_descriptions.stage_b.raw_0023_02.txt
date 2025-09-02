@@ -1,0 +1,99 @@
+Certainly! Let's implement a puzzle that involves identifying a single object within a grid, removing it from its original location, and redrawing it at a specified target position without overlapping existing non-background pixels.
+
+Here is the implementation following the steps and format provided in the examples:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# In the input, you will see a grid with multiple objects of different colors on a black background. 
+# A target position is also provided in the form of a special colored pixel (e.g., PINK).
+# To make the output, identify and move the object containing this target pixel to a new location specified by the target position.
+# Ensure the object does not overlap with any existing non-background pixels when redrawn.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect all objects in the grid, including the target object marked by a PINK pixel.
+    # 2. Determine the target position from the PINK pixel.
+    # 3. Remove the target object from its initial position by setting its pixels to black.
+    # 4. Translate and redraw the object at the target position, ensuring no overlap.
+
+    # Extract all objects
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+
+    # Find the target object containing the PINK pixel
+    target_object = next((obj for obj in objects if np.any(obj == Color.PINK)), None)
+    assert target_object is not None, "No target object with a PINK pixel found."
+
+    # Determine the target position from the pink pixel
+    target_x, target_y = np.argwhere(target_object == Color.PINK)[0]
+
+    # Find new target position for the entire object using the PINK pixel's current position
+    new_x, new_y = target_x, target_y
+
+    # Create an output grid initialized as input grid
+    output_grid = np.copy(input_grid)
+
+    # Remove the target object from its original position
+    target_object_area = (target_object != Color.BLACK)
+    output_grid[target_object_area] = Color.BLACK
+
+    # Translate the target object to the new position
+    translated_object = translate(target_object, new_x - target_x, new_y - target_y)
+
+    # Ensure no overlapping occurs when drawing
+    if not collision(object1=output_grid, object2=translated_object, x2=new_x, y2=new_y):
+        blit_object(output_grid, translated_object, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid of size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random number of objects (2 to 5)
+    num_objects = np.random.randint(2, 6)
+
+    # Add objects to the grid
+    for _ in range(num_objects):
+        # Create a random sprite of size between 3x3 to 5x5
+        sprite_size = np.random.randint(3, 6)
+        sprite = random_sprite(sprite_size, sprite_size, color_palette=Color.NOT_BLACK)
+
+        # Find a random free location for the sprite and place it on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            continue  # If no space is available, skip this sprite placement
+
+    # Choose a random object to be the target object
+    objects = find_connected_components(grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+    target_object = random.choice(objects)
+
+    # Select a random pixel within the target object to mark it with PINK as the target position
+    target_x, target_y = np.argwhere(target_object != Color.BLACK)[0]
+    grid[target_x, target_y] = Color.PINK
+
+    return grid
+```
+
+### Explanation:
+- **Main Function**: 
+  - Detects all objects in the grid and identifies the target object by locating the PINK pixel.
+  - Removes the target object from its initial position and redraws it at a new position based on the PINK pixel.
+  - Ensures no overlap occurs during the object's repositioning.
+
+- **Generate Input**: 
+  - Creates a grid with multiple objects and randomly selects one object to contain a PINK pixel, marking it as the target for movement.
+  - Ensures objects are placed without overlapping initially.
+
+This puzzle challenges participants to understand object detection, pixel manipulation, and grid transformation within the constraints of ensuring no overlap.

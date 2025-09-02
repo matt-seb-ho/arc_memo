@@ -1,0 +1,74 @@
+Here's the implementation for the described puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# specific color selection, connected components, filtering
+
+# description:
+# Input consists of multiple objects of various colors on a grid. Identify and select all objects that are composed entirely of a specified target color.
+# Output a grid where only these selected objects are preserved in their original positions and colors, while all other grid cells are set to background color (0).
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Create an output grid initialized to the background color
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Find all connected components in the input grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4)
+
+    # Iterate through each object and check if it is composed entirely of the target color
+    for obj in objects:
+        if np.all((obj == target_color) | (obj == Color.BLACK)):
+            # If the object is entirely of the target color, place it on the output grid
+            output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Create a grid of size 10x10
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Select a random target color from Color.NOT_BLACK
+    target_color = random.choice(Color.NOT_BLACK)
+
+    # Number of objects to generate
+    num_objects = random.randint(3, 6)
+
+    for _ in range(num_objects):
+        # Randomly decide if the object will be of the target color or another color
+        if random.random() < 0.5:
+            obj_color = target_color
+        else:
+            obj_color = random.choice([color for color in Color.NOT_BLACK if color != target_color])
+
+        # Generate a random object of size between 2x2 to 4x4
+        obj = random_sprite(list(range(2, 5)), list(range(2, 5)), color_palette=[obj_color])
+
+        # Try to place the object in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            # If there's no space to place the object, break the loop
+            break
+
+    return grid, target_color
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves selecting objects based on color, identifying connected components, and filtering them based on the specified color.
+- **Description**:
+  - **Input**: A grid with multiple objects of different colors and a specified target color.
+  - **Output**: A grid where only objects composed entirely of the target color are retained in their original positions. All other positions are set to the background color (black).
+- **`main` function**:
+  - Identifies connected components (objects) in the grid.
+  - Checks if each object is composed entirely of the target color.
+  - Preserves the objects that match the target color on the output grid.
+- **`generate_input` function**:
+  - Generates a random 10x10 grid with objects of various colors.
+  - Randomly selects a target color for the puzzle.
+  - Places objects of both the target and non-target colors into the grid, ensuring some are entirely of the target color.

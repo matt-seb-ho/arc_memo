@@ -1,0 +1,4 @@
+```python
+# concepts: pattern extrapolation, sequence prediction, feature analysis, progression detection
+# description: Input consists of a sequence of grids representing consecutive time steps, where objects exhibit a consistent transformation pattern in terms of position, size, or color. Analyze the sequence to identify the evolving pattern, such as linear movement, size change, or color shift. Extrapolate the identified pattern to predict and generate the next grid in the sequence. The output is a single grid that continues the detected pattern logically from the last input grid.
+```

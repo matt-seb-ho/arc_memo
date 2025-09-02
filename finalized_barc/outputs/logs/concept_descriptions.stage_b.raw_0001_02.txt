@@ -1,0 +1,100 @@
+Here is the implementation of the described puzzle, which involves identifying holes within enclosed regions and filling them with a specified color:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# The input grid will have various objects on a background color. Some objects might enclose regions of the background color, which are not connected to the grid border.
+# The task is to identify these enclosed regions (holes) and fill them with the object's color, ensuring they are completely enclosed by the object's boundary.
+
+def main(input_grid):
+    # Create a copy of the input grid to modify and return as the output grid
+    output_grid = input_grid.copy()
+
+    # Identify the background color as the most common color in the border of the grid
+    border_pixels = np.concatenate((input_grid[0], input_grid[-1], input_grid[:,0], input_grid[:,-1]))
+    background_color = np.argmax(np.bincount(border_pixels.flatten()))
+
+    # Find all connected components in the grid, considering only the background color
+    components = find_connected_components(input_grid, background=background_color, connectivity=4)
+
+    # Mark exterior background areas by flood-filling from the border
+    exterior_background = np.zeros_like(input_grid, dtype=bool)
+    flood_fill(exterior_background, input_grid, background_color)
+
+    # For each component, check if it is a hole (completely enclosed)
+    for component in components:
+        # Check if the component is not connected to the border
+        if not np.any(exterior_background[component != Color.BLACK]):
+            # Fill the hole with the color of the object enclosing it
+            enclosing_object_color = find_enclosing_object_color(input_grid, component)
+            component[component != Color.BLACK] = enclosing_object_color
+            blit_object(output_grid, component, background=Color.BLACK)
+
+    return output_grid
+
+def flood_fill(filled_grid, input_grid, target_color):
+    # Flood fill from the grid's border, marking the exterior background
+    for x in range(input_grid.shape[0]):
+        if input_grid[x, 0] == target_color:
+            fill(filled_grid, input_grid, x, 0, target_color)
+        if input_grid[x, -1] == target_color:
+            fill(filled_grid, input_grid, x, input_grid.shape[1] - 1, target_color)
+    for y in range(input_grid.shape[1]):
+        if input_grid[0, y] == target_color:
+            fill(filled_grid, input_grid, 0, y, target_color)
+        if input_grid[-1, y] == target_color:
+            fill(filled_grid, input_grid, input_grid.shape[0] - 1, y, target_color)
+
+def fill(filled_grid, input_grid, x, y, target_color):
+    stack = [(x, y)]
+    while stack:
+        cx, cy = stack.pop()
+        if 0 <= cx < input_grid.shape[0] and 0 <= cy < input_grid.shape[1] and input_grid[cx, cy] == target_color and not filled_grid[cx, cy]:
+            filled_grid[cx, cy] = True
+            stack.extend([(cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)])
+
+def find_enclosing_object_color(grid, component):
+    # Find the color of the object enclosing the hole (component)
+    x, y = np.argwhere(component != Color.BLACK)[0]
+    return grid[x, y]
+
+def generate_input():
+    n = np.random.randint(10, 20)
+    grid = np.full((n, n), Color.BLACK)
+    
+    # Create random objects with enclosed holes
+    num_objects = np.random.randint(2, 5)
+    for _ in range(num_objects):
+        obj = create_random_object_with_holes()
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y)
+        except ValueError:
+            continue
+
+    return grid
+
+def create_random_object_with_holes():
+    n, m = np.random.randint(5, 8), np.random.randint(5, 8)
+    obj_color = np.random.choice(list(Color.NOT_BLACK))
+    obj = np.full((n, m), obj_color)
+    obj[1:n-1, 1:m-1] = Color.BLACK  # Create a hole
+
+    # Randomly add internal holes
+    num_holes = np.random.randint(1, 3)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, min(n, m) // 2)
+        hole_x, hole_y = np.random.randint(1, n - hole_size), np.random.randint(1, m - hole_size)
+        obj[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    return obj
+```
+
+This puzzle involves identifying and filling holes in the input grid, ensuring that holes are only filled if they are completely enclosed by an object. The `main` function performs the transformation, while the `generate_input` function creates randomized input grids for testing.

@@ -1,0 +1,123 @@
+You are an ARC-AGI puzzle author. ARC-AGI (ARC) problems are small 2D color-grid tasks (values 0..9) where a deterministic transformation maps input to output.
+
+Task: Given ONE internal concept (YAML), write a BARC-style description block. Output a single Markdown Python block that contains exactly:
+
+```python
+# concepts: <comma-separated concept tags suitable for BARC>
+# description: <concise, deterministic I/O transformation in ARC terms>
+```
+
+Guidelines:
+- Keep it puzzle-facing: state the typical input contents and the deterministic output transformation.
+- Use ARC vocabulary (connected components, 4/8-connectivity, colors 0..9, holes/enclosed regions, symmetry, copy/move/scale, blitting, bounding boxes, etc.).
+- Deterministic only; no randomness or ambiguity.
+- Formatting: headers must appear exactly as shown; content may be inline after the colon or on subsequent commented lines.
+
+Difference vs our internal concept description: our YAML’s description is an internal note; your BARC-style description must be a self-contained puzzle spec that can drive codegen (generate_input + main).
+
+Target concept (full YAML; may include parameters/extras):
+```yaml
+concept: ''
+description: use the color of a guide object for the tiling
+Puzzle ID: 0d87d2a6
+Concept: use guide object color
+Kind: routine
+Routine Subtype: parameter selection
+Output Typing: ''
+Parameters: ''
+Implementation: ''
+Cues: ''
+
+```
+
+Here are a few BARC-style examples to emulate (do not copy; follow the style):
+Original Concept:
+```yaml
+d931c21c:
+  border recolour (inside):
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: hole_colour
+      typing: color
+      description: colour of interior placeholder (4)
+    - name: border_colour
+      typing: color
+      description: target colour to paint where touching blue (3)
+    Description: Re‑colour every interior‑hole pixel (4) that shares an edge with
+      a blue pixel (1) to green 3, leaving deeper interior 4's as‑is.
+    Implementation:
+    - Build mask of hole_colour cells that are 4‑adjacent to blue; paint those to border_colour; keep non‑adjacent hole cells unchanged.
+    Cues:
+    - Only the hole cells directly touching the blue frame change to green; deeper holes remain 4.
+```
+
+Converted Description:
+```python
+# concepts: adjacency (4-connectivity), holes, border tracing, recolor
+# description: Input is a single object that forms a closed frame (blue=1) surrounding interior "hole" cells (4) on a background (0). Treat connectivity as 4-connected. Recolor precisely those 4-cells that share an edge with any blue=1 pixel to border_colour (green=3); leave all other 4-cells unchanged. All non-4 pixels are preserved. The result is that only the interior ring of 4 that touches the frame changes color; deeper 4-regions remain 4.
+```
+
+Original Concept:
+```yaml
+963f59bc:
+  colour-transfer stamping:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: reflected shape
+      typing: object
+      description: the transformed copy to stamp
+    - name: stamp colour
+      typing: color
+      description: colour taken from the pivot mark
+    Description: Apply the reflection transform, recolour the resulting shape with
+      the pivot mark's colour, and write it into the grid without altering existing
+      non-background pixels.
+    Implementation:
+    - Recolour all pixels of the transformed shape to the stamp colour.
+    - Paste onto the canvas at the computed location, skipping non-background cells.
+    Cues:
+    - Output adds coloured copies of the reference shape without overwriting existing objects.
+```
+
+Converted Description:
+```python
+# concepts: reflection across pivot axis, recolor from pivot, non-destructive blit (skip nonzero), connected components
+# description: Identify a single seed object and a distinct 1-pixel pivot mark. Reflect the seed across the vertical line through the pivot’s column (mirror columns about pivot col). Translate the reflected seed to its computed location. Recolor every pixel of the reflected copy to the pivot’s color. Stamp onto the grid by writing only into background 0 cells (skip overwrite of any nonzero); leave existing content unchanged elsewhere.
+```
+
+Original Concept:
+```yaml
+connect guide object pairs:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: guide_object
+      typing: object | list[object]
+      description: the object(s) whose colour is unique and used as reference
+    - name: connection color
+      typing: color
+      description: colour to paint along connection paths
+    - name: color mode
+      typing: Literal['pixels','objects']
+      description: whether to paint individual pixels or recolour objects along the path
+    Description: For all non-guide objects or pixels, fill them with a connection
+      color if they are along the path(s) (row/column) between a pair of guide objects.
+      There might be multiple guide objects, and the connection path need to ensure
+      that all pairs of guide objects are connected (in a row/column/row+column way).
+    Implementation:
+    - For each unordered guide-object pair, rasterize the Manhattan path (row/column) between their anchors; paint along the path using connection color, respecting color mode.
+    Cues:
+    - Output shows straight orthogonal bands connecting guide objects.
+```
+
+Converted Description:
+```python
+# concepts: guide selection (unique color), anchors, Manhattan path, orthogonal L routing, recolor
+# description: Identify guide objects as those whose color is unique in the grid; let each guide’s anchor be its bbox centroid rounded down. For every unordered pair of guides, draw an L-shaped Manhattan path that moves HORIZONTALLY first to match the target’s column, then VERTICALLY to match its row. Paint every traversed cell with the fixed connection color (overwriting background or objects). If paths overlap, cells are painted once. All non-path cells remain as in the input.
+```
+

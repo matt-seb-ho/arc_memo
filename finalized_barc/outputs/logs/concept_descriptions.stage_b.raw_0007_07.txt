@@ -1,0 +1,115 @@
+Let's create a new puzzle with the given concept: obstacles, path blocking, line drawing, detours. The task involves identifying any non-background pixels (obstacles) that lie along a planned line or replication path. These obstacles block the direct path and require handling such as detours, bypassing, or recoloring. The transformation involves navigating around these obstacles to complete the path without overwriting them, ensuring the line or replication reaches its intended destination while preserving existing objects.
+
+### Puzzle Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input, you will see a grid with a starting point and an endpoint, marked by distinct colors, and obstacles marked with another color.
+# Draw a line from the start to the end. If an obstacle is encountered, navigate around it and continue the line,
+# ensuring you do not overwrite any existing obstacles or the endpoint.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start, end, and obstacle pixels based on their colors.
+    # 2. Draw a line from the start to the end, navigating around obstacles.
+    # 3. Ensure the line reaches its intended destination while preserving existing objects.
+
+    # Identify colors
+    start_color = Color.RED
+    end_color = Color.GREEN
+    obstacle_color = Color.BLUE
+    path_color = Color.YELLOW  # Line color
+
+    # Find positions
+    start_pos = np.argwhere(input_grid == start_color)[0]
+    end_pos = np.argwhere(input_grid == end_color)[0]
+    obstacles = np.argwhere(input_grid == obstacle_color)
+
+    # Create a function to navigate around obstacles
+    def navigate_and_draw_path(grid, start, end):
+        x, y = start
+        end_x, end_y = end
+        direction = np.sign(end - start)
+
+        # Move in the direction of the endpoint
+        while (x, y) != (end_x, end_y):
+            # Check if the next step hits an obstacle
+            next_x, next_y = x + direction[0], y + direction[1]
+            if grid[next_x, next_y] == obstacle_color:
+                # Find a detour around the obstacle
+                if direction[0] != 0:  # Currently moving horizontally
+                    # Try moving vertically as a detour
+                    if grid[x, y + 1] != obstacle_color:
+                        y += 1
+                    elif grid[x, y - 1] != obstacle_color:
+                        y -= 1
+                if direction[1] != 0:  # Currently moving vertically
+                    # Try moving horizontally as a detour
+                    if grid[x + 1, y] != obstacle_color:
+                        x += 1
+                    elif grid[x - 1, y] != obstacle_color:
+                        x -= 1
+            else:
+                # Move towards the end
+                x, y = next_x, next_y
+            
+            # Draw the path
+            grid[x, y] = path_color
+
+    # Create a copy of the input grid to modify
+    output_grid = input_grid.copy()
+
+    # Draw path from start to end
+    navigate_and_draw_path(output_grid, start_pos, end_pos)
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a grid with a start, end, and multiple obstacles
+    width, height = 10, 10
+    grid = np.full((width, height), Color.BLACK)
+
+    # Define colors for start, end, and obstacles
+    start_color = Color.RED
+    end_color = Color.GREEN
+    obstacle_color = Color.BLUE
+
+    # Randomly place the start and end points
+    start_x, start_y = np.random.randint(1, width - 1), np.random.randint(1, height - 1)
+    end_x, end_y = np.random.randint(1, width - 1), np.random.randint(1, height - 1)
+
+    grid[start_x, start_y] = start_color
+    grid[end_x, end_y] = end_color
+
+    # Randomly place obstacles
+    num_obstacles = np.random.randint(5, 10)
+    for _ in range(num_obstacles):
+        obs_x, obs_y = np.random.randint(1, width - 1), np.random.randint(1, height - 1)
+        if grid[obs_x, obs_y] == Color.BLACK:  # Ensure not overwriting start/end
+            grid[obs_x, obs_y] = obstacle_color
+
+    return grid
+```
+
+### Explanation
+
+1. **Main Function:**
+   - Identifies the start, end, and obstacles in the grid.
+   - Uses a helper function `navigate_and_draw_path` to draw a path from the start to the end while navigating around obstacles.
+   - Draws the path using a specified path color.
+
+2. **Generate Input Function:**
+   - Creates a grid with random dimensions.
+   - Randomly places the start and end points.
+   - Randomly places obstacles in the grid, ensuring they do not overwrite the start or end points.
+
+This puzzle challenges students to think about pathfinding with constraints and obstacle avoidance, using basic grid manipulation techniques.

@@ -1,0 +1,91 @@
+Here's a new puzzle implementation based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider lines, region extraction, array slicing
+
+# description:
+# Input is a grid potentially divided into distinct regions by horizontal or vertical lines of a specific color. 
+# Identify these divider lines and use them to segment the grid into separate regions. Each region is extracted as a subgrid, 
+# excluding the divider lines themselves. Output is a list of these subgrids, preserving their original content and relative order.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Identify the divider color as any line that extends completely horizontally or vertically
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            divider_color = input_grid[i, 0]
+            break
+    
+    assert divider_color is not None, "No divider color found"
+
+    # Find the horizontal and vertical divider lines
+    horizontal_dividers = [i for i in range(input_grid.shape[0]) if np.all(input_grid[i, :] == divider_color)]
+    vertical_dividers = [j for j in range(input_grid.shape[1]) if np.all(input_grid[:, j] == divider_color)]
+
+    # Initialize list to store subgrids
+    subgrids = []
+
+    # Create subgrids by slicing between dividers
+    row_start = 0
+    for row_end in horizontal_dividers + [input_grid.shape[0]]:
+        col_start = 0
+        for col_end in vertical_dividers + [input_grid.shape[1]]:
+            if row_start < row_end and col_start < col_end:
+                subgrid = input_grid[row_start:row_end, col_start:col_end]
+                # Ignore subgrids that are pure dividers
+                if not (np.all(subgrid == divider_color)):
+                    subgrids.append(subgrid)
+            col_start = col_end + 1
+        row_start = row_end + 1
+
+    return subgrids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Randomly select a divider color
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly determine positions for horizontal and vertical dividers
+    num_horizontal_dividers = np.random.randint(1, min(width // 3, 5))
+    num_vertical_dividers = np.random.randint(1, min(height // 3, 5))
+
+    horizontal_divider_positions = randomly_spaced_indices(width, num_horizontal_dividers, border_size=1, padding=1)
+    vertical_divider_positions = randomly_spaced_indices(height, num_vertical_dividers, border_size=1, padding=1)
+
+    # Draw horizontal dividers
+    for row in horizontal_divider_positions:
+        grid[row, :] = divider_color
+
+    # Draw vertical dividers
+    for col in vertical_divider_positions:
+        grid[:, col] = divider_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle involves identifying divider lines in a grid and extracting regions formed by these lines. This involves array slicing and handling subgrids.
+
+2. **Description**: The input is a grid with potential horizontal and vertical dividers of a specific color. The goal is to separate this grid into subgrids delimited by these dividers, excluding the dividers themselves, and output a list of these subgrids.
+
+3. **Function `main`**:
+   - Identifies the divider color by checking for lines that extend across the grid.
+   - Finds positions of horizontal and vertical dividers.
+   - Slices the grid into subgrids between these dividers and collects them into a list.
+
+4. **Function `generate_input`**:
+   - Randomly creates a grid and fills it with random colors.
+   - Randomly selects a divider color and positions for horizontal and vertical dividers.
+   - Draws these dividers on the grid to create distinct regions. 
+
+This implementation adheres to the puzzle description by ensuring the transformation logic is deterministic and the input grid is generated stochastically.

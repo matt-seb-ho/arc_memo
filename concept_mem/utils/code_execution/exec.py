@@ -14,8 +14,17 @@ from pebble import ProcessExpired, ProcessPool
 from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
-mp.set_start_method("fork", force=True)
-logger.info("Using 'fork' start method for multiprocessing")
+try:
+    import sys
+    if sys.platform == "darwin":
+        mp.set_start_method("spawn", force=True)
+        logger.info("Using 'spawn' start method for multiprocessing (darwin)")
+    else:
+        mp.set_start_method("fork", force=True)
+        logger.info("Using 'fork' start method for multiprocessing")
+except RuntimeError:
+    # Start method already set by parent process; proceed
+    pass
 
 # Disallow imports that can escape the sandbox
 DISALLOWED_IMPORTS = ("os", "sys", "subprocess", "multiprocessing", "pathlib")
@@ -113,7 +122,6 @@ def _worker(
     try:
         with redirect_stdout(buf_out), redirect_stderr(buf_err):
             exec(source, ctx)
-        exec(source, ctx)
         if return_var_name not in ctx:
             raise RuntimeError(f"'{return_var_name}' not found in execution context")
         return ExecutionResult(

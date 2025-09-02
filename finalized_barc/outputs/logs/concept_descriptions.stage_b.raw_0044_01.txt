@@ -1,0 +1,74 @@
+Certainly! Let's design a puzzle based on the provided description, involving window processing, predicate checks, and conditional fills.
+
+### Puzzle Implementation
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# window processing, predicate check, conditional fill, grid manipulation
+
+# description:
+# Input is a grid with specific 3x3 window coordinates and a predicate function. 
+# For each cell within the specified 3x3 window, check if it satisfies the predicate. 
+# If a cell does not satisfy the predicate, replace its value with a specified fill_value. 
+# This operation completes the pattern within the window by filling only the non-matching cells.
+
+def main(input_grid: np.ndarray, window_coords: Tuple[int, int], predicate: Callable[[int], bool], fill_value: int) -> np.ndarray:
+    # Create a copy of the input grid to avoid modifying the original
+    output_grid = np.copy(input_grid)
+    
+    # Extract the 3x3 window using the provided coordinates
+    x, y = window_coords
+    window = input_grid[x:x+3, y:y+3]
+    
+    # Process each cell in the window
+    for i in range(3):
+        for j in range(3):
+            cell_value = window[i, j]
+            if not predicate(cell_value):
+                # Replace the value if it does not satisfy the predicate
+                output_grid[x+i, y+j] = fill_value
+    
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, Tuple[int, int], Callable[[int], bool], int]:
+    # Randomly generate a grid of size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.random.choice(Color.NOT_BLACK, size=(n, m))
+    
+    # Randomly choose coordinates for a 3x3 window within the grid
+    x, y = np.random.randint(0, n-2), np.random.randint(0, m-2)
+    
+    # Define a simple predicate function
+    def predicate(color: int) -> bool:
+        # Example predicate: color should be even-indexed in the list of all colors
+        all_colors = list(Color.NOT_BLACK)
+        return all_colors.index(color) % 2 == 0
+    
+    # Randomly choose a fill_value that is not black
+    fill_value = np.random.choice([color for color in Color.NOT_BLACK if color != Color.BLACK])
+    
+    return grid, (x, y), predicate, fill_value
+```
+
+### Explanation
+
+1. **Concepts**: 
+   - **Window Processing**: The main task is to process a specific 3x3 window within a larger grid.
+   - **Predicate Check**: Each cell's value in the 3x3 window is checked against a predicate function.
+   - **Conditional Fill**: Cells failing the predicate get their value replaced with a `fill_value`.
+
+2. **`main` Function**:
+   - Accepts an input grid, window coordinates, a predicate function, and a fill value.
+   - It extracts the 3x3 window and processes each cell to check if it satisfies the predicate.
+   - Non-satisfying cells are replaced with the `fill_value`.
+
+3. **`generate_input` Function**:
+   - Randomly generates a grid and selects random coordinates for a 3x3 window.
+   - Defines a simple predicate as a function to check color index parity.
+   - Randomly chooses a fill value that is not black.
+
+This setup allows students to explore conditional processing and transformations in grids, reinforcing pattern recognition and logical operations.

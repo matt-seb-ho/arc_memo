@@ -1,0 +1,100 @@
+Let's implement the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# In the input grid, you will see a reference object and a target object, along with a direction ('up', 'down', 'left', 'right').
+# The task is to translate the target object so it touches the reference object on the specified side without overlapping. The nearest edge of the target should align with the contact edge of the reference.
+# The output grid shows the target object aligned and merged with the reference object on the specified side.
+
+def main(input_grid):
+    # Detect the objects (reference and target) and the direction
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+    assert len(objects) == 2  # Ensure there are exactly two objects
+
+    # Determine the reference and target objects
+    ref_object, target_object = objects
+
+    # Identify the direction from the input (e.g., as a single pixel in the grid specifying direction)
+    direction_pixel = detect_objects(grid=input_grid, colors=[Color.GREY], monochromatic=True, connectivity=8, allowed_dimensions=[(1,1)])
+    assert len(direction_pixel) == 1
+    direction_pixel = direction_pixel[0]
+
+    # Map direction pixel to actual direction
+    direction_map = {
+        (0, -1): 'up',
+        (0, 1): 'down',
+        (-1, 0): 'left',
+        (1, 0): 'right'
+    }
+    direction = direction_map.get((direction_pixel[0][0], direction_pixel[0][1]))
+
+    # Translate target object to align and contact reference object
+    if direction == 'up':
+        # Move the target object up to touch the top of the reference
+        translation_vector = (0, -1)
+    elif direction == 'down':
+        # Move the target object down to touch the bottom of the reference
+        translation_vector = (0, 1)
+    elif direction == 'left':
+        # Move the target object left to touch the left of the reference
+        translation_vector = (-1, 0)
+    elif direction == 'right':
+        # Move the target object right to touch the right of the reference
+        translation_vector = (1, 0)
+
+    # Align the target object to the reference object
+    while not contact(object1=ref_object, object2=target_object, x1=0, y1=0, x2=translation_vector[0], y2=translation_vector[1]):
+        target_object = translate(target_object, translation_vector[0], translation_vector[1])
+        
+    # Merge target object into reference object
+    output_grid = np.copy(input_grid)
+    blit_object(output_grid, target_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with a reference object and a target object, and randomly decide a direction
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # Create a random reference object
+    ref_sprite = random_sprite(n=[2, 3], m=[2, 3], color_palette=[Color.BLUE], connectivity=8)
+    x, y = random_free_location_for_sprite(grid, ref_sprite, padding=1, border_size=1)
+    blit_sprite(grid, ref_sprite, x, y)
+    
+    # Create a random target object
+    target_sprite = random_sprite(n=[2, 3], m=[2, 3], color_palette=[Color.RED], connectivity=8)
+    x, y = random_free_location_for_sprite(grid, target_sprite, padding=1, border_size=1)
+    blit_sprite(grid, target_sprite, x, y)
+
+    # Randomly choose a direction
+    directions = ['up', 'down', 'left', 'right']
+    direction = random.choice(directions)
+
+    # Place a direction indicator on the grid (using grey color)
+    if direction == 'up':
+        grid[0, 0] = Color.GREY
+    elif direction == 'down':
+        grid[0, 1] = Color.GREY
+    elif direction == 'left':
+        grid[1, 0] = Color.GREY
+    elif direction == 'right':
+        grid[1, 1] = Color.GREY
+
+    return grid
+```
+
+In this implementation:
+
+- We detect two main objects from the input grid, the reference, and the target.
+- A direction is specified by a grey pixel, indicating how the target should align with the reference.
+- Depending on the direction, the target is translated until it touches the reference object without overlapping.
+- Finally, the target object is merged with the reference object on the same grid.

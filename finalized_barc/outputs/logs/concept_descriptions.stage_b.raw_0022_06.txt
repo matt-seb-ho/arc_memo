@@ -1,0 +1,99 @@
+Here is the implementation for the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern extrapolation, sequence prediction, feature analysis, progression detection
+
+# description:
+# Input consists of a sequence of grids representing consecutive time steps, where objects exhibit a consistent transformation pattern 
+# in terms of position, size, or color. Analyze the sequence to identify the evolving pattern, such as linear movement, size change, or color shift. 
+# Extrapolate the identified pattern to predict and generate the next grid in the sequence. 
+# The output is a single grid that continues the detected pattern logically from the last input grid.
+
+def main(input_grids):
+    # Assume input_grids is a list of grids representing consecutive time steps
+    last_grid = input_grids[-1]
+
+    # Find all objects in the last grid
+    objects = find_connected_components(last_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Create a copy of the last grid to transform
+    output_grid = last_grid.copy()
+    
+    # Analyze each object to determine its transformation pattern
+    for obj in objects:
+        # Get object position, color, and size
+        x, y = object_position(obj, background=Color.BLACK)
+        color = object_colors(obj)[0]
+        width, height = obj.shape
+
+        # Determine the pattern of movement, size, or color change
+        # For simplicity, let's assume objects move linearly in the x direction by a fixed amount
+        # This can be expanded to detect more complex transformations
+
+        # Calculate the new position
+        new_x = x + 1  # Assuming a simple linear movement to the right
+        new_y = y
+
+        # Make sure the new position is within bounds
+        if new_x + width <= output_grid.shape[0]:
+            # Clear the previous position
+            blit_sprite(output_grid, np.full_like(obj, Color.BLACK), x=x, y=y, background=Color.BLACK)
+            # Place the object in its new position
+            blit_sprite(output_grid, obj, x=new_x, y=new_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a sequence of grids by applying a deterministic transformation
+    num_steps = 3
+    grid_size = (10, 10)
+
+    # Start with an empty grid
+    grids = [np.full(grid_size, Color.BLACK)]
+
+    # Choose a random color for the object
+    color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Create an initial object at a random position
+    initial_x = np.random.randint(0, grid_size[0] // 2)
+    initial_y = np.random.randint(0, grid_size[1] // 2)
+    object_size = (2, 2)
+    initial_object = np.full(object_size, color)
+    
+    # Place the initial object on the first grid
+    blit_sprite(grids[0], initial_object, x=initial_x, y=initial_y, background=Color.BLACK)
+
+    # Generate subsequent grids by applying simple linear movement
+    for step in range(1, num_steps):
+        new_grid = grids[step-1].copy()
+        new_x = initial_x + step * 1  # Move to the right
+        new_y = initial_y
+
+        if new_x + object_size[0] <= grid_size[0]:
+            blit_sprite(new_grid, initial_object, x=new_x, y=new_y, background=Color.BLACK)
+
+        grids.append(new_grid)
+
+    return grids
+```
+
+### Explanation:
+
+- **Concepts**: The puzzle involves pattern extrapolation, sequence prediction, feature analysis, and progression detection.
+- **Description**: Given a sequence of grids representing consecutive time steps, the goal is to analyze the transformation pattern of objects (like movement) and predict the next grid in the sequence.
+- **`main` function**: 
+  - Processes a list of grids to predict the next state.
+  - Assumes objects move linearly to the right.
+  - Uses functions from `common.py` to detect objects, their positions, and move them to the new predicted position.
+- **`generate_input` function**: 
+  - Creates a sequence of grids by introducing a simple linear movement pattern for an object across a series of grids.
+  - Randomly places an object and moves it linearly in subsequent grids to create a sequence. 
+
+This approach captures the core idea of detecting and extrapolating patterns in a sequence of grids. You can expand this implementation to recognize and extrapolate more complex transformations, such as size changes or color shifts.

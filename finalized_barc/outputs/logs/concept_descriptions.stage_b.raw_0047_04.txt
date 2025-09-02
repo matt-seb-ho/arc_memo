@@ -1,0 +1,82 @@
+Here's an implementation of the puzzle described above:
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# The input is a grid containing various colors, including a target color (cyan).
+# For each row and column, we need to detect maximal contiguous runs of the target color.
+# Output these runs as lists of coordinates, representing the start and end of each contiguous sequence of the target color.
+# Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[List[Tuple[int, int]]]:
+    target_color = Color.TEAL  # Using TEAL as cyan representation
+    output = []
+
+    # Check each row for contiguous runs of the target color
+    for i, row in enumerate(input_grid):
+        j = 0
+        while j < len(row):
+            if row[j] == target_color:
+                start = j
+                while j < len(row) and row[j] == target_color:
+                    j += 1
+                end = j - 1
+                if end > start:
+                    output.append([(i, start), (i, end)])
+            j += 1
+
+    # Check each column for contiguous runs of the target color
+    for j in range(input_grid.shape[1]):
+        i = 0
+        while i < input_grid.shape[0]:
+            if input_grid[i][j] == target_color:
+                start = i
+                while i < input_grid.shape[0] and input_grid[i][j] == target_color:
+                    i += 1
+                end = i - 1
+                if end > start:
+                    output.append([(start, j), (end, j)])
+            i += 1
+
+    return output
+
+
+def generate_input() -> np.ndarray:
+    # Create a grid with random dimensions between 10x10 to 20x20
+    n, m = np.random.randint(10, 21), np.random.randint(10, 21)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly scatter different colors including the target color (cyan)
+    randomly_scatter_points(grid, color=Color.TEAL, density=0.2)
+    for color in np.random.choice(Color.NOT_BLACK - {Color.TEAL}, 3, replace=False):
+        randomly_scatter_points(grid, color=color, density=0.1)
+
+    # Manually create a few contiguous runs for guaranteed test cases
+    for _ in range(np.random.randint(2, 5)):
+        direction = (1, 0) if np.random.rand() > 0.5 else (0, 1)
+        length = np.random.randint(2, min(n, m) // 2)
+        x, y = np.random.randint(0, n), np.random.randint(0, m)
+        draw_line(grid, x, y, length=length, direction=direction, color=Color.TEAL)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Main Function**:
+   - The `main` function scans each row and column of the input grid to find contiguous runs of the target color (cyan, represented by `Color.TEAL`).
+   - For each row and column, it identifies maximal sequences of contiguous target color pixels and appends their start and end coordinates to the output list.
+   - It ensures isolated target pixels do not count as runs.
+
+2. **Generate Input Function**:
+   - The `generate_input` function creates a grid with random dimensions and populates it with different colors, ensuring the inclusion of the target color.
+   - It randomly scatters the target color and other colors and ensures the creation of some contiguous runs to guarantee the presence of patterns for testing.
+
+This implementation provides a deterministic transformation for the given puzzle and a stochastic input generator to create diverse test cases.

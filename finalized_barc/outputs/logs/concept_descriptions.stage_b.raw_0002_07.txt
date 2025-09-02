@@ -1,0 +1,77 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# parity counting, guide object, color restriction
+
+# description:
+# Input consists of a grid with various colored pixels and a designated guide object. 
+# Count the number of pixels within the guide object that have either odd or even color values.
+# If a specific color or set of colors is provided, restrict the count to those colors only; 
+# otherwise, consider all colors present in the guide object. 
+# The output is the total count of pixels satisfying the chosen parity condition.
+
+def main(input_grid, guide_object, parity='odd', restricted_colors=None):
+    # Extract the bounding box of the guide object
+    x, y, width, height = bounding_box(guide_object)
+    
+    # Initialize the count of pixels satisfying the parity condition
+    count = 0
+    
+    # Traverse through the guide object's bounding box
+    for i in range(x, x + width):
+        for j in range(y, y + height):
+            pixel_color = input_grid[i, j]
+            if pixel_color == Color.BLACK:
+                continue
+            
+            # Check if the color is restricted or not
+            if restricted_colors is None or pixel_color in restricted_colors:
+                color_value = list(Color.NOT_BLACK).index(pixel_color)
+                if (parity == 'odd' and color_value % 2 == 1) or (parity == 'even' and color_value % 2 == 0):
+                    count += 1
+    
+    return count
+
+def generate_input():
+    # Create a grid of size 10x10 with a black background
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Scatter various colored pixels randomly
+    for color in Color.NOT_BLACK:
+        randomly_scatter_points(grid, color=color, density=0.1)
+    
+    # Generate a random guide object (sprite)
+    guide_object = random_sprite(n=np.random.randint(2, 5), m=np.random.randint(2, 5), color_palette=[Color.GREY])
+    
+    # Place the guide object randomly on the grid
+    x, y = random_free_location_for_sprite(grid, guide_object)
+    blit_sprite(grid, guide_object, x, y)
+
+    # Randomly decide if a restricted color set is used
+    restricted_colors = None
+    if np.random.rand() > 0.5:
+        restricted_colors = random.sample(Color.NOT_BLACK, k=np.random.randint(1, 5))
+    
+    # Randomly select a parity condition
+    parity = np.random.choice(['odd', 'even'])
+    
+    return grid, guide_object, parity, restricted_colors
+```
+
+### Explanation:
+1. **`main` Function**: 
+    - It calculates the number of pixels inside the guide object that meet the parity condition (odd/even) based on their color index.
+    - It uses the `bounding_box` function to limit the check to the area of the guide object.
+    - The function supports optional color restriction, narrowing the check to specific colors if provided.
+
+2. **`generate_input` Function**:
+    - Creates a 10x10 grid with scattered colored pixels.
+    - Generates a guide object, places it randomly on the grid, and optionally chooses a set of restricted colors.
+    - Randomly decides if the parity check should be for odd or even indexed colors.
+
+This design makes it suitable for middle-schoolers to explore concepts of counting, parity, and logical constraints in a visual manner.

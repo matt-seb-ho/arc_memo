@@ -1,0 +1,81 @@
+Let's implement the puzzle based on the given description:
+
+1. **Concepts**: recolor, guide object, connected components
+2. **Description**: The input consists of a grid with at least two distinct objects: a target object and a guide object. Identify the target object and change its color to match the color of the guide object. The guide object is distinct and serves as the reference for the new color. All other grid elements remain unchanged.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, guide object, connected components
+
+# description:
+# Input consists of a grid with at least two distinct objects: a target object and a guide object.
+# Identify the target object and change its color to match the color of the guide object.
+# The guide object is distinct and serves as the reference for the new color. All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Extract all objects from the grid
+    objects = find_connected_components(input_grid, connectivity=8)
+
+    # Separate objects into the target object and the guide object
+    # For simplicity, let's assume the guide object is always the smallest object
+    # And the target object is the largest object
+    objects_sorted = sorted(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    guide_object = objects_sorted[0]
+    target_object = objects_sorted[-1]
+
+    # Find the color of the guide object
+    guide_color = np.unique(guide_object[guide_object != Color.BLACK])[0]
+
+    # Recolor the target object to match the guide object's color
+    target_object[target_object != Color.BLACK] = guide_color
+
+    # Place the modified target object back into the grid
+    output_grid = np.copy(input_grid)
+    output_grid = blit_object(output_grid, target_object, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid of size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a target object
+    target_size = np.random.randint(4, 8)
+    target_color = random.choice(Color.NOT_BLACK)
+    target_object = random_sprite(target_size, target_size, color_palette=[target_color])
+
+    # Generate a guide object
+    guide_size = np.random.randint(2, 4)
+    guide_color = random.choice([c for c in Color.NOT_BLACK if c != target_color])
+    guide_object = random_sprite(guide_size, guide_size, color_palette=[guide_color])
+
+    # Place the target object in the grid
+    x, y = random_free_location_for_sprite(grid, target_object, padding=1)
+    grid = blit_sprite(grid, target_object, x, y, background=Color.BLACK)
+
+    # Place the guide object in the grid
+    x, y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    grid = blit_sprite(grid, guide_object, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+
+- **Main Function**: 
+  - Detects all objects in the input grid.
+  - Assumes the guide object is the smallest object and the target object is the largest.
+  - Changes the color of the target object to match the guide object.
+
+- **Generate Input Function**:
+  - Creates a grid of random size between 10x10 and 15x15.
+  - Generates a target object with a random color and size.
+  - Generates a guide object with a different color and smaller size.
+  - Places both objects onto the grid without overlap.

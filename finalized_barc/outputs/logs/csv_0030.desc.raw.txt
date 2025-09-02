@@ -1,0 +1,4 @@
+```python
+# concepts: gravity simulation, directional movement, cohesion modes, collision detection
+# description: Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries. If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact. Maintain block order and shape; stop when further movement would result in collision or leaving the grid. The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+```

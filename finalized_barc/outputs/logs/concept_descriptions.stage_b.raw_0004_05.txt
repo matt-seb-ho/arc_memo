@@ -1,0 +1,99 @@
+To implement the puzzle based on the description provided, we will:
+
+1. Identify a unique guide object based on a distinct attribute (e.g., color or size).
+2. Use the guide's anchor point, such as its centroid or top-left corner, as the starting point.
+3. From this anchor, count the number of enclosed regions (holes) in the grid.
+4. The output will be a count of these holes, originating from the guide's position.
+
+The transformation should be deterministic, while the input generation will be stochastic.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# In the input, you will see various colored objects on a black background. 
+# One of these objects is a "guide object", identifiable by its distinct color or size.
+# Use the guide's anchor point (e.g., center) as the starting point.
+# From this anchor, count how many enclosed regions (holes) exist in the grid.
+# The output will be a grid with a single number representing this count.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4)
+
+    # Identify the guide object based on a distinct attribute (we'll use color here for uniqueness)
+    colors = [np.unique(obj[obj != Color.BLACK]) for obj in objects]
+    unique_colors = [color for color in Color.ALL_COLORS if colors.count(color) == 1]
+    
+    # Assume the guide object is the one with a unique color
+    guide_object = None
+    for obj in objects:
+        obj_color = np.unique(obj[obj != Color.BLACK])
+        if obj_color in unique_colors:
+            guide_object = obj
+            break
+
+    if guide_object is None:
+        raise ValueError("No guide object found")
+
+    # Use the guide's anchor point (center) as the starting position
+    anchor_x, anchor_y = object_position(guide_object, background=Color.BLACK, anchor='center')
+
+    # Count the number of enclosed regions (holes) in the grid starting from the anchor point
+    # We will consider holes as black regions fully enclosed by colored regions
+    interior = object_interior(input_grid, background=Color.BLACK)
+    hole_count = 0
+
+    # Check for holes
+    for y in range(interior.shape[0]):
+        for x in range(interior.shape[1]):
+            if interior[y, x] and input_grid[y, x] == Color.BLACK:
+                # If the pixel is part of an enclosed black region, count it as a hole
+                hole_count += 1
+
+    # Create an output grid to display the hole count
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+    output_grid[anchor_y, anchor_x] = hole_count
+
+    return output_grid
+
+
+def generate_input():
+    # Create a random grid with objects of various colors
+    n, m = np.random.randint(12, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Create some objects, one of which has a unique color
+    num_objects = np.random.randint(3, 6)
+    used_colors = set()
+
+    for _ in range(num_objects):
+        # Generate a random color not used before
+        color = np.random.choice([c for c in Color.NOT_BLACK if c not in used_colors])
+        used_colors.add(color)
+
+        # Create a random object with the chosen color
+        obj_height, obj_width = np.random.randint(3, 5, size=2)
+        obj = random_sprite(obj_height, obj_width, color_palette=[color], background=Color.BLACK)
+        
+        # Place the object in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function:** Identifies a "guide object" based on a unique color, uses its center as the anchor point, and counts the number of fully enclosed black regions (holes) in the grid starting from the anchor point.
+- **`generate_input` Function:** Creates a stochastic grid setup with several colored objects, ensuring one of them has a unique color to serve as the guide object. This function ensures variability in the input while maintaining the puzzle's deterministic nature.

@@ -1,0 +1,118 @@
+Below is the implementation of the puzzle described. The puzzle involves detecting holes in a guide object that are not connected to the grid border and filling them with a target color.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# Identify holes as background-color regions fully enclosed by a guide object, not connected to the grid border.
+# Use flood-fill from the grid border to mark exterior background; any remaining background component inside the object is a hole.
+# Fill these holes with the target object color, ensuring they are completely enclosed by the guide object.
+
+def main(input_grid):
+    # Determine the background color (most common color)
+    background_color = np.argmax(np.bincount(input_grid.flatten()))
+    
+    # Create a copy of the input grid for output
+    output_grid = input_grid.copy()
+    
+    # Flood-fill the background from the border to mark exterior background
+    exterior_background = np.zeros_like(input_grid, dtype=bool)
+    h, w = input_grid.shape
+    
+    # Check borders and flood-fill
+    for x in range(w):
+        if input_grid[0, x] == background_color:
+            fill_exterior_background(input_grid, exterior_background, 0, x, background_color)
+        if input_grid[h-1, x] == background_color:
+            fill_exterior_background(input_grid, exterior_background, h-1, x, background_color)
+    
+    for y in range(h):
+        if input_grid[y, 0] == background_color:
+            fill_exterior_background(input_grid, exterior_background, y, 0, background_color)
+        if input_grid[y, w-1] == background_color:
+            fill_exterior_background(input_grid, exterior_background, y, w-1, background_color)
+    
+    # Find holes (background regions not marked as exterior)
+    holes = (input_grid == background_color) & ~exterior_background
+    
+    # Fill holes with the target color
+    target_color = Color.RED  # For instance, filling holes with red
+    output_grid[holes] = target_color
+    
+    return output_grid
+
+def fill_exterior_background(grid, exterior_background, start_y, start_x, background_color):
+    """Flood-fill to mark exterior background"""
+    h, w = grid.shape
+    stack = [(start_y, start_x)]
+    
+    while stack:
+        y, x = stack.pop()
+        
+        if exterior_background[y, x]:
+            continue
+        
+        exterior_background[y, x] = True
+        
+        # Explore neighbors (4-connectivity)
+        for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            ny, nx = y + dy, x + dx
+            if 0 <= ny < h and 0 <= nx < w and not exterior_background[ny, nx] and grid[ny, nx] == background_color:
+                stack.append((ny, nx))
+
+def generate_input():
+    # Create a grid of random size
+    n = np.random.randint(15, 20)
+    grid = np.full((n, n), Color.BLACK)
+    
+    # Choose background and object colors
+    background_color = np.random.choice(list(Color.NOT_BLACK))
+    object_color = np.random.choice([c for c in Color.NOT_BLACK if c != background_color])
+    
+    # Set the entire grid to the background color
+    grid.fill(background_color)
+    
+    # Create a guide object with at least one hole
+    obj_size = np.random.randint(5, 10)
+    obj = np.full((obj_size, obj_size), object_color)
+    
+    # Create a hole by setting a central region to background color
+    hole_size = np.random.randint(1, obj_size - 2)
+    hole_x = np.random.randint(1, obj_size - hole_size - 1)
+    hole_y = np.random.randint(1, obj_size - hole_size - 1)
+    obj[hole_y:hole_y+hole_size, hole_x:hole_x+hole_size] = background_color
+    
+    # Place the object in the grid
+    x, y = random_free_location_for_sprite(grid, obj, background=background_color)
+    blit_sprite(grid, obj, x, y, background=background_color)
+    
+    # Randomly add a few more objects with or without holes
+    num_objects = np.random.randint(1, 4)
+    for _ in range(num_objects):
+        obj = np.full((obj_size, obj_size), object_color)
+        if np.random.rand() > 0.5:
+            hole_size = np.random.randint(1, obj_size - 2)
+            hole_x = np.random.randint(1, obj_size - hole_size - 1)
+            hole_y = np.random.randint(1, obj_size - hole_size - 1)
+            obj[hole_y:hole_y+hole_size, hole_x:hole_x+hole_size] = background_color
+        
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, background=background_color)
+            blit_sprite(grid, obj, x, y, background=background_color)
+        except ValueError:
+            # If there is no space for the object, skip
+            continue
+    
+    return grid
+```
+
+### Explanation:
+- **Main Function:** The `main` function detects holes within a guide object that are not connected to the grid border using a flood-fill algorithm. These holes are then filled with a target color.
+- **Flood-fill Algorithm:** The function `fill_exterior_background` marks the exterior background by starting from the grid's border and using a stack-based flood-fill approach.
+- **Input Generation:** The `generate_input` function creates a grid with a background color and random objects that might have enclosed holes. This setup mimics potential real-world scenarios where the transformation can be applied.

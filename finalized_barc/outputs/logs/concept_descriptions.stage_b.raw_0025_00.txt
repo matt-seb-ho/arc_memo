@@ -1,0 +1,93 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines that span the grid. Each region contains pixels of specific colors that do not appear in other regions.
+# The task is to identify these regions and treat them as separate entities for further processing. The output maintains the structure of these regions without altering the internal arrangement of pixels within each region.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the divider lines to determine the distinct regions
+    # 2. Extract each region based on the divider lines
+    # 3. Assemble the output grid maintaining the internal arrangement of each region
+
+    # 1. Identify divider lines (assumed to be black lines in this case)
+    width, height = input_grid.shape
+    background = Color.BLACK
+
+    # Find all vertical and horizontal divider lines
+    vertical_lines = [x for x in range(width) if np.all(input_grid[x, :] == background)]
+    horizontal_lines = [y for y in range(height) if np.all(input_grid[:, y] == background)]
+
+    # Start from (0, 0)
+    vertical_lines = [0] + vertical_lines + [width]
+    horizontal_lines = [0] + horizontal_lines + [height]
+
+    # 2. Extract each region based on divider lines
+    regions = []
+    for i in range(len(vertical_lines) - 1):
+        for j in range(len(horizontal_lines) - 1):
+            x1, x2 = vertical_lines[i], vertical_lines[i + 1]
+            y1, y2 = horizontal_lines[j], horizontal_lines[j + 1]
+            region = input_grid[x1:x2, y1:y2]
+            regions.append(region)
+
+    # 3. Assemble the output grid maintaining the structure of regions
+    # Output grid will have the same size as input grid
+    output_grid = np.full(input_grid.shape, background)
+
+    # Place each region in its original position
+    for i in range(len(vertical_lines) - 1):
+        for j in range(len(horizontal_lines) - 1):
+            x1, x2 = vertical_lines[i], vertical_lines[i + 1]
+            y1, y2 = horizontal_lines[j], horizontal_lines[j + 1]
+            output_grid[x1:x2, y1:y2] = regions[i * (len(horizontal_lines) - 1) + j]
+
+    return output_grid
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly select the number of regions
+    n_regions_horizontal, n_regions_vertical = np.random.randint(2, 5), np.random.randint(2, 5)
+
+    # Randomly space indices for divider lines
+    horizontal_dividers = randomly_spaced_indices(max_len=width, n_indices=n_regions_horizontal - 1, border_size=1, padding=2)
+    vertical_dividers = randomly_spaced_indices(max_len=height, n_indices=n_regions_vertical - 1, border_size=1, padding=2)
+
+    # Draw divider lines
+    # Draw vertical divider lines
+    for x in horizontal_dividers:
+        draw_line(grid=grid, x=x, y=0, direction=(0, 1), color=Color.BLACK)
+
+    # Draw horizontal divider lines
+    for y in vertical_dividers:
+        draw_line(grid=grid, x=0, y=y, direction=(1, 0), color=Color.BLACK)
+
+    # Fill regions with unique colors
+    colors = np.random.choice(Color.NOT_BLACK, (n_regions_horizontal, n_regions_vertical), replace=False)
+
+    for X in range(n_regions_horizontal):
+        for Y in range(n_regions_vertical):
+            # Get the region boundary
+            x1 = 0 if X == 0 else horizontal_dividers[X-1]
+            x2 = horizontal_dividers[X] if X < len(horizontal_dividers) else width
+            y1 = 0 if Y == 0 else vertical_dividers[Y-1]
+            y2 = vertical_dividers[Y] if Y < len(vertical_dividers) else height
+
+            # Fill the region with a specific color
+            region = grid[x1:x2, y1:y2]
+            region.fill(colors[X, Y])
+
+    return grid
+```
+
+This implementation identifies and separates distinct color regions divided by black lines in a grid, maintaining each region's internal structure when generating the output. The input generator creates grids with randomly placed divider lines and unique colors for each region.

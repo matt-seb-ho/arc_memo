@@ -1,0 +1,68 @@
+Here's the implementation for the puzzle described, which involves detecting L-shaped triominoes and identifying the missing corner in a 2x2 grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# In the input, you will see a 2x2 grid with a 3-pixel L-shaped triomino.
+# Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape.
+# Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner.
+# The grid may contain noise, but the L-shape is dominant.
+
+def main(input_grid):
+    # Identify which corner is missing in the L-shape
+    corner_positions = {
+        "tl": (0, 0),
+        "tr": (0, 1),
+        "bl": (1, 0),
+        "br": (1, 1)
+    }
+    
+    # Find the location of the pixels in the L-shape
+    occupied_positions = np.argwhere(input_grid != Color.BLACK)
+    
+    # Generate a set of possible L-shape positions based on occupied positions
+    occupied_set = set(tuple(pos) for pos in occupied_positions)
+    
+    # Check which corner is missing
+    for corner, pos in corner_positions.items():
+        if pos not in occupied_set:
+            return np.array([[corner]])
+    
+    raise ValueError("No valid L-shape detected.")
+
+def generate_input():
+    # Create a 2x2 grid
+    grid = np.full((2, 2), Color.BLACK, dtype=int)
+    
+    # Choose a random missing corner for the L-shape
+    missing_corner = np.random.choice(["tl", "tr", "bl", "br"])
+    
+    # Define the L-shape positions based on the missing corner
+    l_shape_positions = {
+        "tl": [(0, 1), (1, 0), (1, 1)],
+        "tr": [(0, 0), (1, 0), (1, 1)],
+        "bl": [(0, 0), (0, 1), (1, 1)],
+        "br": [(0, 0), (0, 1), (1, 0)]
+    }
+    
+    # Fill in the L-shape on the grid with a random color
+    color = np.random.choice(list(Color.NOT_BLACK))
+    for pos in l_shape_positions[missing_corner]:
+        grid[pos] = color
+    
+    return grid
+```
+
+### Explanation
+- **`main` Function**: This function identifies the missing corner by checking which position in the 2x2 grid does not have a colored pixel. It returns the corresponding corner label.
+- **`generate_input` Function**: This function randomly selects a missing corner for the L-shape and fills the other three positions with a random color, ensuring that the grid is properly set up for the puzzle.
+- **Concepts and Description**: The puzzle revolves around identifying L-shapes and determining the missing corner, which involves logical reasoning and spatial understanding.
+
+This implementation makes use of the common library's color handling and grid manipulation capabilities to generate inputs and apply the transformation rule.

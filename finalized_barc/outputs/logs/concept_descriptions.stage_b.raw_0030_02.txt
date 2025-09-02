@@ -1,0 +1,124 @@
+Here is an implementation of your puzzle, focusing on gravity simulation, directional movement, cohesion modes, and collision detection:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries.
+# If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact.
+# Maintain block order and shape; stop when further movement would result in collision or leaving the grid. The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_grid, gravity_direction='down', cohesion_mode='per-column'):
+    # Initialize the output grid with the same size as input grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Get all connected components in the grid
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    if cohesion_mode == 'per-column':
+        if gravity_direction in ('down', 'up'):
+            # Handle vertical column-wise gravity
+            for x in range(input_grid.shape[0]):
+                column = input_grid[x, :]
+                if gravity_direction == 'down':
+                    # Start from the bottom and move up
+                    filled_indices = np.where(column != Color.BLACK)[0]
+                    for idx in reversed(filled_indices):
+                        color = column[idx]
+                        # Find the target position
+                        target_idx = idx
+                        while target_idx < column.shape[0] - 1 and output_grid[x, target_idx + 1] == Color.BLACK:
+                            target_idx += 1
+                        output_grid[x, target_idx] = color
+                else:
+                    # Start from the top and move down
+                    filled_indices = np.where(column != Color.BLACK)[0]
+                    for idx in filled_indices:
+                        color = column[idx]
+                        # Find the target position
+                        target_idx = idx
+                        while target_idx > 0 and output_grid[x, target_idx - 1] == Color.BLACK:
+                            target_idx -= 1
+                        output_grid[x, target_idx] = color
+        else:
+            # Handle horizontal column-wise gravity
+            for y in range(input_grid.shape[1]):
+                row = input_grid[:, y]
+                if gravity_direction == 'right':
+                    # Start from the right and move left
+                    filled_indices = np.where(row != Color.BLACK)[0]
+                    for idx in reversed(filled_indices):
+                        color = row[idx]
+                        # Find the target position
+                        target_idx = idx
+                        while target_idx < row.shape[0] - 1 and output_grid[target_idx + 1, y] == Color.BLACK:
+                            target_idx += 1
+                        output_grid[target_idx, y] = color
+                else:
+                    # Start from the left and move right
+                    filled_indices = np.where(row != Color.BLACK)[0]
+                    for idx in filled_indices:
+                        color = row[idx]
+                        # Find the target position
+                        target_idx = idx
+                        while target_idx > 0 and output_grid[target_idx - 1, y] == Color.BLACK:
+                            target_idx -= 1
+                        output_grid[target_idx, y] = color
+
+    elif cohesion_mode == 'cohesive':
+        # Treat the whole structure as a single rigid body
+        for comp in components:
+            blit_object(output_grid, comp)
+            while True:
+                if gravity_direction == 'down':
+                    # Try moving down
+                    if collision(object1=translate(comp, 0, 1), object2=output_grid):
+                        break
+                    comp = translate(comp, 0, 1)
+                elif gravity_direction == 'up':
+                    # Try moving up
+                    if collision(object1=translate(comp, 0, -1), object2=output_grid):
+                        break
+                    comp = translate(comp, 0, -1)
+                elif gravity_direction == 'right':
+                    # Try moving right
+                    if collision(object1=translate(comp, 1, 0), object2=output_grid):
+                        break
+                    comp = translate(comp, 1, 0)
+                elif gravity_direction == 'left':
+                    # Try moving left
+                    if collision(object1=translate(comp, -1, 0), object2=output_grid):
+                        break
+                    comp = translate(comp, -1, 0)
+
+            # Final position of the component
+            blit_object(output_grid, comp)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random blocks and a random gravity direction and cohesion mode
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Add random blocks to the grid
+    num_blocks = np.random.randint(5, 10)
+    for _ in range(num_blocks):
+        block_size = np.random.randint(2, 4)
+        block = random_sprite(block_size, block_size, color_palette=Color.NOT_BLACK)
+        x, y = random_free_location_for_sprite(grid, block, background=Color.BLACK)
+        blit_sprite(grid, block, x, y)
+
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    return grid, gravity_direction, cohesion_mode
+```
+
+In this implementation, the `main` function processes the input grid and applies gravity to the blocks based on the specified direction and cohesion mode. The `generate_input` function generates randomized input grids with blocks, gravity direction, and cohesion mode.

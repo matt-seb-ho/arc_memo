@@ -1,0 +1,66 @@
+Certainly! Let's implement the puzzle as described, focusing on the concepts of sliding window, color presence, pattern matching, and window selection.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# sliding window, color presence, pattern matching, window selection
+
+# description:
+# Input is a grid with various colors. Slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors. Output the coordinates of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+
+def main(input_grid: np.ndarray, required_colors: Set[str]) -> Tuple[int, int]:
+    # Slide a 3x3 window over the grid
+    rows, cols = input_grid.shape
+    window_size = 3
+
+    for i in range(rows - window_size + 1):
+        for j in range(cols - window_size + 1):
+            # Extract the 3x3 window
+            window = input_grid[i:i+window_size, j:j+window_size]
+            # Get unique colors in the window
+            unique_colors_in_window = set(np.unique(window))
+            # Check if all required colors are present in the window
+            if required_colors.issubset(unique_colors_in_window):
+                return (i, j)
+    
+    # If no such window is found, return a sentinel value indicating failure
+    return (-1, -1)
+
+def generate_input() -> Tuple[np.ndarray, Set[str]]:
+    # Randomly generate a grid with a size between 5x5 and 10x10
+    n = random.randint(5, 10)
+    grid = np.random.choice(list(Color.NOT_BLACK), (n, n))
+
+    # Select a random subset of colors to be the required colors
+    required_colors = set(random.sample(list(Color.NOT_BLACK), random.randint(2, 5)))
+
+    # Ensure at least one valid window exists
+    # Randomly choose a position to place a valid window
+    valid_x = random.randint(0, n - 3)
+    valid_y = random.randint(0, n - 3)
+    # Place required colors in this window
+    for idx, color in enumerate(required_colors):
+        # Ensure each color is placed within the window
+        grid[valid_x + idx % 3, valid_y + idx // 3] = color
+
+    return grid, required_colors
+```
+
+### Explanation:
+
+1. **`main` Function**:
+   - The function slides a 3x3 window over the grid.
+   - For each position of the window, it checks if all the required colors are present.
+   - If a window satisfies the condition, it returns the top-left coordinates of that window.
+   - If no such window is found, it returns `(-1, -1)` to indicate the absence of a valid window.
+
+2. **`generate_input` Function**:
+   - Randomly generates a grid of size between 5x5 and 10x10 filled with various colors.
+   - Randomly selects a subset of colors as the required colors.
+   - Ensures that at least one window in the grid contains all the required colors by manually placing these colors in a randomly chosen window. This guarantees that the puzzle always has a solution.

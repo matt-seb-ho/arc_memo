@@ -1,0 +1,83 @@
+Let's implement the puzzle as described. We'll create two functions: `generate_input` to produce a random grid configuration, and `main` to apply the deterministic transformation where an object is moved to a target position.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# Identify a single object within the grid and a target position. Remove the object from its original location by erasing its pixels.
+# Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels.
+# The grid is updated to reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Plan:
+    # 1. Extract the objects from the input grid.
+    # 2. Identify the object to be moved and the target position.
+    # 3. Check for possible collisions at the target position.
+    # 4. Erase the object from its original location and redraw it at the target position.
+
+    # Extract the objects from the input grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+    
+    # Assume the first object is the one to be moved (for simplicity)
+    object_to_move = objects[0]
+    
+    # Get the sprite of the object to move
+    sprite = crop(object_to_move, background=Color.BLACK)
+    
+    # Identify the target position (for simplicity, choose a random free location)
+    target_x, target_y = random_free_location_for_sprite(input_grid, sprite, background=Color.BLACK, padding=1)
+
+    # Create a copy of the input grid to modify
+    output_grid = np.copy(input_grid)
+
+    # Erase the object from its original position
+    x, y = object_position(object_to_move, background=Color.BLACK)
+    original_shape = object_to_move.shape
+    output_grid[x:x+original_shape[0], y:y+original_shape[1]] = Color.BLACK
+
+    # Redraw the object at the target position
+    blit_sprite(output_grid, sprite, target_x, target_y, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Create a grid of random size
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random sprite and place it in the grid
+    sprite_size = np.random.randint(2, 5), np.random.randint(2, 5)
+    sprite = random_sprite(*sprite_size, color_palette=Color.NOT_BLACK, connectivity=8)
+
+    # Find a random free location to place the sprite
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1)
+
+    # Place the sprite in the grid
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation
+
+1. **Concepts**: This puzzle focuses on object movement within a grid, updating the grid by erasing and redrawing the object at a new position.
+
+2. **`main` Function**:
+   - Extracts objects from the input grid.
+   - Identifies the object to be moved (assumed to be the first detected object for simplicity).
+   - Finds a new target position for the object by choosing a random free location.
+   - Erases the original object from the grid and redraws it at the new position.
+
+3. **`generate_input` Function**:
+   - Creates a grid of random size between 10x15.
+   - Generates a random sprite, ensures it doesn't overlap with existing non-background pixels, and places it in the grid. 
+
+This implementation is designed to teach students about object manipulation and grid updates using common grid operations.

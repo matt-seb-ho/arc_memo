@@ -1,0 +1,90 @@
+Here's a new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines that span the grid. Each region contains pixels of specific colors that do not appear in other regions.
+# The task is to identify these regions and treat them as separate entities for further processing. The output maintains the structure of these regions without altering the internal arrangement of pixels within each region.
+# Specifically, the output should highlight the boundaries of each region by coloring them with a specific boundary color.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the regions separated by the divider lines.
+    # 2. For each region, detect its boundary.
+    # 3. Create an output grid where each region's boundary is highlighted with a specific color, leaving the internal arrangement of pixels unchanged.
+
+    # Identify the divider color, which is the most frequent non-background color
+    divider_color = max(Color.NOT_BLACK, key=lambda color: np.sum(input_grid == color))
+
+    # Find all the regions separated by the divider color
+    regions = find_connected_components(input_grid, background=divider_color, connectivity=4, monochromatic=False)
+
+    # Create an output grid initialized as a copy of the input grid
+    output_grid = input_grid.copy()
+
+    # Define a boundary color
+    boundary_color = Color.GREY
+
+    # Process each region
+    for region in regions:
+        # Find the boundary of the region
+        region_boundary = object_boundary(region, background=divider_color)
+
+        # Highlight the boundary in the output grid
+        for x, y in np.argwhere(region_boundary):
+            output_grid[x, y] = boundary_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid of arbitrary size with a black background
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly choose a color for dividers
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly generate divider lines
+    num_dividers = np.random.randint(2, 5)
+    x_indices = randomly_spaced_indices(n, num_dividers, border_size=1, padding=2)
+    y_indices = randomly_spaced_indices(m, num_dividers, border_size=1, padding=2)
+
+    # Draw vertical and horizontal dividers
+    for x in x_indices:
+        draw_line(grid, x, 0, direction=(0, 1), color=divider_color)
+    for y in y_indices:
+        draw_line(grid, 0, y, direction=(1, 0), color=divider_color)
+
+    # Fill each region with a random color
+    regions = find_connected_components(grid=grid, background=divider_color, connectivity=4, monochromatic=True)
+    for region in regions:
+        color = np.random.choice(list(Color.NOT_BLACK - {divider_color}))
+        region_interior = object_interior(region, background=divider_color)
+        for x, y in np.argwhere(region_interior):
+            grid[x, y] = color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts & Description:**
+   - The puzzle involves partitioning a grid into distinct regions using divider lines.
+   - Each region contains unique colors that don't appear in other regions.
+   - The task is to highlight the boundaries of these regions without changing the internal arrangement of their pixels.
+
+2. **`main` Function:**
+   - Identify regions by detecting connected components separated by divider color.
+   - Highlight the boundary of each region using a specific color (e.g., `Color.GREY`).
+
+3. **`generate_input` Function:**
+   - Create a grid with randomly placed vertical and horizontal dividers of a chosen color.
+   - Fill each partitioned region with a unique color.
+   - Ensure the input generation is stochastic, providing varied inputs for each execution.

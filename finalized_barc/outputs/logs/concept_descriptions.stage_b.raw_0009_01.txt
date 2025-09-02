@@ -1,0 +1,83 @@
+Here's a code block for the described puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, guide object identification
+
+# description:
+# The input grid consists of several objects of different colors. 
+# To create the output grid, extract all connected components and identify the guide object as the one whose color is unique among all components.
+# The guide object is the only one with a color that no other object shares.
+# All other objects are ignored in the output.
+
+def main(input_grid):
+    # Detect all objects in the grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+    
+    # Determine the color of each object
+    colors = [np.unique(obj[obj != Color.BLACK])[0] for obj in objects]
+    
+    # Find the unique color
+    unique_color = None
+    for color in colors:
+        if colors.count(color) == 1:
+            unique_color = color
+            break
+
+    # Create the output grid with the guide object
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Identify and blit the guide object
+    for obj in objects:
+        if np.any(obj == unique_color):
+            blit_object(output_grid, obj, background=Color.BLACK)
+            break
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size 10x10
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Select a set of colors for the objects, ensuring at least one unique color
+    colors = list(Color.NOT_BLACK)
+    np.random.shuffle(colors)
+    unique_color = colors.pop()
+    
+    # Place objects with the same color
+    for _ in range(np.random.randint(2, 4)):
+        color = np.random.choice(colors)
+        obj = random_sprite(n=np.random.randint(2, 4), m=np.random.randint(2, 4), color_palette=[color])
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    # Place one object with the unique color
+    unique_obj = random_sprite(n=np.random.randint(2, 4), m=np.random.randint(2, 4), color_palette=[unique_color])
+    try:
+        x, y = random_free_location_for_sprite(grid, unique_obj, padding=1)
+        blit_sprite(grid, unique_obj, x, y, background=Color.BLACK)
+    except ValueError:
+        return generate_input()
+
+    return grid
+```
+
+### Explanation:
+1. **`main` Function**:
+   - Extracts all connected components in the input grid using `find_connected_components`.
+   - Identifies the color of each component.
+   - Searches for the unique color by checking which colors appear only once.
+   - Copies only the component with the unique color to the output grid using `blit_object`.
+
+2. **`generate_input` Function**:
+   - Creates an empty grid and selects a list of colors for the objects.
+   - Ensures at least one object with a unique color by reserving one color.
+   - Randomly places objects with non-unique colors and finally places one object with the unique color on the grid.

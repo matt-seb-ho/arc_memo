@@ -1,0 +1,57 @@
+Here's a new puzzle implementation that involves boolean masks and predicate evaluation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import Callable
+
+# concepts:
+# boolean mask, predicate evaluation, pattern recognition, template creation
+
+# description:
+# The input is a grid and a predicate function. The predicate function is applied to each cell of the grid to determine if the condition is met. 
+# The output is a boolean mask of the same size, where each cell is True if the predicate is satisfied at that location, otherwise False. 
+# This mask can serve as a reusable template for identifying the pattern in other grid regions.
+
+def main(input_grid: np.ndarray, predicate: Callable[[int], bool]) -> np.ndarray:
+    # Create a boolean mask with the same dimensions as the input grid
+    boolean_mask = np.zeros_like(input_grid, dtype=bool)
+
+    # Iterate over each cell in the grid
+    for x in range(input_grid.shape[0]):
+        for y in range(input_grid.shape[1]):
+            # Evaluate the predicate on the current cell's value
+            if predicate(input_grid[x, y]):
+                # Set the corresponding cell in the boolean mask to True
+                boolean_mask[x, y] = True
+
+    return boolean_mask
+
+
+def generate_input() -> Tuple[np.ndarray, Callable[[int], bool]]:
+    # Randomly generate grid dimensions
+    n, m = np.random.randint(5, 15), np.random.randint(5, 15)
+    grid = np.random.choice(list(Color.NOT_BLACK), (n, m))
+
+    # Define a random predicate function
+    chosen_color = np.random.choice(list(Color.NOT_BLACK))
+    predicate = lambda color: color == chosen_color
+
+    return grid, predicate
+```
+
+### Explanation
+
+1. **Concepts**: 
+   - **Boolean Mask**: We create a mask of boolean values to represent which grid cells satisfy the predicate.
+   - **Predicate Evaluation**: We use a predicate function to evaluate conditions on each cell of the input grid.
+   - **Pattern Recognition**: The boolean mask helps identify patterns based on the predicate.
+   - **Template Creation**: The mask acts as a template that can be applied to other grids.
+
+2. **Description**:
+   - The `main` function takes a grid (2D array of colors) and a predicate (a function that evaluates to True or False for a given color).
+   - It produces a boolean mask where each cell is True if the predicate is satisfied for the corresponding cell in the input grid.
+   - The `generate_input` function creates a random grid of colors and a predicate function that checks if a cell is a specific randomly chosen color.
+
+This puzzle encourages students to understand how boolean masks can be used to evaluate conditions across a grid, a fundamental concept in many computational and image processing tasks.

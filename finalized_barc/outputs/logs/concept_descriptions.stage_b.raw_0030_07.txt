@@ -1,0 +1,105 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries. If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact. Maintain block order and shape; stop when further movement would result in collision or leaving the grid. The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_grid):
+    # Extract the gravity direction and cohesion mode from the first row
+    gravity_direction = input_grid[0, 0]
+    cohesion_mode = input_grid[0, 1]
+
+    # Remove the first row which contains metadata
+    input_grid = input_grid[1:]
+
+    # Copy the input grid to the output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Apply gravity based on the direction
+    if gravity_direction == 'down':
+        if cohesion_mode == 'per-column':
+            for col in range(input_grid.shape[1]):
+                column = input_grid[:, col]
+                non_black_indices = np.where(column != Color.BLACK)[0]
+                for i, idx in enumerate(non_black_indices):
+                    output_grid[-len(non_black_indices) + i, col] = column[idx]
+        elif cohesion_mode == 'cohesive':
+            blocks = find_connected_components(input_grid, background=Color.BLACK)
+            for block in blocks:
+                while not collision(object1=block, object2=output_grid, y1=1):
+                    block = translate(block, 0, 1)
+                blit_object(output_grid, block)
+    elif gravity_direction == 'up':
+        if cohesion_mode == 'per-column':
+            for col in range(input_grid.shape[1]):
+                column = input_grid[:, col]
+                non_black_indices = np.where(column != Color.BLACK)[0]
+                for i, idx in enumerate(non_black_indices):
+                    output_grid[i, col] = column[idx]
+        elif cohesion_mode == 'cohesive':
+            blocks = find_connected_components(input_grid, background=Color.BLACK)
+            for block in blocks:
+                while not collision(object1=block, object2=output_grid, y1=-1):
+                    block = translate(block, 0, -1)
+                blit_object(output_grid, block)
+    elif gravity_direction == 'left':
+        if cohesion_mode == 'per-column':
+            for row in range(input_grid.shape[0]):
+                line = input_grid[row, :]
+                non_black_indices = np.where(line != Color.BLACK)[0]
+                for i, idx in enumerate(non_black_indices):
+                    output_grid[row, i] = line[idx]
+        elif cohesion_mode == 'cohesive':
+            blocks = find_connected_components(input_grid, background=Color.BLACK)
+            for block in blocks:
+                while not collision(object1=block, object2=output_grid, x1=-1):
+                    block = translate(block, -1, 0)
+                blit_object(output_grid, block)
+    elif gravity_direction == 'right':
+        if cohesion_mode == 'per-column':
+            for row in range(input_grid.shape[0]):
+                line = input_grid[row, :]
+                non_black_indices = np.where(line != Color.BLACK)[0]
+                for i, idx in enumerate(non_black_indices):
+                    output_grid[row, -len(non_black_indices) + i] = line[idx]
+        elif cohesion_mode == 'cohesive':
+            blocks = find_connected_components(input_grid, background=Color.BLACK)
+            for block in blocks:
+                while not collision(object1=block, object2=output_grid, x1=1):
+                    block = translate(block, 1, 0)
+                blit_object(output_grid, block)
+
+    return output_grid
+
+
+def generate_input():
+    # Randomly determine dimensions for the grid
+    n = np.random.randint(5, 10)
+    m = np.random.randint(5, 10)
+
+    # Create a grid with a row for gravity direction and cohesion mode
+    grid = np.full((n+1, m), Color.BLACK, dtype=int)
+
+    # Randomly choose gravity direction and cohesion mode
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    # Encode gravity direction and cohesion mode in the first row
+    grid[0, 0] = gravity_direction
+    grid[0, 1] = cohesion_mode
+
+    # Fill in the rest of the grid with random colors
+    for _ in range(np.random.randint(5, 15)):
+        color = np.random.choice(list(Color.NOT_BLACK))
+        sprite = random_sprite(1, 1, color_palette=[color])
+        x, y = random_free_location_for_sprite(grid[1:], sprite, background=Color.BLACK)
+        blit_sprite(grid[1:], sprite, x, y)
+
+    return grid
+```

@@ -1,0 +1,69 @@
+Below is an implementation of a new puzzle based on the provided description. This puzzle involves identifying a distinct guide object and applying a transformation from that starting point.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, position-based transformation
+
+# description:
+# In the input, you will see a grid with multiple colored objects. One of these objects is distinct, colored in teal, and serves as a guide object.
+# The task is to find the guide object and use its position as a reference point to rotate all other objects 90 degrees clockwise around it in the grid.
+
+def main(input_grid):
+    # Find the guide object, which is uniquely colored in teal
+    guide_objects = detect_objects(grid=input_grid, colors=[Color.TEAL], monochromatic=True, connectivity=8)
+    assert len(guide_objects) == 1, "There should be exactly one guide object"
+    guide_object = guide_objects[0]
+
+    # Find the position of the guide object
+    guide_x, guide_y, _, _ = bounding_box(guide_object, background=Color.BLACK)
+
+    # Prepare the output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Find all other objects in the grid
+    other_objects = detect_objects(grid=input_grid, colors=Color.NOT_BLACK - {Color.TEAL}, monochromatic=False, connectivity=8)
+
+    # Rotate each object 90 degrees clockwise around the guide's position
+    for obj in other_objects:
+        x, y, _, _ = bounding_box(obj, background=Color.BLACK)
+        translated_obj = translate(obj, -guide_x, -guide_y, background=Color.BLACK)
+        rotated_obj = np.rot90(translated_obj, k=-1) # Rotate 90 degrees clockwise
+        translated_back_obj = translate(rotated_obj, guide_x, guide_y, background=Color.BLACK)
+        blit_object(output_grid, translated_back_obj, background=Color.BLACK)
+
+    # Add the guide object back into the output grid
+    blit_object(output_grid, guide_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate the background grid with random dimensions
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Create the guide object in teal
+    guide_sprite = random_sprite(2, 2, color_palette=[Color.TEAL], connectivity=4)
+    x, y = random_free_location_for_sprite(grid, guide_sprite, background=Color.BLACK, padding=1, border_size=1)
+    blit_sprite(grid, guide_sprite, x, y, background=Color.BLACK)
+
+    # Create other random objects
+    for _ in range(np.random.randint(2, 4)):  # 2 to 3 other objects
+        color = np.random.choice(list(Color.NOT_BLACK - {Color.TEAL}))
+        sprite = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), color_palette=[color], connectivity=4)
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1, border_size=1)
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: The puzzle introduces a guide object in teal that serves as a reference point for rotating other objects around it.
+2. **Description**: The grid contains multiple objects, one of which is teal and serves as a guide. The transformation involves rotating all other objects 90 degrees clockwise around the guide.
+3. **Implementation**:
+   - `main` function: Detects the guide object and its position, then rotates all other objects around this position.
+   - `generate_input` function: Stochastically generates input grids with a teal guide object and several other randomly colored objects.

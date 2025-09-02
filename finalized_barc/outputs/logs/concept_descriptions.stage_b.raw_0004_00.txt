@@ -1,0 +1,96 @@
+Certainly! Let's create a new puzzle based on the provided concepts: guide object, unique selection, anchor point, and hole counting.
+
+### Puzzle Overview
+
+**Concepts:**
+- Guide object
+- Unique selection
+- Anchor point
+- Hole counting
+
+**Description:**
+In the input grid, you will see multiple colored objects. One of these objects will be a unique guide object, distinguished by being the only object with a specific color. Use the top-left corner of the guide object as an anchor point. From this anchor, count the number of fully enclosed black regions (holes) in the grid. The output is the count of these holes originating from the guide's position.
+
+### Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# The input grid contains multiple colored objects. One object is a unique guide object, identified by being the only object with a specific color.
+# Use the top-left corner of the guide object as the anchor point. From this point onward, count the number of fully enclosed black regions (holes).
+# The output is the count of these holes originating from the guide's position.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+
+    # Determine which color is the unique color
+    color_counts = {}
+    for obj in objects:
+        unique_colors = np.unique(obj[obj != Color.BLACK])
+        for color in unique_colors:
+            color_counts[color] = color_counts.get(color, 0) + 1
+
+    guide_color = next(color for color, count in color_counts.items() if count == 1)
+
+    # Identify the guide object
+    guide_object = next(obj for obj in objects if np.any(obj == guide_color))
+
+    # Use the top-left corner of the guide object as the anchor point
+    anchor_x, anchor_y = object_position(guide_object, background=Color.BLACK, anchor='upper left')
+
+    # Count the number of fully enclosed black regions (holes) starting from the anchor point
+    # We consider holes as enclosed black regions surrounded by non-black pixels
+    grid_from_anchor = input_grid[anchor_x:, anchor_y:]
+    holes = find_connected_components(grid_from_anchor, background=Color.BLACK, connectivity=8, monochromatic=False)
+
+    hole_count = 0
+    for hole in holes:
+        # A hole is valid if it's enclosed; hence, its interior should be empty
+        if is_hole(hole):
+            hole_count += 1
+
+    return hole_count
+
+def is_hole(obj):
+    # Check if the object is a hole by verifying if its interior is empty
+    interior_mask = object_interior(obj)
+    return np.any(interior_mask & (obj == Color.BLACK))
+
+def generate_input():
+    # Create a grid of size between 12x12 and 20x20
+    n = np.random.randint(12, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Randomly select a unique guide color
+    guide_color = np.random.choice(Color.NOT_BLACK)
+
+    # Create several objects with random colors
+    num_objects = np.random.randint(5, 10)
+    colors = np.random.choice([color for color in Color.NOT_BLACK if color != guide_color], num_objects - 1, replace=False)
+
+    # Insert the guide object
+    guide_obj = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), color_palette=[guide_color])
+    x, y = random_free_location_for_sprite(grid, guide_obj, padding=1)
+    blit_sprite(grid, guide_obj, x, y)
+
+    # Insert other objects
+    for color in colors:
+        obj = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), color_palette=[color])
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y)
+        except ValueError:
+            pass
+
+    return grid
+```
+
+This puzzle challenges the solver to identify a unique guide object based on its color, use its top-left corner as an anchor point, and count the number of fully enclosed black regions (holes) in the grid starting from that point. The puzzle emphasizes object recognition, unique selection, and spatial reasoning.

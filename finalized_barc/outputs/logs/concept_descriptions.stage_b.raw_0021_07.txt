@@ -1,0 +1,94 @@
+Here is an implementation for the described puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, horizontal/vertical slicing
+
+# description:
+# Input is a grid containing horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions.
+# Identify these uninterrupted divider lines and use them to partition the grid into separate sub-grids. Each sub-grid is bounded 
+# by the divider lines and contains no dividers within it. Output is a list of these non-empty sub-grids, preserving their original content.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the color of the divider lines.
+    # 2. Determine the positions of the horizontal and vertical divider lines.
+    # 3. Segment the grid into sub-grids based on these dividers.
+    # 4. Return a list of non-empty sub-grids.
+
+    # 1. Identify the color of the divider lines
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            color = input_grid[i][j]
+            if np.all(input_grid[i, :] == color) or np.all(input_grid[:, j] == color):
+                divider_color = color
+                break
+    assert divider_color is not None, "No divider color found"
+
+    # 2. Determine the positions of the horizontal and vertical divider lines
+    width, height = input_grid.shape
+    vertical_lines = [x for x in range(width) if np.all(input_grid[x, :] == divider_color)]
+    horizontal_lines = [y for y in range(height) if np.all(input_grid[:, y] == divider_color)]
+
+    # Add bounds to the lines list
+    vertical_lines = [0] + vertical_lines + [width]
+    horizontal_lines = [0] + horizontal_lines + [height]
+
+    # 3. Segment the grid into sub-grids based on these dividers
+    sub_grids = []
+    for i in range(len(vertical_lines) - 1):
+        for j in range(len(horizontal_lines) - 1):
+            x1, x2 = vertical_lines[i], vertical_lines[i + 1]
+            y1, y2 = horizontal_lines[j], horizontal_lines[j + 1]
+            sub_grid = input_grid[x1:x2, y1:y2]
+
+            # 4. Add non-empty sub-grids to the list
+            if np.any(sub_grid != divider_color):
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly select the grid separation
+    num_dividers_horizontal = np.random.randint(1, 4)
+    num_dividers_vertical = np.random.randint(1, 4)
+    horizontal_divider_positions = randomly_spaced_indices(max_len=width, n_indices=num_dividers_horizontal, border_size=1, padding=2)
+    vertical_divider_positions = randomly_spaced_indices(max_len=height, n_indices=num_dividers_vertical, border_size=1, padding=2)
+
+    # Choose a random color for the dividers
+    divider_color = np.random.choice(Color.NOT_BLACK)
+
+    # Draw horizontal and vertical dividers
+    for x in horizontal_divider_positions:
+        draw_line(grid=grid, x=x, y=0, direction=(0, 1), color=divider_color)
+
+    for y in vertical_divider_positions:
+        draw_line(grid=grid, x=0, y=y, direction=(1, 0), color=divider_color)
+
+    # Randomly fill regions with colors
+    for i in range(len(horizontal_divider_positions) + 1):
+        for j in range(len(vertical_divider_positions) + 1):
+            x1 = 0 if i == 0 else horizontal_divider_positions[i - 1] + 1
+            x2 = horizontal_divider_positions[i] if i < len(horizontal_divider_positions) else width
+            y1 = 0 if j == 0 else vertical_divider_positions[j - 1] + 1
+            y2 = vertical_divider_positions[j] if j < len(vertical_divider_positions) else height
+
+            if x1 < x2 and y1 < y2:
+                color = np.random.choice(Color.NOT_BLACK)
+                sprite = np.full((x2 - x1, y2 - y1), color)
+                blit_sprite(grid, sprite, x=x1, y=y1, background=Color.BLACK)
+
+    return grid
+```
+
+This implementation uses the functions provided in the `common.py` library to handle grid manipulations and transformations, ensuring that the process of partitioning the grid into sub-grids is both clear and efficient. Each sub-grid is extracted based on the identified divider lines and is checked to ensure it contains non-divider content before being included in the final output list.

@@ -1,0 +1,4 @@
+```python
+# concepts: window scanning, color matching, pattern detection
+# description: Input is a grid with various colors. For each 2x2 window in the grid, check if all cells match a specified target color. Return True if every cell in the window matches the target color; otherwise, return False. This operation is applied to each 2x2 window independently.
+```

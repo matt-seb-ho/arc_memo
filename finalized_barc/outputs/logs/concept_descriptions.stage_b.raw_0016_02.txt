@@ -1,0 +1,88 @@
+### Puzzle Implementation: Filling Interior Holes
+
+This puzzle involves identifying interior holes within a guide object on a grid and determining if a target object can fit into these holes, similar to a Tetris-style filling mechanism. Let's implement this puzzle using the provided `common.py` functions.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, guide object, filling, connected components, interior regions
+
+# description:
+# The input consists of a guide object and a target object on a grid. Identify all interior holes within the guide object that are not connected to the border (using 4-connectivity). 
+# For each hole, determine if the target object can be fully or partially filled into these holes, akin to a Tetris-style filling. The output is a list of hole objects, each represented by its pixel coordinates, where the target object can be placed. 
+# The rest of the grid remains unchanged.
+
+def main(input_grid):
+    # Find the guide object and the target object
+    guide_object = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)[0]
+    target_object = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)[1]
+    
+    # Create a mask for the interior of the guide object
+    interior_mask = object_interior(guide_object, background=Color.BLACK)
+    
+    # Find all the holes inside the guide object
+    holes = find_connected_components(interior_mask & (guide_object == Color.BLACK), background=False, connectivity=4)
+    
+    # Initialize the output grid
+    output_grid = np.copy(input_grid)
+    
+    # Check each hole to see if the target object can fit
+    for hole in holes:
+        # Crop the hole and target object to their respective bounding boxes
+        hole_sprite = crop(hole, background=False)
+        target_sprite = crop(target_object, background=Color.BLACK)
+        
+        # Check if the target object can fit into the hole
+        if target_sprite.shape[0] <= hole_sprite.shape[0] and target_sprite.shape[1] <= hole_sprite.shape[1]:
+            # Check if the hole is at least as large as the target object in both dimensions
+            hole_x, hole_y, _, _ = bounding_box(hole, background=False)
+            blit_sprite(output_grid, target_sprite, hole_x, hole_y, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Create a random grid size
+    width = np.random.randint(10, 20)
+    height = np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+    
+    # Generate a guide object with random interior holes
+    guide_width = np.random.randint(5, min(width, 10))
+    guide_height = np.random.randint(5, min(height, 10))
+    guide_object = np.full((guide_width, guide_height), Color.RED)
+    
+    # Create holes in the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_width = np.random.randint(1, guide_width // 2)
+        hole_height = np.random.randint(1, guide_height // 2)
+        hole_x = np.random.randint(1, guide_width - hole_width - 1)
+        hole_y = np.random.randint(1, guide_height - hole_height - 1)
+        guide_object[hole_x:hole_x + hole_width, hole_y:hole_y + hole_height] = Color.BLACK
+    
+    # Place the guide object onto the grid
+    guide_x, guide_y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    blit_sprite(grid, guide_object, guide_x, guide_y, background=Color.BLACK)
+    
+    # Generate a target object
+    target_width = np.random.randint(1, 4)
+    target_height = np.random.randint(1, 4)
+    target_object = random_sprite(target_width, target_height, color_palette=[Color.BLUE], background=Color.BLACK)
+    
+    # Place the target object randomly on the grid
+    target_x, target_y = random_free_location_for_sprite(grid, target_object, padding=1)
+    blit_sprite(grid, target_object, target_x, target_y, background=Color.BLACK)
+    
+    return grid
+```
+
+### Explanation
+- **Guide Object**: The guide object is a larger shape with potential holes inside it that are not connected to the border.
+- **Target Object**: This is a smaller object which we attempt to fit into the holes of the guide object.
+- **Interior Holes**: Using the `object_interior` function to find the holes inside the guide object.
+- **Fitting Logic**: For each hole, check if the target object can fit entirely within the hole. If so, the target object is placed at that location.
+- **Input Generation**: The `generate_input` function creates an example grid with a guide object containing random holes and a target object somewhere on the grid.

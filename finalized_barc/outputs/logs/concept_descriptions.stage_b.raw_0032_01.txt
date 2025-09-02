@@ -1,0 +1,71 @@
+Certainly! Let's implement the new puzzle based on L-shape detection, corner identification, and orientation classification. The puzzle requires identifying the missing corner of an L-shaped triomino on a 2x2 grid and returning the corresponding orientation.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# The input is a 3-pixel L-shaped triomino on a 2x2 grid.
+# Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape.
+# Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner.
+# The grid may contain noise, but the L-shape is dominant.
+
+def main(input_grid):
+    # Define the potential corners for L-shape detection
+    corners = {
+        'tl': [(0, 1), (1, 0), (1, 1)],
+        'tr': [(0, 0), (1, 0), (1, 1)],
+        'bl': [(0, 0), (0, 1), (1, 1)],
+        'br': [(0, 0), (0, 1), (1, 0)],
+    }
+    
+    # Find occupied positions in the input grid
+    occupied_positions = set(zip(*np.where(input_grid != Color.BLACK)))
+    
+    # Compare occupied positions with known L-shape positions to find the missing corner
+    for corner, positions in corners.items():
+        if occupied_positions == set(positions):
+            return np.array([[corner]])
+    
+    return np.array([["unknown"]])  # Default case if something goes wrong
+
+def generate_input():
+    # Initialize a 2x2 grid
+    grid = np.zeros((2, 2), dtype=int)
+    
+    # Randomly select one of the four L-shape configurations
+    l_shape_types = ['tl', 'tr', 'bl', 'br']
+    selected_l_shape = np.random.choice(l_shape_types)
+    
+    # Define the L-shape positions for each corner
+    l_shape_positions = {
+        'tl': [(0, 1), (1, 0), (1, 1)],
+        'tr': [(0, 0), (1, 0), (1, 1)],
+        'bl': [(0, 0), (0, 1), (1, 1)],
+        'br': [(0, 0), (0, 1), (1, 0)],
+    }
+    
+    # Fill the grid according to the selected L-shape
+    for x, y in l_shape_positions[selected_l_shape]:
+        grid[x, y] = np.random.choice(list(Color.NOT_BLACK))
+        
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves detecting the configuration of an L-shaped triomino on a 2x2 grid, identifying which corner is missing, and classifying the orientation.
+  
+- **Description**: The given 2x2 grid contains three pixels that form an L-shape. The task is to identify which corner (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape and output the orientation as one of "tl", "tr", "bl", or "br".
+
+- **`main` Function**: This function checks the occupied positions in the grid against predefined L-shape configurations to determine the missing corner.
+
+- **`generate_input` Function**: This function randomly generates a 2x2 grid with one of the four possible L-shape configurations, ensuring that the L-shape is dominant while allowing some noise using colors other than black.
+
+This implementation should provide a robust puzzle for middle-schoolers to solve, focusing on pattern recognition and orientation classification.

@@ -1,0 +1,92 @@
+To create a puzzle following the given description, we'll design a solution that identifies and marks enclosed regions (holes) within a single object on a grid. The input grid consists of a single object with the background being black. The task is to identify the holes in the object that are fully enclosed and not connected to the grid border. We'll use flood-fill techniques to differentiate between enclosed and non-enclosed regions.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# Input consists of a grid with a single object and background (0). Identify holes as fully enclosed 0-regions within the object that are not connected to the grid border. 
+# Use flood-fill from the border to detect and exclude non-enclosed regions. The output grid highlights these enclosed holes, typically for further processing or filling.
+
+def main(input_grid):
+    # Create a copy of the input grid to work on
+    output_grid = input_grid.copy()
+
+    # Find the object in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8)
+    assert len(objects) == 1, "There should be exactly one object in the input grid."
+    obj = objects[0]
+
+    # Find the boundaries of the object
+    boundary_mask = object_boundary(obj, background=Color.BLACK)
+
+    # Flood-fill from the border to identify non-enclosed regions
+    border_filled = np.zeros_like(input_grid, dtype=bool)
+    flood_fill_from_border(border_filled, input_grid, boundary_mask)
+
+    # Identify enclosed holes by finding regions not touched by the flood-fill
+    enclosed_holes = (input_grid == Color.BLACK) & ~border_filled
+
+    # Highlight enclosed holes in the output grid
+    output_grid[enclosed_holes] = Color.RED  # Mark enclosed holes with red, for example
+
+    return output_grid
+
+def flood_fill_from_border(filled_grid, input_grid, boundary_mask):
+    # Use a queue for flood-fill
+    queue = []
+
+    # Start from the border and add all boundary points to the queue
+    for x, y in np.argwhere(boundary_mask):
+        queue.append((x, y))
+        filled_grid[x, y] = True
+
+    # Perform flood-fill
+    while queue:
+        x, y = queue.pop(0)
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4-way connectivity
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1]:
+                if not filled_grid[nx, ny] and input_grid[nx, ny] == Color.BLACK:
+                    filled_grid[nx, ny] = True
+                    queue.append((nx, ny))
+
+def generate_input():
+    # Generate a grid of size between 10x10 and 20x20 with a single object
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create a single random object and place it in the grid
+    obj_size = np.random.randint(5, n - 1)
+    object_sprite = random_sprite(obj_size, obj_size, color_palette=[Color.BLUE], connectivity=8)
+
+    # Ensure there's at least one enclosed region (hole) inside the object
+    hole_size = np.random.randint(2, obj_size - 2)
+    hole_x, hole_y = np.random.randint(1, obj_size - hole_size), np.random.randint(1, obj_size - hole_size)
+    object_sprite[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    # Place the object on the grid
+    obj_x, obj_y = random_free_location_for_sprite(grid, object_sprite, border_size=1, padding=1)
+    blit_sprite(grid, object_sprite, obj_x, obj_y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+- **Main Function**: 
+  - This function processes the input grid to identify enclosed regions within the object. It uses flood-fill starting from the boundary to exclude non-enclosed regions.
+  - Enclosed holes are marked in the output grid with a distinct color (e.g., red).
+
+- **Flood Fill Function**:
+  - This helper function performs a flood-fill from the boundary of the object using a queue. It marks all reachable black regions starting from the boundary.
+
+- **Generate Input Function**:
+  - Generates a grid with a single object and ensures that there is at least one enclosed region within it.
+  - An object is created with a hole inside and placed at a random location on the grid.

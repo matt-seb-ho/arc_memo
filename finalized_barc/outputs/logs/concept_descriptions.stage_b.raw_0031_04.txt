@@ -1,0 +1,94 @@
+Here's a new puzzle idea based on the concepts of object identification, rotation, and grid manipulation.
+
+### Puzzle Concept:
+
+**Concepts:**
+object identification, rotation, grid manipulation
+
+**Description:**
+Identify a single connected component (object) within the input grid. Determine its bounding box and rotate the object 90 degrees clockwise around its center. The output grid reflects the object rotated in place.
+
+### Implementation:
+
+Below is the implementation of the `generate_input` and `main` functions to create this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, rotation, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid. Determine its bounding box and rotate the object 90 degrees clockwise around its center.
+# The output grid reflects the object rotated in place.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the connected component (object) within the grid.
+    # 2. Crop the object to isolate it.
+    # 3. Rotate the cropped object 90 degrees clockwise.
+    # 4. Place the rotated object back onto the grid in its original position.
+
+    background = Color.BLACK
+    
+    # Identify the connected component.
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4, background=background)
+    
+    # There should only be one object in the grid.
+    assert len(objects) == 1
+    obj = objects[0]
+    
+    # Crop the object to get a sprite.
+    sprite = crop(obj, background=background)
+    
+    # Rotate the sprite 90 degrees clockwise.
+    rotated_sprite = np.rot90(sprite, k=-1)
+    
+    # Get the position of the object within the grid.
+    x, y = object_position(obj, background=background)
+    
+    # Create an output grid.
+    output_grid = np.copy(input_grid)
+    
+    # Fill the original position with the background color to clear it.
+    blit_sprite(output_grid, np.full(sprite.shape, background), x, y, background=background)
+    
+    # Place the rotated object back onto the grid.
+    blit_sprite(output_grid, rotated_sprite, x, y, background=background)
+    
+    return output_grid
+
+def generate_input():
+    # Create a grid with random dimensions.
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate a random object (sprite).
+    sprite = random_sprite(n=np.random.randint(3, 5), m=np.random.randint(3, 5), color_palette=Color.NOT_BLACK, background=Color.BLACK, connectivity=4)
+    
+    # Find a random free location to place the sprite onto the grid.
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+    
+    # Place the sprite onto the grid.
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+### Explanation:
+
+1. **Main Function:**
+   - The `main` function identifies the object in the grid using `find_connected_components`.
+   - It crops the object to isolate it.
+   - Rotates the object using `np.rot90` for a 90-degree clockwise rotation.
+   - The output grid is then updated by clearing the original position and placing the rotated object back onto the grid.
+
+2. **Generate Input Function:**
+   - The `generate_input` function creates a grid of random size between 10x10 and 15x15.
+   - It generates a random sprite (object) and places it on the grid at a random location that maintains a border.
+   - The sprite is placed such that it does not touch the grid's edges, allowing space for rotation.
+
+This puzzle challenges students to understand object manipulation through rotation and encourages spatial reasoning and understanding of grid-based transformations.

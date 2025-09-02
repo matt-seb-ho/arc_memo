@@ -1,0 +1,86 @@
+Here's the implementation of the puzzle based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, recolor, connected components, bounding box
+
+# description:
+# Input is a single connected object on a grid. Determine the object's orientation by identifying the missing corner in its bounding box (top-left, top-right, bottom-left, bottom-right).
+# Recolor the entire object uniformly based on this orientation using a fixed color map: top-left to red (3), top-right to yellow (4), bottom-left to green (2), and bottom-right to blue (1).
+# The background and any other grid content remain unchanged.
+
+def main(input_grid):
+    # Extract the single connected object from the input grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+    assert len(objects) == 1, "There should be exactly one connected object in the input grid."
+    object_grid = objects[0]
+
+    # Determine the bounding box of the object
+    x, y, width, height = bounding_box(object_grid, background=Color.BLACK)
+
+    # Determine missing corner of the bounding box to find the orientation
+    top_left = (x, y)
+    top_right = (x, y + width - 1)
+    bottom_left = (x + height - 1, y)
+    bottom_right = (x + height - 1, y + width - 1)
+
+    # Determine which corner is missing
+    corners = [top_left, top_right, bottom_left, bottom_right]
+    present_corners = [corner for corner in corners if object_grid[corner] != Color.BLACK]
+    
+    # Map present corners to the missing corner
+    missing_corner_map = {
+        frozenset([top_right, bottom_left, bottom_right]): "top-left",
+        frozenset([top_left, bottom_left, bottom_right]): "top-right",
+        frozenset([top_left, top_right, bottom_right]): "bottom-left",
+        frozenset([top_left, top_right, bottom_left]): "bottom-right",
+    }
+    
+    missing_corner = missing_corner_map[frozenset(present_corners)]
+
+    # Color map based on missing corner
+    color_map = {
+        "top-left": Color.RED,
+        "top-right": Color.YELLOW,
+        "bottom-left": Color.GREEN,
+        "bottom-right": Color.BLUE
+    }
+    
+    # Recolor the object uniformly based on the missing corner
+    recolor = color_map[missing_corner]
+    flood_fill(object_grid, x, y, recolor)
+
+    # Copy the recolored object back to the original grid
+    output_grid = np.copy(input_grid)
+    blit_object(output_grid, object_grid, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a grid with a single connected object with a missing corner
+    grid_size = np.random.randint(10, 20)
+    input_grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Create a random sprite with a missing corner
+    sprite_size = np.random.randint(4, 8)
+    sprite = np.full((sprite_size, sprite_size), Color.TEAL)
+    
+    # Remove a random corner
+    corners = [(0, 0), (0, sprite_size - 1), (sprite_size - 1, 0), (sprite_size - 1, sprite_size - 1)]
+    missing_corner = random.choice(corners)
+    sprite[missing_corner] = Color.BLACK
+
+    # Place sprite at a random location in the grid
+    x, y = random_free_location_for_sprite(input_grid, sprite, border_size=1, padding=0)
+    blit_sprite(input_grid, sprite, x, y, background=Color.BLACK)
+
+    return input_grid
+```
+
+This implementation uses the provided `common.py` functions to handle the grid-based operations, ensuring that the transformation is deterministic and follows the puzzle's description. The `generate_input` function creates new examples by randomly generating connected objects with a missing corner.

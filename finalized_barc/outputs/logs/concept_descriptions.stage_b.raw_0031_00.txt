@@ -1,0 +1,63 @@
+Here's a new puzzle design based on the concepts of object identification, translation, erasure, grid manipulation, and rotation. The goal is to take an identified object from the grid, erase it, and then translate and rotate it to a new position.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, translation, erasure, rotation, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0).
+# Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates.
+# Additionally, apply a 90-degree clockwise rotation to the object before placing it at the new location.
+# Redraw the object at the new position, preserving its rotated shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+
+def main(input_grid):
+    # Identify all objects in the grid; assuming only one object needs manipulation
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=False)
+    assert len(objects) == 1, "There should be exactly one object in the input grid."
+    obj = objects[0]
+
+    # Get the bounding box of the object
+    x, y, width, height = bounding_box(obj)
+
+    # Erase the object in the input grid by setting it to the background color (0)
+    input_grid[x:x+width, y:y+height] = Color.BLACK
+
+    # Crop the object to get its sprite representation
+    sprite = crop(obj, background=Color.BLACK)
+
+    # Rotate the sprite 90 degrees clockwise
+    rotated_sprite = np.rot90(sprite, k=-1)
+
+    # Determine a new position for the object
+    new_x, new_y = np.random.randint(0, input_grid.shape[0] - rotated_sprite.shape[0]), np.random.randint(0, input_grid.shape[1] - rotated_sprite.shape[1])
+
+    # Check if the new position is free
+    if collision(object1=input_grid, object2=rotated_sprite, x2=new_x, y2=new_y, background=Color.BLACK):
+        raise ValueError("No free space for the rotated object. Try again.")
+
+    # Blit the rotated object to the new position
+    blit_sprite(input_grid, rotated_sprite, new_x, new_y, background=Color.BLACK)
+
+    return input_grid
+
+def generate_input():
+    # Create an empty grid
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random sprite (object) to place on the grid
+    sprite = random_sprite(np.random.randint(2, 5), np.random.randint(2, 5), color_palette=Color.NOT_BLACK, connectivity=4)
+
+    # Find a free location for the sprite and place it there
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1)
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+This puzzle challenges students to work with object identification, translation, erasure, and rotation on a grid. The deterministic transformation involves erasing an object from its original position, rotating it 90 degrees clockwise, and placing it in a new location. The generation function `generate_input` creates stochastic examples by randomly placing an object on the grid.

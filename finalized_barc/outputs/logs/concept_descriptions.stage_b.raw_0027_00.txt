@@ -1,0 +1,94 @@
+Here is a possible implementation for the puzzle described:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# In the input grid, you will see two distinct objects of different colors on a black background. One object is designated as the reference, and the other as the target.
+# The task is to translate the target object to touch a specified side (up, down, left, right) of the reference object. Align the nearest edge of the target to the contact edge of the reference without overlap.
+# Merge the target into the reference by painting target pixels into the grid, preserving existing reference pixels.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the two objects in the grid
+    # 2. Determine which is the reference and which is the target (you can assume the reference is the first object found)
+    # 3. Translate the target to touch the reference on the specified side
+    # 4. Merge the target into the reference without overlapping existing pixels
+
+    output_grid = np.copy(input_grid)
+
+    # Detect the objects in the input grid
+    objects = find_connected_components(grid=input_grid, connectivity=4, monochromatic=True)
+    assert len(objects) == 2, "There should be exactly two objects."
+
+    # Assume the first object is the reference and the second is the target
+    reference_object, target_object = objects
+
+    # Define a direction for the target to align to the reference
+    direction = random.choice(['up', 'down', 'left', 'right'])
+
+    # Get the bounding box for both objects
+    ref_bbox = crop(reference_object)
+    tgt_bbox = crop(target_object)
+
+    # Calculate the translation needed to touch the specified side
+    if direction == 'up':
+        dx, dy = 0, -(tgt_bbox.shape[0])
+    elif direction == 'down':
+        dx, dy = 0, ref_bbox.shape[0]
+    elif direction == 'left':
+        dx, dy = -(tgt_bbox.shape[1]), 0
+    elif direction == 'right':
+        dx, dy = ref_bbox.shape[1], 0
+
+    # Translate the target object
+    translated_target = translate(target_object, dx, dy, background=Color.BLACK)
+
+    # Ensure the target aligns correctly without overlapping the reference
+    while not contact(object1=reference_object, object2=translated_target, connectivity=4):
+        if direction in ['up', 'down']:
+            dy += 1 if direction == 'up' else -1
+        else:
+            dx += 1 if direction == 'left' else -1
+        translated_target = translate(target_object, dx, dy, background=Color.BLACK)
+
+    # Merge target into reference by painting target pixels into the grid
+    blit_object(output_grid, translated_target, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    n, m = 15, 15
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Generate a reference object
+    ref_color = random.choice(list(Color.NOT_BLACK))
+    ref_sprite = random_sprite(n=3, m=3, color_palette=[ref_color], density=0.5)
+    x, y = random_free_location_for_sprite(grid, ref_sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, ref_sprite, x, y, background=Color.BLACK)
+
+    # Generate a target object with a different color
+    tgt_color = random.choice([c for c in Color.NOT_BLACK if c != ref_color])
+    tgt_sprite = random_sprite(n=2, m=2, color_palette=[tgt_color], density=0.5)
+    x, y = random_free_location_for_sprite(grid, tgt_sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, tgt_sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation
+
+- **Concepts**: The puzzle involves translating, aligning, and merging objects based on connected components.
+- **Description**: The input grid has two objects. One is the reference, and the other is the target. The goal is to translate the target to touch the reference from a specified side (up, down, left, right) and merge them, ensuring no overlap of existing reference pixels.
+- **Functions Used**: 
+  - `find_connected_components` to detect objects.
+  - `translate` to move the target object.
+  - `contact` to ensure alignment without overlap.
+  - `blit_object` to merge objects into the grid.
+- **Stochastic Input**: The `generate_input` function creates a grid with random placement and colors for the reference and target objects, ensuring different scenarios for each run.

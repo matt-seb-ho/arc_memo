@@ -1,0 +1,4 @@
+```python
+# concepts: window processing, predicate check, conditional fill, grid manipulation
+# description: Input is a grid with specific 3x3 window coordinates and a predicate function. For each cell within the specified 3x3 window, check if it satisfies the predicate. If a cell does not satisfy the predicate, replace its value with a specified fill_value. Cells that satisfy the predicate remain unchanged. This operation completes the pattern within the window by filling only the non-matching cells.
+```

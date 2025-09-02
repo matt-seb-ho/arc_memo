@@ -1,0 +1,82 @@
+Here's an implementation for the new puzzle involving gravity simulation, directional movement, cohesion modes, and collision detection:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries. If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact. Maintain block order and shape; stop when further movement would result in collision or leaving the grid. The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_data):
+    input_grid, gravity_direction, cohesion_mode = input_data
+    output_grid = np.copy(input_grid)
+    
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    if cohesion_mode == 'per-column':
+        for col in range(output_grid.shape[1]):
+            column_objects = [obj for obj in objects if np.any(np.where(obj != Color.BLACK)[1] == col)]
+            for obj in column_objects:
+                move_object_in_direction(output_grid, obj, gravity_direction)
+    else: # 'cohesive'
+        for obj in objects:
+            move_object_in_direction(output_grid, obj, gravity_direction)
+
+    return output_grid
+
+def move_object_in_direction(grid, obj, direction):
+    dx, dy = 0, 0
+    if direction == 'down':
+        dy = 1
+    elif direction == 'up':
+        dy = -1
+    elif direction == 'right':
+        dx = 1
+    elif direction == 'left':
+        dx = -1
+
+    while not collision(object1=translate(obj, dx, dy), object2=grid):
+        obj = translate(obj, dx, dy)
+
+    blit_object(grid, obj)
+
+def generate_input():
+    n = np.random.randint(10, 15)
+    m = np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    num_objects = np.random.randint(2, 5)
+    for _ in range(num_objects):
+        sprite = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), color_palette=[Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW])
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK)
+        blit_sprite(grid, sprite, x, y)
+
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    return grid, gravity_direction, cohesion_mode
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle is based on simulating gravity to move blocks in a specified direction, considering different cohesion modes. Collision detection is used to stop movement when blocks hit obstacles or grid boundaries.
+
+2. **Main Function**:
+   - Extracts objects from the grid.
+   - Depending on the `cohesion_mode`, either moves each column independently or treats the objects as a cohesive unit.
+   - Uses `move_object_in_direction` to apply gravity by translating objects in the specified direction until they collide with something.
+
+3. **Movement**:
+   - The function `move_object_in_direction` calculates the translation vector based on the gravity direction.
+   - It moves the object until a collision is detected, then places the object in its final position.
+
+4. **Input Generation**:
+   - Creates a grid filled with randomly placed colored blocks.
+   - Randomly selects a gravity direction and cohesion mode for each generated input.
+
+This design aims to mimic a simple physics engine where gravity affects block arrangements on a grid, providing an engaging puzzle for middle-schoolers.

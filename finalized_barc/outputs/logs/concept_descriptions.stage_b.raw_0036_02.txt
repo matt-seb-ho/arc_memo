@@ -1,0 +1,75 @@
+Certainly! Here's an implementation of the described puzzle, which involves drawing a straight line between two marked points on a grid using Bresenham's line algorithm:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line drawing, pixel connectivity, grid update
+
+# description:
+# The input grid contains two distinct pixels marked as start and end.
+# The task is to draw a straight line connecting these two pixels using Bresenham's line algorithm.
+# The pixels along this path should be updated to a specified line color, while all other pixels remain unchanged.
+
+def main(input_grid):
+    # Find the start and end points
+    start_color = Color.BLUE
+    end_color = Color.RED
+    line_color = Color.GREEN
+
+    # Locate the start and end pixel positions
+    start_pos = np.argwhere(input_grid == start_color)[0]
+    end_pos = np.argwhere(input_grid == end_color)[0]
+
+    # Initialize the output grid
+    output_grid = np.copy(input_grid)
+
+    # Bresenham's line algorithm to draw a line
+    x1, y1 = start_pos
+    x2, y2 = end_pos
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    sx = 1 if x1 < x2 else -1
+    sy = 1 if y1 < y2 else -1
+    err = dx - dy
+
+    while True:
+        output_grid[x1, y1] = line_color
+        if x1 == x2 and y1 == y2:
+            break
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x1 += sx
+        if e2 < dx:
+            err += dx
+            y1 += sy
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random dimensions between 10x10 and 20x20
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly select two distinct positions for the start and end points
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+    while start_x == end_x and start_y == end_y:
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    # Assign start and end colors
+    grid[start_x, start_y] = Color.BLUE
+    grid[end_x, end_y] = Color.RED
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves line drawing, pixel connectivity, and updating a grid based on a deterministic procedure.
+- **Description**: The input grid contains two distinct points, marked with different colors. The goal is to draw a straight line connecting these two points using Bresenham's line algorithm. This algorithm is efficient for rasterizing lines on a grid.
+- **Main Function**: The `main` function finds the start and end points, then draws a line between them using Bresenham's algorithm, coloring the path with a specified line color.
+- **Generate Input Function**: This function creates a grid and randomly places two distinct points on it, ensuring they are not the same. The grid size and placement are stochastic, giving different valid inputs each time.

@@ -1,0 +1,81 @@
+Here's the implementation for the puzzle you described, where we translate and align the target object to the reference object:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# In the input, a grid contains two distinct objects: a reference object and a target object.
+# A direction is specified (up, down, left, or right) indicating where the target should be translated.
+# The goal is to translate the target object until it touches the reference object on the specified side.
+# After aligning, merge the target object into the reference object by painting target pixels into the grid,
+# preserving existing reference pixels. The output grid shows the target object aligned and merged with the reference object.
+
+def main(input_grid, direction):
+    # Find the connected components in the grid, assuming black is the background
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    # Assume the first object is the reference and the second is the target
+    reference = components[0]
+    target = components[1]
+
+    # Create a copy of the input grid to prepare the output grid
+    output_grid = np.copy(input_grid)
+
+    # Determine the translation vector based on the specified direction
+    translation_vector = {
+        "up": (0, -1),
+        "down": (0, 1),
+        "left": (-1, 0),
+        "right": (1, 0),
+    }[direction]
+
+    # Translate the target until it touches the reference on the specified side
+    while not contact(object1=reference, object2=target):
+        target = translate(target, *translation_vector, background=Color.BLACK)
+
+    # Merge the target object into the reference object, preserving existing reference pixels
+    blit_object(output_grid, target, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a 10x10 black grid
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Generate a random reference object
+    ref_obj = random_sprite(n=3, m=3, color_palette=[random.choice(Color.NOT_BLACK)], connectivity=4)
+
+    # Generate a random target object
+    target_obj = random_sprite(n=3, m=3, color_palette=[random.choice(Color.NOT_BLACK)], connectivity=4)
+
+    # Place the reference object randomly in the grid
+    x_ref, y_ref = random_free_location_for_sprite(grid, ref_obj, background=Color.BLACK)
+    blit_sprite(grid, ref_obj, x=x_ref, y=y_ref, background=Color.BLACK)
+
+    # Place the target object randomly in the grid
+    x_target, y_target = random_free_location_for_sprite(grid, target_obj, background=Color.BLACK)
+    blit_sprite(grid, target_obj, x=x_target, y=y_target, background=Color.BLACK)
+
+    # Randomly choose a direction for the target to move towards the reference
+    direction = random.choice(["up", "down", "left", "right"])
+
+    return grid, direction
+```
+
+### Explanation:
+- **`main` Function**: 
+  - Detects the connected components in the input grid to identify the reference and target objects.
+  - Determines the translation vector based on the specified direction.
+  - Translates the target object until it touches the reference object on the specified side.
+  - Merges the target object into the reference object by painting the target onto the grid, preserving existing reference pixels.
+
+- **`generate_input` Function**:
+  - Creates a 10x10 grid and places a reference object and a target object randomly.
+  - Randomly selects a direction (up, down, left, right) for the target to move towards the reference object.

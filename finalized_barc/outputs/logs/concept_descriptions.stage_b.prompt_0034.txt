@@ -1,0 +1,449 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+window scanning, color matching, pattern detection
+
+Description: 
+Input is a grid with various colors. For each 2x2 window in the grid, check if all cells match a specified target color. Return True if every cell in the window matches the target color; otherwise, return False. This operation is applied to each 2x2 window independently.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def flood_fill(grid, x, y, color, connectivity=4):
+    """
+    Fill the connected region that contains the point (x, y) with the specified color.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. 8-way counts diagonals as connected, 4-way only counts cardinal directions as connected.
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def contact(_=None, object1=None, object2=None, x1=0, y1=0, x2=0, y2=0, background=Color.BLACK, connectivity=4):
+    """
+    Check if object1 and object2 touch each other (have contact) when object1 is at (x1, y1) and object2 is at (x2, y2).
+    They are touching each other if they share a border, or if they overlap. Collision implies contact, but contact does not imply collision.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. (8-way counts diagonals as touching, 4-way only counts cardinal directions as touching)
+
+    Example usage:
+
+    # Check if a sprite touches anything if it were to be placed at (X,Y)
+    contact(object1=output_grid, object2=a_sprite, x2=X, y2=Y)
+
+    # Check if two objects touch each other
+    contact(object1=object1, object2=object2)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def object_interior(grid, background=Color.BLACK):
+    """
+    Computes the interior of the object (including edges)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's interior.
+
+    Example usage:
+    interior = object_interior(obj, background=Color.BLACK)
+    for x, y in np.argwhere(interior):
+        # x,y is either inside the object or at least on its edge
+    """
+
+def object_boundary(grid, background=Color.BLACK):
+    """
+    Computes the boundary of the object (excluding interior)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's boundary.
+
+    Example usage:
+    boundary = object_boundary(obj, background=Color.BLACK)
+    assert np.all(obj[boundary] != Color.BLACK)
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+def detect_objects(grid, _=None, predicate=None, background=Color.BLACK, monochromatic=False, connectivity=None, allowed_dimensions=None, colors=None, can_overlap=False):
+    """
+    Detects and extracts objects from the grid that satisfy custom specification.
+
+    predicate: a function that takes a candidate object as input and returns True if it counts as an object
+    background: color treated as transparent
+    monochromatic: if True, each object is assumed to have only one color. If False, each object can include multiple colors.
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. If None, the connectivity is determined automatically.
+    allowed_dimensions: a list of tuples (n, m) specifying the allowed dimensions of the objects. If None, objects of any size are allowed.
+    colors: a list of colors that the objects are allowed to have. If None, objects of any color are allowed.
+    can_overlap: if True, objects can overlap. If False, objects cannot overlap.
+
+    Returns a list of objects, where each object is a numpy array.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# rectangular cells, flood fill, connecting same color
+
+# description:
+# In the input you will see horizontal and vertical bars that divide the grid into rectangular cells
+# To make the output, find any pair of rectangular cells that are in the same row and column and have the same color, then color all the rectangular cells between them with that color
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+
+    # find the color of the horizontal and vertical bars that divide the rectangular cells
+    # this is the color of any line that extends all the way horizontally or vertically
+    jail_color = None
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            color = input_grid[i][j]
+            if np.all(input_grid[i, :] == color) or np.all(input_grid[:, j] == color):
+                jail_color = color
+                break
+    
+    assert jail_color is not None, "No jail color found"
+
+    output_grid = input_grid.copy()
+
+    # color all the cells between the same color pixels
+    for x in range(input_grid.shape[0]):
+        for y in range(input_grid.shape[1]):
+            color = input_grid[x][y]
+            if color == jail_color or color == Color.BLACK:
+                continue
+
+            # check if there is a cell with the same color in the same X value
+            for y2 in range(y+1, input_grid.shape[1]):
+                if input_grid[x][y2] == color:
+                    for y3 in range(y+1, y2):
+                        if input_grid[x][y3] == Color.BLACK:
+                            output_grid[x][y3] = color
+                    break
+
+            # check if there is a cell with the same color in the same Y value
+            for x2 in range(x+1, input_grid.shape[0]):
+                if input_grid[x2][y] == color:
+                    for x3 in range(x+1, x2):
+                        if input_grid[x3][y] == Color.BLACK:
+                            output_grid[x3][y] = color
+                    break
+                
+    return output_grid
+
+def generate_input() -> np.ndarray:
+
+    grid_size = 32
+    cell_size = 2
+
+    # First create the array of rectangular cells, each of which is separated by horizontal and vertical bars dividing cells
+
+    # pick a non-black color for the divider
+    divider_color = random.choice(Color.NOT_BLACK)
+    grid = np.zeros((grid_size, grid_size), dtype=int)
+    r_offset_x, r_offset_y = np.random.randint(0, cell_size), np.random.randint(0, cell_size)
+
+    # make horizontal bars with cell_size gaps, but +1 because we need to include the divider, which is one pixel wide
+    for x in range(r_offset_x, grid_size, cell_size+1):
+        grid[x, :] = divider_color
+    # make vertical bars with cell_size gaps
+    for y in range(r_offset_y, grid_size, cell_size+1):
+        grid[:, y] = divider_color
+
+    # Second we will color some of the cells with a random color
+
+    # random number of cells to color
+    number_to_color = np.random.randint(1, 4)
+    for _ in range(number_to_color):
+        # pick what we're going to color the inside of the cell, which needs to be a different color from the divider
+        other_color = np.random.choice([c for c in Color.ALL_COLORS if c != divider_color and c != Color.BLACK])
+
+        # get all coords of black cells
+        black_coords = np.argwhere(grid == Color.BLACK)
+        # pick a random black cell
+        x, y = random.choice(black_coords)
+        flood_fill(grid, x, y, other_color)
+
+        # sometimes skip coloring the other side of the divider
+        if random.random() <= 0.2:
+            continue 
+
+        # flip a coin to decide if horizontal or vertical
+        h_or_v = random.random() < 0.5
+        if h_or_v:
+            # horizontal
+            # get all the black cells in the same row
+            black_coords = np.argwhere(grid[x, :] == Color.BLACK)
+            # pick a random black cell
+            other_y = random.choice(black_coords)
+            flood_fill(grid, x, other_y, other_color)
+        else:
+            # vertical
+            # get all the black cells in the same column
+            black_coords = np.argwhere(grid[:, y] == Color.BLACK)
+            # pick a random black cell
+            other_x = random.choice(black_coords)
+            flood_fill(grid, other_x, y, other_color)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# topology
+
+# description:
+# The input grid is a square grid with black and green pixels. The input grid should have regions that are enclosed by the green pixels. 
+# To produce the output, you need to find the enclosed regions in the input grid, and then color them yellow. 
+                
+def main(input_grid):
+    # Create initial output grid template based on input grid.
+    output_grid = input_grid.copy()
+
+    # Find enclosed regions
+    interior_mask = object_interior(input_grid)
+    boundary_mask = object_boundary(input_grid)
+    inside_but_not_on_edge = interior_mask & ~boundary_mask
+
+    # Color enclosed regions
+    for x, y in np.argwhere(inside_but_not_on_edge):
+        if output_grid[x, y] == Color.BLACK:
+            output_grid[x, y] = Color.YELLOW
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a square grid of arbitrary size with black background, size from 5x5 to 20x20
+    n = random.randint(10, 20)
+    grid = np.zeros((n, n), dtype=int)
+
+    # Generate some random green sprites, and then hollow out the interior
+    n_objects = random.randint(1, 3)
+    for _ in range(n_objects):
+        n, m = random.randint(4, 10), random.randint(4, 10)
+        sprite = random_sprite(n, m, color_palette=[Color.GREEN], connectivity=8)
+        interior_mask = object_interior(sprite)
+        boundary_mask = object_boundary(sprite)
+        interior_but_not_edges = interior_mask & ~boundary_mask
+        sprite[interior_but_not_edges] = Color.BLACK
+
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+        except:
+            continue
+
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting, object detection, alternating pattern
+
+# description:
+# In the input you will see several 2 x 2 red squares on the grid.
+# To make the output grid, you should count the number of red squares
+# Then place the same number of 1 x 1 blue squares on the output grid following this pattern in the output:
+# First fill the top row, then the next row, but skip every other column. Begin the first/third/fifth/etc row in the first column, but begin the second/forth/etc row in the second column.
+
+def main(input_grid):
+    # Detect all the 2 x 2 red squares on the grid.
+    red_square = detect_objects(grid=input_grid, colors=[Color.RED], monochromatic=True, connectivity=4)
+
+    # Count the number of 2 x 2 red squares.
+    num_red_square = len(red_square)
+
+    # Output grid is always 3 x 3.
+    output_grid = np.zeros((3, 3), dtype=int)
+
+    # Fill the output grid with red square number follow specific pattern sequence:
+    # 1. Fill the top row, then the next row, but skip every other column.
+    # 2. Begin the first/third/fifth/etc row in the first column, but begin the second/forth/etc row in the second column.
+    pos_list = []
+    for i in range(9):
+        if i % 2 == 0:
+            pos_list.append((i % 3, i // 3))
+
+    # Place the same number of 1 x 1 blue squares on the output grid follow the specific pattern sequence.
+    for i in range(num_red_square):
+        x, y = pos_list[i]
+        output_grid[x, y] = Color.BLUE
+        
+    return  output_grid
+
+def generate_input():
+    # Generate the background grid with size of n x n.
+    square_len = np.random.randint(3, 10)
+    n, m = square_len, square_len
+    grid = np.zeros((n, m), dtype=int)
+
+    # Generate the 2 x 2 red squares on the grid.
+    square = random_sprite(n=2, m=2, color_palette=[Color.RED], density=1.0)
+
+    # Randomly choose the number of 2 x 2 red squares.
+    square_num = np.random.randint(1, 6)
+
+    # Place the 2 x 2 red squares on the grid.
+    for _ in range(square_num):
+        # Make sure there is enough space for the 2 x 2 red square.
+        try:
+            # Place the 2 x 2 red square on the grid.
+            # Make sure the red square is not too close to each other.
+            x, y = random_free_location_for_sprite(grid=grid, sprite=square, padding=1, padding_connectivity=4)
+            grid = blit_sprite(grid=grid, sprite=square, x=x, y=y)
+        except:
+            break
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connectivity
+
+# description:
+# In the input image you will see several teal pixels and two 2x2 red squares on the black background.
+# If the 2x2 red squares are connected by a path of teal pixels, then output a 1x1 teal grid, otherwise, output a 1x1 black grid. 
+
+def main(input_grid):
+    # make output grid
+    output_grid = np.zeros((1,1), dtype=int)
+
+    # get just the red squares
+    red_squares = np.zeros_like(input_grid)
+    red_squares[input_grid == Color.RED] = Color.RED
+
+    # get all components that are connected, regardless of color
+    connected_components = find_connected_components(input_grid, connectivity=4, monochromatic=False)
+
+    # check each connected component to see if it contains both red squares
+    for connected_component in connected_components:
+        # if it contains both red squares, output teal grid
+        if np.all(connected_component[red_squares == Color.RED] == Color.RED):         
+            output_grid[:,:] = Color.TEAL
+            return output_grid
+
+    # if none of the connected components contain both red squares, output black grid
+    output_grid[:,:] = Color.BLACK
+    return output_grid
+
+
+def generate_input():
+    # make a black grid first as background
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.zeros((n, m), dtype=int)
+
+    # make a 2x2 red square sprite
+    red_square_sprite = np.full((2,2), Color.RED, dtype=int)
+
+    # place a red square sprite at two random places on the grid
+    x1, y1 = random_free_location_for_sprite(grid, red_square_sprite, padding=1)
+    blit_sprite(grid, red_square_sprite, x1, y1)
+    x2, y2 = random_free_location_for_sprite(grid, red_square_sprite, padding=1)
+    blit_sprite(grid, red_square_sprite, x2, y2)
+
+    # check that the red squares do not touch
+    # if they do, then try again
+    if contact(object1=red_square_sprite, object2=red_square_sprite, x1=x1, y1=y1, x2=x2, y2=y2):
+        return generate_input()
+
+    # sprinkle teal pixels over the black parts of the grid so they cover roughly a third of it
+    for _ in range(n * m // 3):
+        x, y = random.randint(0, n - 1), random.randint(0, m - 1)
+        # do not sprinkle teal pixels on top of red ones
+        if grid[x, y] != Color.RED:
+            grid[x, y] = Color.TEAL
+    
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

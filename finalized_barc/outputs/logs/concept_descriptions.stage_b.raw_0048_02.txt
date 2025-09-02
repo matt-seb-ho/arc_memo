@@ -1,0 +1,87 @@
+Here's the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# color runs, recolor, bounding box, symmetry
+
+# description:
+# Identify contiguous horizontal or vertical runs of cyan (color=4) in the grid. For each run, compute k as the minimum of 3 or half the run's length (rounded down).
+# Recolor the first k and last k cells of each run to yellow (color=3), leaving the interior cells unchanged. This transformation applies symmetrically to both ends of each cyan run, capping them with yellow while preserving the run's central portion.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    output_grid = np.copy(input_grid)
+    
+    # Check each row for horizontal cyan runs
+    for row in range(output_grid.shape[0]):
+        start = None
+        for col in range(output_grid.shape[1]):
+            if output_grid[row, col] == Color.CYAN and start is None:
+                start = col
+            elif output_grid[row, col] != Color.CYAN and start is not None:
+                length = col - start
+                k = min(3, length // 2)
+                output_grid[row, start:start + k] = Color.YELLOW
+                output_grid[row, start + length - k:start + length] = Color.YELLOW
+                start = None
+        if start is not None:
+            length = output_grid.shape[1] - start
+            k = min(3, length // 2)
+            output_grid[row, start:start + k] = Color.YELLOW
+            output_grid[row, start + length - k:start + length] = Color.YELLOW
+
+    # Check each column for vertical cyan runs
+    for col in range(output_grid.shape[1]):
+        start = None
+        for row in range(output_grid.shape[0]):
+            if output_grid[row, col] == Color.CYAN and start is None:
+                start = row
+            elif output_grid[row, col] != Color.CYAN and start is not None:
+                length = row - start
+                k = min(3, length // 2)
+                output_grid[start:start + k, col] = Color.YELLOW
+                output_grid[start + length - k:start + length, col] = Color.YELLOW
+                start = None
+        if start is not None:
+            length = output_grid.shape[0] - start
+            k = min(3, length // 2)
+            output_grid[start:start + k, col] = Color.YELLOW
+            output_grid[start + length - k:start + length, col] = Color.YELLOW
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Random grid size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    
+    # Initialize grid with random colors
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+    
+    # Introduce some cyan runs in the grid
+    num_runs = np.random.randint(1, 4)
+    for _ in range(num_runs):
+        if np.random.rand() > 0.5:
+            # Horizontal run
+            row = np.random.randint(n)
+            start_col = np.random.randint(0, m - 3)
+            length = np.random.randint(3, m - start_col)
+            grid[row, start_col:start_col + length] = Color.CYAN
+        else:
+            # Vertical run
+            col = np.random.randint(m)
+            start_row = np.random.randint(0, n - 3)
+            length = np.random.randint(3, n - start_row)
+            grid[start_row:start_row + length, col] = Color.CYAN
+    
+    return grid
+```
+
+### Explanation
+
+1. **`main` Function**: The `main` function processes the input grid to identify contiguous horizontal and vertical runs of cyan (color=4). For each run, it calculates the value of `k`, which is the minimum of 3 or half the run's length (rounded down). It then recolors the first `k` and last `k` cells of each run to yellow (color=3) while leaving the central portion unchanged. This transformation ensures symmetry in the capping of the runs.
+
+2. **`generate_input` Function**: The `generate_input` function creates a grid with random dimensions between 5x5 and 10x10. It fills the grid with random colors and introduces a few random cyan runs, both horizontally and vertically, to create a suitable input for the `main` function. This function ensures variability in the generated inputs each time it's called.

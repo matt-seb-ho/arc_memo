@@ -1,0 +1,101 @@
+Here's a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, object identification, guide object
+
+# description:
+# In the input grid, you will see various colored objects. Each object is a connected component of the grid with a single color.
+# Identify the color that is unique among all objects (meaning no other object has this color).
+# The output grid should highlight or isolate the object with this unique color, turning all its pixels white, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Find all the connected components in the grid
+    connected_components = find_connected_components(input_grid, monochromatic=True)
+    
+    # Dictionary to count occurrences of each color
+    color_count = {}
+
+    # Map each component to its color and count the occurrences
+    for component in connected_components:
+        color = np.unique(component)[1]  # skip background color (assumed to be first)
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    # Find the unique color (count == 1)
+    unique_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            unique_color = color
+            break
+
+    if unique_color is None:
+        raise ValueError("No unique color found in the grid.")
+
+    # Create the output grid
+    output_grid = input_grid.copy()
+    
+    # Isolate the object with the unique color by turning it white
+    for component in connected_components:
+        if np.any(component == unique_color):
+            output_grid[component == unique_color] = Color.WHITE
+    
+    return output_grid
+
+def generate_input():
+    n = np.random.randint(10, 16)
+    m = np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # List of colors to use, excluding black
+    available_colors = list(Color.NOT_BLACK)
+    
+    # Number of objects to generate
+    num_objects = np.random.randint(5, 8)
+
+    # Ensure there's at least one unique color
+    unique_color = np.random.choice(available_colors)
+    colors_to_use = [unique_color] + np.random.choice(available_colors, num_objects - 1).tolist()
+
+    np.random.shuffle(colors_to_use)  # Shuffle to ensure unique color is placed randomly
+    
+    for color in colors_to_use:
+        # Generate random object (connected component) using the specified color
+        sprite = random_sprite(np.random.randint(2, 5), np.random.randint(2, 5), color_palette=[color])
+        
+        # Try to place the sprite in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If no valid position is found, retry
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts Used**:
+   - **Unique Color Selection**: Identify the color that only one object has.
+   - **Connected Components**: Detect objects on the grid as connected components.
+   - **Guide Object**: The object with the unique color acts as a guide for the transformation.
+
+2. **Description**:
+   - The input grid contains multiple colored objects.
+   - Each object is a connected component with a single color.
+   - The task is to find the object whose color is not shared by any other object (i.e., unique).
+   - The output grid highlights or isolates the unique object by turning it white, while leaving others unchanged.
+
+3. **Implementation Details**:
+   - `find_connected_components` is used to identify and separate objects.
+   - A dictionary tallies occurrences of each color.
+   - The unique color is identified by checking the dictionary for a count of one.
+   - The grid is updated to highlight the unique color object by turning it to white.

@@ -1,0 +1,104 @@
+Here's an implementation of the puzzle based on the provided description. We will identify holes in a grid, which are regions of the background color fully enclosed by a guide object, and fill these holes with the target object color.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# Identify holes as background-color regions fully enclosed by a guide object, not connected to the grid border. Use flood-fill from the grid border to mark exterior background; any remaining background component inside the object is a hole. Fill these holes with the target object color, ensuring they are completely enclosed by the guide object.
+
+def main(input_grid):
+    output_grid = input_grid.copy()
+
+    # Assume the background color is black
+    background_color = Color.BLACK
+
+    # Find all connected components of the background
+    background_components = find_connected_components(input_grid, background=background_color, connectivity=8)
+
+    # Mark exterior background by performing flood-fill from the grid border
+    exterior_background = set()
+    for x in range(input_grid.shape[0]):
+        for y in [0, input_grid.shape[1] - 1]:
+            if input_grid[x, y] == background_color:
+                exterior_background.add((x, y))
+    for y in range(input_grid.shape[1]):
+        for x in [0, input_grid.shape[0] - 1]:
+            if input_grid[x, y] == background_color:
+                exterior_background.add((x, y))
+
+    # Flood-fill on the exterior to mark all connected exterior background pixels
+    exterior_filled = set()
+    for start in exterior_background:
+        if start not in exterior_filled:
+            component = set()
+            stack = [start]
+            while stack:
+                x, y = stack.pop()
+                if (x, y) not in exterior_filled and input_grid[x, y] == background_color:
+                    exterior_filled.add((x, y))
+                    component.add((x, y))
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1]:
+                            stack.append((nx, ny))
+
+    # Fill the holes (background regions not connected to the exterior)
+    for component in background_components:
+        if not any((x, y) in exterior_filled for x, y in zip(*np.where(component))):
+            # If this background component is not connected to the exterior, it's a hole
+            target_color = determine_target_color(input_grid, component)
+            for x, y in zip(*np.where(component)):
+                output_grid[x, y] = target_color
+
+    return output_grid
+
+def determine_target_color(grid, component):
+    """
+    Determine the color to fill the hole with. Assume the color of the enclosing object.
+    """
+    x, y = np.argwhere(component)[0]
+    neighbors = get_neighbors(grid, x, y)
+    for nx, ny in neighbors:
+        if grid[nx, ny] != Color.BLACK:
+            return grid[nx, ny]
+    return Color.BLACK
+
+def get_neighbors(grid, x, y):
+    neighbors = []
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nx, ny = x + dx, y + dy
+        if 0 <= nx < grid.shape[0] and 0 <= ny < grid.shape[1]:
+            neighbors.append((nx, ny))
+    return neighbors
+
+def generate_input():
+    n = np.random.randint(10, 28)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    for _ in range(np.random.randint(3, 6)):
+        # Create a random colored object with a possible enclosed region
+        obj = random_sprite(np.random.randint(3, 7), np.random.randint(3, 7), color_palette=Color.NOT_BLACK)
+        interior_mask = object_interior(obj, background=Color.BLACK)
+        boundary_mask = object_boundary(obj, background=Color.BLACK)
+
+        # Make some of the interior black to create holes
+        for x, y in zip(*np.where(interior_mask)):
+            if np.random.rand() < 0.5:
+                obj[x, y] = Color.BLACK
+
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+
+    return input_grid
+```
+
+This implementation uses flood-fill to determine which parts of the background are connected to the grid border and therefore not considered holes. The enclosed regions are identified as those not connected to the exterior and are filled with the target color from the surrounding object.

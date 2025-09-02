@@ -1,0 +1,81 @@
+Here's a possible implementation of the puzzle based on the provided description. This puzzle involves filling enclosed regions within a guide object using a target object without overlapping existing non-background pixels.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole filling, guide object, target object, enclosed regions, non-overlapping placement
+
+# description:
+# Input consists of a guide object with enclosed holes and a separate target object. Identify interior holes within the guide object (regions not connected to the border).
+# Fill these holes using the target object by fitting its pixels or blocks into the hole geometry without overlapping existing non-background pixels. 
+# Continue filling until all holes are filled or no more legal placements are possible. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+def main(input_grid):
+    # Detect the guide object and the target object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+    guide_object, target_object = None, None
+    
+    for obj in objects:
+        colors = object_colors(obj, background=Color.BLACK)
+        if len(colors) > 1:  # Assume the guide object has multiple colors
+            guide_object = obj
+        else:
+            target_object = obj
+
+    # Get the interior holes in the guide object
+    guide_interior_mask = object_interior(guide_object, background=Color.BLACK)
+    holes = find_connected_components(guide_interior_mask, background=False, connectivity=4)
+
+    output_grid = input_grid.copy()
+    
+    for hole in holes:
+        hole_bbox = bounding_box(hole, background=False)
+        hole_region = np.zeros_like(output_grid)
+        hole_region[hole_bbox[1]:hole_bbox[1]+hole_bbox[3], hole_bbox[0]:hole_bbox[0]+hole_bbox[2]] = hole
+        
+        # Try to fit the target object in the hole
+        try:
+            x, y = random_free_location_for_sprite(hole_region, target_object, background=Color.BLACK, padding=0)
+            blit_sprite(output_grid, target_object, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no fitting position is found, skip this hole
+            continue
+
+    return output_grid
+
+def generate_input():
+    # Create a 20x20 black grid
+    grid = np.full((20, 20), Color.BLACK)
+
+    # Create a guide object with random enclosed holes
+    guide_size = np.random.randint(10, 15)
+    guide_object = np.full((guide_size, guide_size), np.random.choice(list(Color.NOT_BLACK)))
+
+    # Carve out holes in the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 5)
+        hole_x = np.random.randint(1, guide_size - hole_size)
+        hole_y = np.random.randint(1, guide_size - hole_size)
+        guide_object[hole_x:hole_x+hole_size, hole_y:hole_y+hole_size] = Color.BLACK
+
+    # Place the guide object in the grid
+    guide_x, guide_y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    blit_sprite(grid, guide_object, guide_x, guide_y)
+
+    # Create a target object
+    target_size = np.random.randint(2, 4)
+    target_object = random_sprite(target_size, target_size, density=0.5, color_palette=[np.random.choice(list(Color.NOT_BLACK))])
+
+    # Place the target object in a separate area of the grid
+    target_x, target_y = random_free_location_for_sprite(grid, target_object, padding=1)
+    blit_sprite(grid, target_object, target_x, target_y)
+
+    return grid
+```
+
+This puzzle implementation involves detecting the guide object and its enclosed holes, and then attempting to fill these holes with the target object, ensuring no overlap with non-background pixels. The `generate_input` function creates an input grid with a randomly placed guide object with holes and a separate target object. The `main` function implements the transformation logic to fill the holes with the target object if possible.

@@ -1,0 +1,4 @@
+```python
+# concepts: pattern matching, boolean mask, predicate evaluation, exact match
+# description: Input is a 3x3 grid (window) and a boolean mask (pattern_mask) of the same size. A predicate function is applied to each cell in the window to create a boolean mask. Return True if this generated mask exactly matches the given pattern_mask element-wise, with no rotations or flips allowed. Otherwise, return False.
+```

@@ -1,0 +1,64 @@
+Here's a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# window processing, predicate check, conditional fill, grid manipulation
+
+# description:
+# In the input, you will receive a grid, specific 3x3 window coordinates, and a predicate function.
+# For each cell within the specified 3x3 window, check if it satisfies the predicate.
+# If a cell does not satisfy the predicate, replace its value with a specified fill_value.
+# Cells that satisfy the predicate remain unchanged. The operation completes the pattern within the window by filling only the non-matching cells.
+
+def main(input_grid: np.ndarray, window_coords: Tuple[int, int], predicate: Callable[[int], bool], fill_value: int) -> np.ndarray:
+    # Extract the 3x3 window from the input grid
+    x, y = window_coords
+    window = input_grid[x:x+3, y:y+3]
+
+    # Iterate through each cell in the 3x3 window
+    for i in range(3):
+        for j in range(3):
+            # Check if the cell satisfies the predicate
+            if not predicate(window[i, j]):
+                # If not, replace with fill_value
+                window[i, j] = fill_value
+
+    # Place the modified window back into the output grid
+    output_grid = np.copy(input_grid)
+    output_grid[x:x+3, y:y+3] = window
+
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, Tuple[int, int], Callable[[int], bool], int]:
+    # Create a grid filled with random colors
+    grid_size = np.random.randint(6, 10)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(grid_size, grid_size))
+
+    # Randomly select the top-left corner of a 3x3 window within the grid
+    window_x = np.random.randint(0, grid_size - 2)
+    window_y = np.random.randint(0, grid_size - 2)
+
+    # Define a random predicate function (e.g., checks if a color is 'BLUE')
+    def predicate(color):
+        return color == Color.BLUE
+
+    # Select a random fill_value different from 'BLUE'
+    fill_value = random.choice([color for color in Color.NOT_BLACK if color != Color.BLUE])
+
+    return grid, (window_x, window_y), predicate, fill_value
+```
+
+### Explanation:
+
+- **Concepts**: This puzzle uses concepts like window processing, predicate checks, conditional fills, and grid manipulation.
+  
+- **Description**: The main function processes a specified 3x3 window of the input grid. For each cell, it checks if the cell's value satisfies a given predicate. If not, it replaces the cell's value with a fill_value. The transformation is deterministic, meaning that the same input and parameters will always yield the same output.
+
+- **`main` Function**: It takes the input grid, window coordinates, a predicate function, and a fill_value. It extracts the window, applies the predicate to each cell, and conditionally fills cells that don't satisfy the predicate.
+
+- **`generate_input` Function**: It generates a random grid of colors, selects a random 3x3 window within the grid, defines a predicate function, and chooses a fill_value. Each run of `generate_input` produces different inputs.

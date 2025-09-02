@@ -1,0 +1,68 @@
+Here's an implementation of the puzzle described in your prompt. The puzzle involves counting pixels of certain colors within a guide object and checking their parity.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# parity counting, guide object, color restriction
+
+# description:
+# Input consists of a grid with various colored pixels and a designated guide object.
+# Count the number of pixels within the guide object that have either odd or even color values.
+# If a specific color or set of colors is provided, restrict the count to those colors only;
+# otherwise, consider all colors present in the guide object.
+# The output is the total count of pixels satisfying the chosen parity condition.
+
+def main(input_grid: np.ndarray, guide_color: str, parity: str, restricted_colors: Optional[Set[str]] = None) -> int:
+    # Find the guide object in the input grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    guide_object = next(obj for obj in objects if np.any(obj == guide_color))
+
+    # Get the bounding box of the guide object
+    x, y, width, height = bounding_box(guide_object)
+
+    # Count pixels with the specified parity within the guide object
+    count = 0
+    for i in range(x, x + width):
+        for j in range(y, y + height):
+            if guide_object[i, j] != Color.BLACK:
+                if restricted_colors is None or guide_object[i, j] in restricted_colors:
+                    if parity == 'odd' and int(guide_object[i, j]) % 2 == 1:
+                        count += 1
+                    elif parity == 'even' and int(guide_object[i, j]) % 2 == 0:
+                        count += 1
+
+    return count
+
+def generate_input() -> Tuple[np.ndarray, str, str, Optional[Set[str]]]:
+    # Create a grid with random colored pixels
+    n, m = 10, 10
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+
+    # Generate a random guide object
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    guide_sprite = random_sprite(n=3, m=3, density=0.7, color_palette=[guide_color])
+    x, y = random_free_location_for_sprite(grid, guide_sprite, background=Color.BLACK)
+    blit_sprite(grid, guide_sprite, x, y)
+
+    # Choose parity condition: odd or even
+    parity = np.random.choice(['odd', 'even'])
+
+    # Randomly choose whether to restrict colors or not
+    if np.random.rand() > 0.5:
+        restricted_colors = set(np.random.choice(list(Color.NOT_BLACK), size=np.random.randint(1, 4), replace=False))
+    else:
+        restricted_colors = None
+
+    return grid, guide_color, parity, restricted_colors
+```
+
+### Explanation
+
+- **Main Function**: This function takes an `input_grid`, a `guide_color` that identifies the guide object, a `parity` ('odd' or 'even'), and an optional `restricted_colors` set. It identifies the guide object, checks each pixel within the guide object for the specified parity, and counts those pixels.
+- **Generate Input**: This function creates a random grid with colored pixels. It randomly places a guide object made up of a specific color. It also randomly selects parity and whether to restrict the colors for counting. These serve as input parameters to the `main` function.
+
+The puzzle challenges students to understand and apply concepts of parity and restrictions in counting within a defined region.

@@ -1,0 +1,4 @@
+```python
+# concepts: guide object, starting point, position-based transformation
+# description: Identify a guide object within the grid, characterized by a unique color or distinct feature. Use the position of this guide object as a starting point for a transformation or operation. The specific transformation depends on the task context but consistently originates from the guide object's location. The rest of the grid is processed based on this positional reference, ensuring a deterministic output transformation.
+```

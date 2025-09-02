@@ -1,0 +1,66 @@
+Here is a new puzzle design based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, translation, erasure, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0).
+# Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates.
+# Redraw the object at the new position, preserving its shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the connected component (object).
+    # 2. Determine the object's bounding box.
+    # 3. Erase the object by setting its pixels to the background color.
+    # 4. Calculate a new random position to translate the object.
+    # 5. Translate and redraw the object at the new position on the grid.
+
+    # Find the connected component in the grid
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Assuming only one object exists in the grid
+    obj = components[0]
+
+    # Determine the object's bounding box
+    x, y, width, height = bounding_box(obj, background=Color.BLACK)
+    
+    # Erase the object from its original position
+    input_grid[x:x+width, y:y+height] = Color.BLACK
+
+    # Determine a new position for the object
+    new_x, new_y = random_free_location_for_sprite(input_grid, crop(obj), background=Color.BLACK, border_size=1)
+
+    # Translate and redraw the object at the new position
+    translated_object = translate(obj, new_x - x, new_y - y, background=Color.BLACK)
+    blit_object(input_grid, translated_object, background=Color.BLACK)
+
+    return input_grid
+
+
+def generate_input():
+    # Create an empty grid with a random size between 10x10 and 20x20
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random connected component with dimensions between 3x3 and 5x5
+    width, height = np.random.randint(3, 6, size=2)
+    sprite = random_sprite(width, height, density=0.7, color_palette=Color.NOT_BLACK, background=Color.BLACK)
+
+    # Place the sprite randomly on the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves identifying an object within a grid, determining its bounding box, erasing it, translating it to a new position, and redrawing it while preserving its shape and color.
+  
+- **Description**: The `main` function finds the single connected component in the `input_grid`, erases it by filling its bounding box with the background color, calculates a new random position for it, and redraws it at this new location. The `generate_input` function creates an input grid by placing a randomly generated sprite onto a grid. The sprite is a connected component with random dimensions and density, chosen from a set of non-black colors.

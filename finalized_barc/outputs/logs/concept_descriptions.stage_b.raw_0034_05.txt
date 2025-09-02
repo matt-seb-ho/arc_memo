@@ -1,0 +1,69 @@
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# The input grid contains various colors. For each 2x2 window in the grid, check if all cells match a specified target color.
+# Return a grid of the same size with True if every cell in the window matches the target color; otherwise, return False.
+# This operation is applied to each 2x2 window independently, resulting in a grid indicating which 2x2 windows are homogeneous in color.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Determine the size of the grid
+    rows, cols = input_grid.shape
+    # Initialize the output grid of same size with False values
+    output_grid = np.zeros((rows, cols), dtype=bool)
+    
+    # Specify the target color to match
+    target_color = Color.RED  # Example target color; this can be any color from Color.ALL_COLORS
+
+    # Iterate through each possible 2x2 window in the grid
+    for i in range(rows - 1):
+        for j in range(cols - 1):
+            # Extract the current 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+            # Check if all cells in the window match the target color
+            if np.all(window == target_color):
+                # If they match, set the corresponding cells in the output grid to True
+                output_grid[i:i+2, j:j+2] = True
+
+    return output_grid
+
+
+def generate_input() -> np.ndarray:
+    # Randomly select the grid size
+    rows, cols = random.randint(5, 10), random.randint(5, 10)
+    # Create a grid of random colors
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(rows, cols))
+    
+    # Randomly choose some 2x2 regions to be homogeneous and match the target color
+    for _ in range(random.randint(1, 5)):
+        # Select a random starting position for the 2x2 window
+        i, j = random.randint(0, rows - 2), random.randint(0, cols - 2)
+        # Set a random target color from the available colors
+        target_color = random.choice(list(Color.NOT_BLACK))
+        # Make the 2x2 window homogeneous
+        grid[i:i+2, j:j+2] = target_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**:
+   - **Window Scanning**: The function traverses through each possible 2x2 window within the grid.
+   - **Color Matching**: It checks if all cells within a 2x2 window are the same specified target color.
+   - **Pattern Detection**: It identifies 2x2 windows that are homogeneous in color.
+
+2. **Description**:
+   - **Input**: A grid with various colors where a target color is specified.
+   - **Output**: A grid of the same dimensions as the input, with `True` values marking 2x2 windows where all cells match the target color and `False` otherwise.
+
+3. **Implementation**:
+   - `main` function scans the grid using a 2x2 window and checks for color uniformity. The result is a boolean grid.
+   - `generate_input` function creates stochastic examples of grids with random sizes and colors, inserting a few homogeneous 2x2 windows with a random target color to ensure variability in examples.

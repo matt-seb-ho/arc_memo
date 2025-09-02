@@ -1,0 +1,122 @@
+Below is the implementation for the described puzzle, where the task is to identify obstacles along a planned path and navigate around them to ensure the path reaches its intended destination without overwriting existing objects.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input, you will see a grid with a start point marked by a green pixel and an end point marked by a red pixel.
+# There are several obstacles marked by blue pixels. The task is to draw a continuous line from the green start point to the red end point.
+# The line should be drawn in yellow and must avoid any blue obstacles by creating detours around them.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start and end points.
+    # 2. Use a pathfinding algorithm to navigate from start to end, avoiding blue obstacles.
+    # 3. Draw the path in yellow.
+
+    # Identify colors
+    background = Color.BLACK
+    start_color = Color.GREEN
+    end_color = Color.RED
+    obstacle_color = Color.BLUE
+    path_color = Color.YELLOW
+
+    # Find the start and end positions
+    start_position = tuple(np.argwhere(input_grid == start_color)[0])
+    end_position = tuple(np.argwhere(input_grid == end_color)[0])
+
+    # 2. Use a pathfinding algorithm to navigate from start to end, avoiding blue obstacles.
+    def get_neighbors(pos):
+        x, y = pos
+        neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+        return [(nx, ny) for nx, ny in neighbors if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1]]
+
+    def is_obstacle(pos):
+        x, y = pos
+        return input_grid[x, y] == obstacle_color
+
+    # Perform Breadth-First Search (BFS) for shortest path
+    from collections import deque
+    queue = deque([start_position])
+    came_from = {start_position: None}
+
+    while queue:
+        current = queue.popleft()
+
+        if current == end_position:
+            break
+
+        for neighbor in get_neighbors(current):
+            if neighbor not in came_from and not is_obstacle(neighbor):
+                queue.append(neighbor)
+                came_from[neighbor] = current
+
+    # Reconstruct the path
+    path = []
+    step = end_position
+    while step:
+        path.append(step)
+        step = came_from.get(step)
+
+    # 3. Draw the path in yellow.
+    output_grid = input_grid.copy()
+    for x, y in path:
+        if output_grid[x, y] not in {start_color, end_color}:
+            output_grid[x, y] = path_color
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random obstacles and defined start/end points
+    width, height = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Place start and end points
+    start_x, start_y = np.random.randint(1, width-1), np.random.randint(1, height-1)
+    end_x, end_y = np.random.randint(1, width-1), np.random.randint(1, height-1)
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    # Add random obstacles
+    num_obstacles = np.random.randint(5, 10)
+    for _ in range(num_obstacles):
+        obs_x, obs_y = np.random.randint(0, width), np.random.randint(0, height)
+        if grid[obs_x, obs_y] == Color.BLACK:
+            grid[obs_x, obs_y] = Color.BLUE
+
+    # Ensure there is a possible path by removing a few obstacles if needed
+    while not is_path_possible(grid, (start_x, start_y), (end_x, end_y)):
+        obs_x, obs_y = np.random.randint(0, width), np.random.randint(0, height)
+        if grid[obs_x, obs_y] == Color.BLUE:
+            grid[obs_x, obs_y] = Color.BLACK
+
+    return grid
+
+def is_path_possible(grid, start, end):
+    # Simple DFS to check if there's a path from start to end
+    stack = [start]
+    visited = set()
+    while stack:
+        current = stack.pop()
+        if current == end:
+            return True
+        if current in visited:
+            continue
+        visited.add(current)
+        for neighbor in get_neighbors(current):
+            if grid[neighbor] != Color.BLUE and neighbor not in visited:
+                stack.append(neighbor)
+    return False
+
+def get_neighbors(pos):
+    x, y = pos
+    return [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+```
+
+This code defines a puzzle where the goal is to draw a path from a start point to an end point while avoiding obstacles. The `generate_input` function creates a grid with random obstacles and ensures that a path is possible between the start and end points. The `main` function uses a pathfinding algorithm to navigate around obstacles and draw the path.

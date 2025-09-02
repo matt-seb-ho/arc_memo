@@ -1,0 +1,4 @@
+```python
+# concepts: guide object, color propagation, hole filling
+# description: Identify a guide object by its unique color in the grid. Use this color to fill all enclosed regions (holes) within the grid. A hole is defined as a region of background (0) pixels completely surrounded by non-background pixels. The guide object's color is propagated to fill these holes, ensuring that all other non-hole areas remain unchanged.
+```

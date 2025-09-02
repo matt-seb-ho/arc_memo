@@ -1,0 +1,84 @@
+Here's a new puzzle concept and its implementation that involves identifying a guide object and performing a transformation based on its position:
+
+**Puzzle Concept:**
+- **Concepts**: guide object, position-based transformation, spiral fill
+- **Description**: In the input, you will see a grid with various colored objects, including one uniquely colored "guide" object. The goal is to identify this guide object and use its position as the starting point to fill the grid in a spiral pattern with a new color, overwriting existing colors. The output grid will show this spiral pattern starting from the guide object's position.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, position-based transformation, spiral fill
+
+# description:
+# In the input, you will see a grid with various colored objects, including one uniquely colored "guide" object.
+# The goal is to identify this guide object and use its position as the starting point to fill the grid in a 
+# spiral pattern with a new color, overwriting existing colors. The output grid will show this spiral pattern
+# starting from the guide object's position.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the guide object by its unique color.
+    # 2. Determine its position within the grid.
+    # 3. Generate a spiral pattern starting from the guide object's position.
+    # 4. Fill the grid with the spiral pattern using a new color.
+
+    # Step 1: Identify the guide object by its unique color
+    unique_colors = np.unique(input_grid)
+    guide_color = next(color for color in unique_colors if np.sum(input_grid == color) == 1)
+    
+    # Step 2: Determine the position of the guide object
+    guide_position = np.argwhere(input_grid == guide_color)[0]
+    guide_x, guide_y = guide_position
+
+    # Step 3: Generate a spiral pattern starting from the guide object's position
+    def generate_spiral(n, m, start_x, start_y):
+        spiral = np.full((n, m), Color.BLACK)
+        x, y = start_x, start_y
+        dx, dy = 0, 1
+
+        for _ in range(n * m):
+            if 0 <= x < n and 0 <= y < m:
+                spiral[x, y] = Color.PINK
+            if spiral[(x + dx) % n, (y + dy) % m] != Color.BLACK:
+                dx, dy = dy, -dx
+            x, y = x + dx, y + dy
+
+        return spiral
+
+    # Step 4: Fill the grid with the spiral pattern using a new color
+    n, m = input_grid.shape
+    spiral_pattern = generate_spiral(n, m, guide_x, guide_y)
+    output_grid = np.where(spiral_pattern == Color.PINK, Color.PINK, input_grid)
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with various colored objects
+    n, m = np.random.randint(6, 10), np.random.randint(6, 10)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+
+    # Select a unique color for the guide object
+    unique_guide_color = np.random.choice(list(Color.NOT_BLACK - set(grid.flatten())))
+    
+    # Place the guide object at a random position in the grid
+    guide_x, guide_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[guide_x, guide_y] = unique_guide_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Guide Object Identification**: The guide object is identified by finding a color that appears only once in the grid.
+
+2. **Position-Based Transformation**: The position of the guide object is used as the starting point for the transformation.
+
+3. **Spiral Pattern**: A spiral pattern is generated starting from the guide object's position. The pattern overwrites existing colors with a new color (e.g., pink) in a spiral manner.
+
+4. **Randomized Input Generation**: The `generate_input` function creates a grid with a unique guide color placed randomly, ensuring varied inputs for each puzzle instance.
+
+This puzzle tests the player's ability to identify a unique element in a grid and perform a structured transformation based on its position.

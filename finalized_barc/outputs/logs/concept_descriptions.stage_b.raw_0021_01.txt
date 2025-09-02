@@ -1,0 +1,98 @@
+Here's your puzzle implementation based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, horizontal/vertical slicing
+
+# description:
+# Input is a grid containing horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions.
+# Identify these uninterrupted divider lines and use them to partition the grid into separate sub-grids.
+# Each sub-grid is bounded by the divider lines and contains no dividers within it.
+# Output is a list of these non-empty sub-grids, preserving their original content.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the color of the divider lines
+    # 2. Find the positions of these divider lines in both horizontal and vertical directions
+    # 3. Use these lines to partition the grid into sub-grids
+    # 4. Extract and return the non-empty sub-grids
+
+    # Step 1: Identify the divider color
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            color = input_grid[i][j]
+            if np.all(input_grid[i, :] == color) or np.all(input_grid[:, j] == color):
+                divider_color = color
+                break
+        if divider_color:
+            break
+
+    assert divider_color is not None, "No divider color found"
+
+    # Step 2: Find divider line positions
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == divider_color)]
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == divider_color)]
+
+    # Ensure grid boundaries are considered as dividers
+    horizontal_dividers = [0] + horizontal_dividers + [input_grid.shape[1]]
+    vertical_dividers = [0] + vertical_dividers + [input_grid.shape[0]]
+
+    # Step 3: Partition the grid into sub-grids
+    sub_grids = []
+    for x1, x2 in zip(vertical_dividers[:-1], vertical_dividers[1:]):
+        for y1, y2 in zip(horizontal_dividers[:-1], horizontal_dividers[1:]):
+            sub_grid = input_grid[x1:x2, y1:y2]
+            if not np.all(sub_grid == divider_color):  # Ignore empty sub-grids
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate grid dimensions
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly select a divider color
+    divider_color = np.random.choice(Color.NOT_BLACK)
+
+    # Randomly place horizontal and vertical dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    horizontal_positions = randomly_spaced_indices(height, num_horizontal_dividers, border_size=1, padding=2)
+    vertical_positions = randomly_spaced_indices(width, num_vertical_dividers, border_size=1, padding=2)
+
+    for y in horizontal_positions:
+        draw_line(grid, 0, y, direction=(1, 0), color=divider_color)
+
+    for x in vertical_positions:
+        draw_line(grid, x, 0, direction=(0, 1), color=divider_color)
+
+    # Fill regions with random colors
+    for x1, x2 in zip([0] + vertical_positions, vertical_positions + [width]):
+        for y1, y2 in zip([0] + horizontal_positions, horizontal_positions + [height]):
+            region_color = np.random.choice(Color.NOT_BLACK)
+            if region_color != divider_color:
+                grid[x1:x2, y1:y2] = region_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Main Function**:
+    - **Step 1**: Identify the color used for dividers by checking for lines that extend the entire row or column.
+    - **Step 2**: Find positions of all horizontal and vertical dividers, and include the grid's boundaries as dividers.
+    - **Step 3**: Partition the grid into sub-grids using identified divider positions.
+    - **Step 4**: Exclude empty sub-grids (those fully covered by the divider color) and return the remaining as the output.
+
+2. **Generate Input Function**:
+    - Randomly determine grid size and divider color.
+    - Randomly place horizontal and vertical dividers.
+    - Fill each partition with a random color, ensuring it's different from the divider color.

@@ -1,0 +1,86 @@
+Here's the implementation for the new puzzle based on the provided description. The puzzle involves identifying a unique colored object and transforming the grid to highlight this object:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color identification, guide object selection, connected components
+
+# description:
+# The input consists of multiple distinct objects on a grid, each with a unique color. 
+# Identify the guide object as the one whose color is not shared by any other object in the grid. 
+# The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Detect all the objects in the grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8, background=Color.BLACK)
+
+    # Determine the colors of each object
+    color_count = {}
+    for obj in objects:
+        colors = object_colors(obj, background=Color.BLACK)
+        for color in colors:
+            if color not in color_count:
+                color_count[color] = 0
+            color_count[color] += 1
+
+    # Find the unique colored object
+    unique_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            unique_color = color
+            break
+
+    # Create a copy of the input grid for the output
+    output_grid = np.copy(input_grid)
+
+    # Highlight the unique object by changing its color to a specific highlight color (e.g., TEAL)
+    highlight_color = Color.TEAL
+    for obj in objects:
+        if unique_color in object_colors(obj, background=Color.BLACK):
+            mask = obj != Color.BLACK
+            output_grid[mask] = highlight_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random objects, each with a unique color
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # List of possible colors
+    colors = list(Color.NOT_BLACK)
+
+    # Randomly shuffle colors to ensure uniqueness
+    np.random.shuffle(colors)
+
+    # Determine how many objects to create
+    num_objects = np.random.randint(3, min(8, len(colors)))
+
+    # Generate and place objects on the grid
+    for i in range(num_objects):
+        color = colors.pop()  # Use a unique color for each object
+        sprite = random_sprite(n=[2, 3, 4], m=[2, 3, 4], color_palette=[color], connectivity=8)
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1, padding=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            continue  # If no space is available, skip this sprite
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**: The puzzle revolves around identifying unique colors among objects in a grid and using this property to highlight the guide object.
+  
+- **Description**: The `main` function identifies the guide object by searching for the object with a unique color. It transforms the grid by changing the color of this unique object while leaving all other objects unchanged. The `generate_input` function creates a grid with several objects, each having a unique color, ensuring the puzzle can always be solved by the procedure in `main`.
+
+- **Implementation Details**:
+  - `find_connected_components` is used to detect all objects in the grid.
+  - A dictionary `color_count` is used to track the occurrence of each color.
+  - The guide object is highlighted using a predefined highlight color (TEAL) to distinguish it from other objects.
+  - `generate_input` ensures a unique color for each object by using a shuffled list of colors.

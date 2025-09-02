@@ -1,0 +1,112 @@
+Here's an implementation of the puzzle described as "grid partitioning, separator detection, slicing". The puzzle involves identifying full-length separator rows or columns that divide the grid into distinct regions, and then partitioning the grid into contiguous sub-grids.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# Input is a grid containing full-length separator rows or columns of a single color that divide the grid into distinct regions. 
+# Identify these separators and use them to partition the grid into contiguous sub-grids. 
+# Each sub-grid is formed by slicing the input grid between consecutive separators, excluding the separators themselves. 
+# The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the full-length separator rows and columns
+    # 2. Partition the grid into sub-grids based on these separators
+    # 3. Return the list of sub-grids
+
+    height, width = input_grid.shape
+    separator_color = None
+    
+    # Detect the separator color, which is any color forming a full-length line
+    for color in Color.NOT_BLACK:
+        if any(np.all(input_grid[i, :] == color) for i in range(height)) or \
+           any(np.all(input_grid[:, j] == color) for j in range(width)):
+            separator_color = color
+            break
+
+    assert separator_color is not None, "No separator color found."
+
+    # Identify separator rows and columns
+    separator_rows = [i for i in range(height) if np.all(input_grid[i, :] == separator_color)]
+    separator_cols = [j for j in range(width) if np.all(input_grid[:, j] == separator_color)]
+
+    # Partition the grid into sub-grids
+    sub_grids = []
+
+    # Process row partitions
+    row_partitions = [0] + separator_rows + [height]
+    for i in range(len(row_partitions) - 1):
+        row_start = row_partitions[i] + 1
+        row_end = row_partitions[i + 1]
+        if row_start >= row_end:
+            continue
+
+        # Process column partitions within each row partition
+        col_partitions = [0] + separator_cols + [width]
+        for j in range(len(col_partitions) - 1):
+            col_start = col_partitions[j] + 1
+            col_end = col_partitions[j + 1]
+            if col_start >= col_end:
+                continue
+
+            # Extract the sub-grid
+            sub_grid = input_grid[row_start:row_end, col_start:col_end]
+            sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((height, width), np.random.choice(Color.NOT_BLACK))
+
+    # Randomly select separator color
+    separator_color = np.random.choice(Color.NOT_BLACK)
+
+    # Randomly create full-length separators
+    num_separators_rows = np.random.randint(1, 3)
+    num_separators_cols = np.random.randint(1, 3)
+
+    separator_rows = randomly_spaced_indices(max_len=height, n_indices=num_separators_rows, border_size=1, padding=1)
+    separator_cols = randomly_spaced_indices(max_len=width, n_indices=num_separators_cols, border_size=1, padding=1)
+
+    for row in separator_rows:
+        grid[row, :] = separator_color
+
+    for col in separator_cols:
+        grid[:, col] = separator_color
+
+    # Randomly fill the regions with different colors
+    for i in range(len(separator_rows) + 1):
+        for j in range(len(separator_cols) + 1):
+            row_start = 0 if i == 0 else separator_rows[i - 1] + 1
+            row_end = separator_rows[i] if i < len(separator_rows) else height
+            col_start = 0 if j == 0 else separator_cols[j - 1] + 1
+            col_end = separator_cols[j] if j < len(separator_cols) else width
+
+            if row_start < row_end and col_start < col_end:
+                sub_grid_color = np.random.choice(Color.NOT_BLACK)
+                grid[row_start:row_end, col_start:col_end] = sub_grid_color
+
+    return grid
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle involves grid partitioning, separator detection, and slicing, which are achieved by identifying separator rows and columns and using them to partition the grid into sub-grids.
+
+2. **Description**: 
+   - The input grid contains full-length rows or columns of a single color acting as separators.
+   - These separators divide the grid into sub-grids.
+   - The task is to identify these separators, partition the grid into sub-grids, and return a list of sub-grids in their original order.
+
+3. **Implementation**:
+   - `main` function: Identifies the separator color, determines the separator rows and columns, partitions the grid into sub-grids, and returns them.
+   - `generate_input` function: Creates a random grid with randomly placed separator rows and columns, and fills the regions with random colors, ensuring variability.

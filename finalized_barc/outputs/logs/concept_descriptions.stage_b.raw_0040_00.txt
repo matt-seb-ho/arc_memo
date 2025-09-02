@@ -1,0 +1,82 @@
+Here's the implementation of the puzzle as described:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# specific color selection, connected components, filtering
+
+# description:
+# The input consists of multiple objects of various colors on a grid.
+# Identify and select all objects that are composed entirely of a specified target color.
+# Output a grid where only these selected objects are preserved in their original positions and colors,
+# while all other grid cells are set to the background color (0).
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Define the target color which we want to preserve in the output
+    target_color = Color.RED  # For example, assume the target color is RED
+
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+
+    # Create an output grid initialized to the background color
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Iterate over the detected objects
+    for obj in objects:
+        # Check if the object is composed entirely of the target color
+        if np.all(obj[obj != Color.BLACK] == target_color):
+            # Preserve the object in the output grid
+            output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input() -> np.ndarray:
+    # Create a grid of size 10x10 filled with the background color
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Define a random palette of colors including the target color
+    colors = list(Color.NOT_BLACK)
+    target_color = Color.RED  # Example target color
+    random_color_palette = [target_color] + [c for c in colors if c != target_color]
+
+    # Randomly place objects of various colors in the grid
+    for _ in range(5):  # Number of objects to place
+        # Randomly choose dimensions for the object
+        obj_height = np.random.randint(1, 4)
+        obj_width = np.random.randint(1, 4)
+
+        # Create the object
+        obj_color = random.choice(random_color_palette)
+        obj = random_sprite(obj_height, obj_width, color_palette=[obj_color], density=0.7)
+
+        # Try to place the object in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, border_size=1, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue  # If no space is available, skip this object
+
+    return grid
+```
+
+### Explanation
+
+- **Concepts**: The puzzle involves identifying objects composed entirely of a specific target color and preserving only these objects in their original positions while setting all other cells to the background color.
+  
+- **`main` Function**: 
+  - The function first sets a target color (here, `Color.RED` is used as an example).
+  - It identifies connected components in the grid that are monochromatic (i.e., consist of only one color).
+  - It checks each component to see if it's entirely made up of the target color.
+  - Those that match are drawn onto the output grid, which starts as entirely `Color.BLACK`.
+
+- **`generate_input` Function**: 
+  - Creates a 10x10 grid filled initially with `Color.BLACK`.
+  - Randomly generates objects using a color palette including the target color and other colors.
+  - Places these objects onto the grid without overlapping, ensuring some variety in the grid.
+
+This solution maintains the core idea of selecting and preserving objects of a specific color and can be customized by changing the `target_color` as needed for different puzzles.

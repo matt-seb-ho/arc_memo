@@ -1,0 +1,72 @@
+Based on the description provided, we will implement the puzzle that involves identifying a target object and changing its color to match the color of a guide object. This involves detecting connected components and recoloring based on the guide's color.
+
+Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, guide object, connected components
+
+# description:
+# The input consists of a grid with at least two distinct objects: a target object and a guide object.
+# Identify the target object and change its color to match the color of the guide object.
+# The guide object is distinct and serves as the reference for the new color.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all objects in the grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+
+    # Assume the guide object is the smallest object by area
+    guide_object = min(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Get color of the guide object
+    guide_color = input_grid[guide_object != Color.BLACK][0]
+
+    # Assume the target object is the largest object by area
+    # (which is not the guide object)
+    target_object = max(
+        [obj for obj in objects if not np.array_equal(obj, guide_object)],
+        key=lambda obj: np.sum(obj != Color.BLACK)
+    )
+
+    # Create an output grid by copying the input grid
+    output_grid = input_grid.copy()
+
+    # Recolor the target object to guide's color
+    output_grid[target_object != Color.BLACK] = guide_color
+
+    return output_grid
+
+
+def generate_input():
+    # Create a 10x10 grid
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Generate a guide object with a random color
+    guide_color = random.choice(Color.NOT_BLACK)
+    guide_object = random_sprite(2, 2, color_palette=[guide_color])
+
+    # Place the guide object on the grid
+    x, y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    grid = blit_sprite(grid, guide_object, x, y, background=Color.BLACK)
+
+    # Generate a target object with a different random color
+    target_color = random.choice([c for c in Color.NOT_BLACK if c != guide_color])
+    target_object = random_sprite(list(range(3, 5)), list(range(3, 5)), color_palette=[target_color])
+
+    # Place the target object on the grid
+    x, y = random_free_location_for_sprite(grid, target_object, padding=1)
+    grid = blit_sprite(grid, target_object, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation
+
+- **Concepts**: This puzzle involves recoloring a specific target object based on the color of a smaller guide object within the grid. The challenge is to correctly identify and distinguish these objects using geometric and topological analysis.
+- **Description**: The `main` function detects objects in the input grid, identifies the guide and target objects by size, and recolors the target object to match the guide's color. The `generate_input` function creates a grid with a guide object and a target object, ensuring they have distinct colors initially.

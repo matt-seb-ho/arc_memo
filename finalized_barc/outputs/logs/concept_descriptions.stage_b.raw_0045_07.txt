@@ -1,0 +1,80 @@
+To create a puzzle for middle-schoolers involving sliding windows and color presence, let's implement a deterministic transformation. We will use the `common.py` functions as needed for handling colors and grids. Below are the implementations of the `main` and `generate_input` functions for the described puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# sliding window, color presence, pattern matching, window selection
+
+# description:
+# Given an input grid with various colors, slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors.
+# Output the coordinates of the top-left corner of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+
+def main(input_grid: np.ndarray, required_colors: Set[str]) -> Tuple[int, int]:
+    """
+    Slide a 3x3 window over the grid and find the first window that contains all the required colors.
+    Return the coordinates of the top-left corner of this window.
+    """
+
+    # Get dimensions of the grid
+    n, m = input_grid.shape
+
+    # Iterate over all possible 3x3 windows in the grid
+    for i in range(n - 2):
+        for j in range(m - 2):
+            # Extract the 3x3 window
+            window = input_grid[i:i+3, j:j+3]
+            
+            # Flatten the window to a 1D array and convert it to a set of colors
+            window_colors = set(window.flatten())
+            
+            # Check if this window contains all required colors
+            if required_colors.issubset(window_colors):
+                return (i, j)
+
+    # If no window matches the criteria, return an indication (e.g., (-1, -1))
+    return (-1, -1)
+
+
+def generate_input() -> Tuple[np.ndarray, Set[str]]:
+    """
+    Generates a random grid and a set of required colors for the puzzle.
+    The grid will have a size between 5x5 and 10x10, and the required colors will be a random subset of available colors.
+    """
+
+    # Define possible grid size and colors
+    grid_size = random.randint(5, 10)
+    available_colors = list(Color.NOT_BLACK)
+
+    # Create an empty grid
+    grid = np.zeros((grid_size, grid_size), dtype=int)
+
+    # Randomly fill the grid with colors
+    for i in range(grid_size):
+        for j in range(grid_size):
+            grid[i, j] = random.choice(available_colors)
+
+    # Select a random subset of colors as the required colors for the window
+    required_colors_count = random.randint(2, len(available_colors))
+    required_colors = set(random.sample(available_colors, required_colors_count))
+
+    return grid, required_colors
+```
+
+### Explanation:
+
+1. **`main` Function**:
+   - Iterates over every possible top-left corner of a 3x3 window within the grid.
+   - Extracts the 3x3 window and checks if it contains all the colors from the `required_colors` set.
+   - If a valid window is found, returns its top-left corner coordinates.
+   - If no such window is found, returns `(-1, -1)` to indicate failure (though this case should be rare with a properly generated input).
+
+2. **`generate_input` Function**:
+   - Randomly determines the grid size between 5x5 and 10x10.
+   - Fills the grid with random colors chosen from the available colors.
+   - Randomly selects a subset of the available colors to be the required colors.
+
+This puzzle challenges students to think about pattern recognition, sliding windows, and the presence of specific criteria in a localized area of a grid.

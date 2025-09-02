@@ -1,0 +1,93 @@
+Here is a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacle navigation, fixed direction turn, pathfinding
+
+# description:
+# Input is a grid with a path and obstacles. Starting from a given point, navigate the path until an obstacle is encountered. 
+# When an obstacle is hit, turn in the specified direction ('left' or 'right') and continue moving until the path is clear.
+# Resume the original direction once past the obstacle. The output grid shows the path with consistent detours around obstacles, 
+# always turning the same way as specified.
+
+def main(input_grid):
+    output_grid = np.copy(input_grid)
+
+    # Define the colors
+    path_color = Color.RED
+    obstacle_color = Color.GREY
+    start_color = Color.BLUE
+
+    # Find the start position
+    start_x, start_y = np.argwhere(input_grid == start_color)[0]
+
+    # Define the initial direction (right)
+    direction = (0, 1)
+
+    # Define a function to turn left or right
+    def turn(direction, turn_direction):
+        if turn_direction == 'left':
+            return (-direction[1], direction[0])
+        elif turn_direction == 'right':
+            return (direction[1], -direction[0])
+
+    # Move along the path
+    x, y = start_x, start_y
+    while 0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1]:
+        # Move forward
+        x, y = x + direction[0], y + direction[1]
+
+        # Check for obstacles
+        if 0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1] and input_grid[x, y] == obstacle_color:
+            # Turn right
+            direction = turn(direction, 'right')
+            # Move forward with new direction
+            x, y = x + direction[0], y + direction[1]
+            # Continue moving until path is clear
+            while 0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1] and input_grid[x, y] != path_color:
+                x, y = x + direction[0], y + direction[1]
+            # Resume original direction
+            direction = turn(direction, 'left')
+        
+        # Mark the path
+        if 0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1]:
+            output_grid[x, y] = path_color
+
+    return output_grid
+
+def generate_input():
+    # Create a random grid with a path and obstacles
+    width, height = 10, 10
+    grid = np.full((width, height), Color.BLACK)
+
+    # Define colors
+    path_color = Color.RED
+    obstacle_color = Color.GREY
+    start_color = Color.BLUE
+
+    # Randomly place the starting point
+    start_x, start_y = np.random.randint(1, width-1), np.random.randint(1, height-1)
+    grid[start_x, start_y] = start_color
+
+    # Create a simple path
+    for x in range(start_x, width-1):
+        grid[x, start_y] = path_color
+
+    # Place obstacles randomly
+    for _ in range(3):
+        obs_x, obs_y = np.random.randint(1, width-1), np.random.randint(1, height-1)
+        grid[obs_x, obs_y] = obstacle_color
+
+    return grid
+```
+
+### Explanation:
+- **Concepts:** This puzzle involves navigating a path with obstacles and making consistent directional turns when obstacles are encountered.
+- **Description:** The input grid contains a path marked by a specific color and obstacles by another. The task is to navigate the path, turning consistently at obstacles, and mark the path taken in the output grid.
+- **Functions Used:** `np.copy`, `np.argwhere`, and basic numpy indexing are used. Helper functions turn the direction and move along the path.
+- The `generate_input` function creates a grid with a random path and randomly placed obstacles.

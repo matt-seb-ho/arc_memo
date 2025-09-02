@@ -1,0 +1,91 @@
+To design a new puzzle based on the provided description and utilizing the provided `common.py` functions, let's break down the steps:
+
+### Puzzle Description
+
+**Concepts**: Output grid shape, guide object, bounding box, zero-initialized grid.
+
+**Description**: 
+The goal is to determine the output grid's shape based on a specified rule: either a fixed size or derived from a guide object's bounding box. Allocate a new grid with the calculated dimensions, initialized to zero (background color). The output grid's dimensions are independent of the input's specific content but adhere to the defined shape rule.
+
+### Implementation Plan
+
+1. **Determine Output Grid Shape**:
+   - If using a fixed size, output grid is predetermined.
+   - If using a guide object, find the bounding box of the first detected object and use its dimensions for the grid.
+
+2. **Create Output Grid**:
+   - Initialize a new grid with the calculated dimensions, filled with the background color (`Color.BLACK`).
+
+3. **Transformation**:
+   - The output grid does not depend on the input content except for its dimensions if derived from a guide object.
+
+### Code Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# output grid shape, guide object, bounding box, zero-initialized grid
+
+# description:
+# In the input, you may see a grid with several colored shapes scattered throughout. The task is to output a new grid
+# that is either of a fixed size or derived from the bounding box of the largest object detected in the input grid.
+# The output grid is initialized with the background color (black), and contains no content from the input grid.
+
+def main(input_grid):
+    # Determine if we are using a fixed size or derived from an object
+    use_fixed_size = np.random.choice([True, False])
+
+    if use_fixed_size:
+        # Fixed size output grid
+        output_shape = (10, 10)  # Example fixed size
+    else:
+        # Determine bounding box from the largest object
+        objects = detect_objects(input_grid, background=Color.BLACK, monochromatic=False)
+        if objects:
+            # Find the largest object by area
+            largest_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+            # Determine the bounding box of this object
+            sprite = crop(largest_object, background=Color.BLACK)
+            output_shape = sprite.shape
+        else:
+            # Default to a fixed size if no objects are found
+            output_shape = (5, 5)
+
+    # Create the output grid
+    output_grid = np.full(output_shape, Color.BLACK, dtype=int)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a random grid with several colored shapes
+    n = np.random.randint(10, 15)
+    m = np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # Create a few random sprites and place them in the grid
+    num_sprites = np.random.randint(1, 5)
+    for _ in range(num_sprites):
+        w = np.random.randint(2, 6)
+        h = np.random.randint(2, 6)
+        sprite = random_sprite(w, h, color_palette=[np.random.choice(Color.NOT_BLACK)])
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If placement fails, skip this sprite
+            continue
+
+    return grid
+```
+
+### Explanation
+
+- The `main` function either selects a fixed size for the output grid or determines the size based on the largest object in the input grid.
+- The `generate_input` function creates a grid with randomly placed and sized colorful sprites to simulate a variety of input scenarios.
+
+This puzzle challenges students to understand how to determine grid dimensions based on either a fixed choice or the properties of objects within the grid, emphasizing spatial reasoning and detection techniques.

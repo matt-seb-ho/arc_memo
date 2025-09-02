@@ -1,0 +1,447 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+output grid shape, guide object, bounding box, zero-initialized grid
+
+Description: 
+Determine the output grid's shape based on a specified rule: either a fixed size or derived from a guide object's bounding box. Allocate a new grid with the calculated dimensions, initialized to zero (background color). The output grid's dimensions are independent of the input's specific content but adhere to the defined shape rule.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+def detect_objects(grid, _=None, predicate=None, background=Color.BLACK, monochromatic=False, connectivity=None, allowed_dimensions=None, colors=None, can_overlap=False):
+    """
+    Detects and extracts objects from the grid that satisfy custom specification.
+
+    predicate: a function that takes a candidate object as input and returns True if it counts as an object
+    background: color treated as transparent
+    monochromatic: if True, each object is assumed to have only one color. If False, each object can include multiple colors.
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. If None, the connectivity is determined automatically.
+    allowed_dimensions: a list of tuples (n, m) specifying the allowed dimensions of the objects. If None, objects of any size are allowed.
+    colors: a list of colors that the objects are allowed to have. If None, objects of any color are allowed.
+    can_overlap: if True, objects can overlap. If False, objects cannot overlap.
+
+    Returns a list of objects, where each object is a numpy array.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# cropping
+
+# description:
+# In the input you will see a single colored shape, around 4x6 in size, floating in a 12x12 grid of black.
+# To make the output, crop the background out of the image - so the output grid has the same dimensions as the shape.
+
+def main(input_grid):
+    return crop(input_grid, background=Color.BLACK)
+
+def generate_input():
+    # create a roughly 12x12 input grid
+    n = np.random.randint(10, 15)
+    m = np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # create a small random sprite with shape (2-7)x(2-7)
+    w = np.random.randint(2, 8)
+    h = np.random.randint(2, 8)
+    sprite = random_sprite(w, h, color_palette=[np.random.choice(Color.NOT_BLACK)])
+
+    # blit the spite onto a random location on the grid
+    x, y = random_free_location_for_sprite(grid, sprite)
+    blit_sprite(grid, sprite, x, y)
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+
+import numpy as np
+from typing import *
+
+# concepts:
+# alignment, sliding objects
+
+# description:
+# In the input, you should see a black grid with nine 3x3 grey squares randomly placed in it (some of the squares touch a little bit). Each square contains a colored object of a different color, 3-4 cells in area, except for one which is blank. The colored objects are at the border of the 3x3 shape.
+# To make the output, create a 9x9 grey grid. Now place each of the 3x3 squares from the input grid into the output grid. The location of an object is done so that the colored object in the grey square is moved "away" fromm the center square of the output grid in the direction the colored object is in the 3x3 square.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the 3x3 grey squares from the input grid (tricky because sometimes they touch, so we can't use connected components; detect_objects works better)
+    # 2. Create the output grid
+    # 3. Place the 3x3 squares into the output grid by sliding it in the direction of the colored (non-grey) portion
+
+    # step 1: extract the 3x3 squares, which are grey+another color
+    square_length = 3
+    square_objects = detect_objects(input_grid, background=Color.BLACK, allowed_dimensions=[(square_length, square_length)],
+                                    predicate=lambda sprite: np.all(sprite != Color.BLACK) and np.any(sprite == Color.GREY))
+    square_sprites = [crop(obj, background=Color.BLACK) for obj in square_objects]
+
+    assert len(square_sprites) == 9, "There should be exactly 9 3x3 grey squares in the input grid"
+
+    # step 2: create the output grid, which is all grey
+    output_grid = np.full((9, 9), Color.GREY, dtype=int)
+
+    # step 3: place the 3x3 squares into the output grid
+    # for each square, find the "direction" of the colored object in it, and place it in that direction of the output grid.
+
+    # we can ignore the blank square, since the middle is already grey
+    square_sprites = [square for square in square_sprites if not (square == Color.GREY).all()]
+
+    def get_direction_between(point1, point2):
+        '''
+        returns one of (-1, -1), (-1, 0), (-1, 1),
+                       (0, -1), (0, 0), (0, 1),
+                       (1, -1), (1, 0), (1, 1)
+
+        based on the direction from point1 to point2
+        '''
+        x1, y1 = point1
+        x2, y2 = point2
+
+        dx, dy = x2 - x1, y2 - y1
+
+        def sign(x):
+            if x < 0:
+                return -1
+            elif x > 0:
+                return 1
+            else:
+                return 0
+
+        return (sign(dx), sign(dy))
+
+    for square in square_sprites:
+        colored_object_center_of_mass = np.argwhere(square != Color.GREY).mean(axis=0)
+        grey_center_of_mass = np.argwhere(square == Color.GREY).mean(axis=0)
+
+        dx, dy = get_direction_between(grey_center_of_mass, colored_object_center_of_mass)
+
+        # start with the square in the middle of the canvas, which has length 9 (we will slide it afterward)
+        x, y = (9 - square_length)//2, (9 - square_length)//2
+        
+        # slide until we can't anymore
+        while 0 < x < 9 - square_length and 0 < y < 9 - square_length:
+            x += dx
+            y += dy
+
+        blit_sprite(output_grid, square, x=x, y=y)
+
+    return output_grid
+
+
+def generate_input():
+
+    # 1. create nine 3x3 grey squares with colored objects in them.
+    # One is blank. Each of the 8 shapes can be defined by taking a border point, and coloring it and its 4-connected neighbors in a random color.
+    squares = []
+    for x in range(3):
+        for y in range(3):
+            square = np.full((3, 3), Color.GREY, dtype=int)
+
+            # Middle square is all grey (blank square)
+            if (x, y) == (1, 1):
+                squares.append(square)
+                continue
+
+            # color this point and its neighbors in a random color
+            color = np.random.choice([c for c in Color.ALL_COLORS if c != Color.GREY and c != Color.BLACK])
+            square[x, y] = color
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < 3 and 0 <= ny < 3:
+                    square[nx, ny] = color
+
+            squares.append(square)
+
+    # 2. place the squares randomly in the grid.
+    # to do so, we can put each square in a random open location greedily.
+    # placement might fail if there is no open location for a square.
+    # so try repeatedly until we succeed
+    while True:
+        # create a black (14-17)x(14-17) grid
+        n = np.random.randint(14, 18)
+        m = np.random.randint(14, 18)
+        input_grid = np.full((n, m), Color.BLACK, dtype=int)
+        success = True
+        for square in squares:
+            try:
+                x, y = random_free_location_for_sprite(input_grid, square, padding=1, padding_connectivity=4)
+                blit_sprite(input_grid, square, x=x, y=y)
+            except: # no free location
+                success = False
+                break
+
+        if success:
+            return input_grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# repeating pattern, connecting colors
+
+# description:
+# In the input grid, you will see an all black grid with three dots of the same color in a perfect 45 degree diagonal, but equally spaced apart from each other.
+# To create the output grid, connect the outer two of the three dots with a square border shape. The square border contains the two dots as corners, and is centered on the third center dot. Then make another square border that is the same distance (number of background cells) from the existing border as the existing border is from the center dot. Repeat making square borders of the same distance outwards until the grid is filled.
+
+def main(input_grid):
+    # Plan:
+    # 1. get the dots
+    # 2. get the center dot, and the two outer dots
+    # 3. calculate the distance from the center dot of the outer dots.
+    # 4. make a helper function for drawing a square of a certain distance from the center dot
+    # 5. repeat making squares of multiples of that distance until no new cells are filled in on the grid.
+
+    # get a list of locations
+    pixel_xs, pixel_ys = np.where(input_grid != Color.BLACK)
+    pixel_locations = list(zip(list(pixel_xs), list(pixel_ys)))
+    assert len(pixel_locations) == 3
+    
+    # sort by x coordinate
+    pixel0, pixel1, pixel2 = sorted(pixel_locations, key=lambda l: l[0])
+    color = input_grid[pixel0[0], pixel0[1]]
+    width = pixel1[0] - pixel0[0]
+
+    def in_bounds(grid, x, y):
+        return 0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]
+
+    def draw_square_border(grid, x, y, w, h, color):
+        # x, y is the top left corner
+        for dx in range(w+1):
+            # top border
+            if in_bounds(grid, x+dx, y):
+                grid[x+dx, y] = color
+            # bottom border
+            if in_bounds(grid, x+dx, y+h):
+                grid[x+dx, y+h] = color
+        for dy in range(h+1):
+            # left border
+            if in_bounds(grid, x, y+dy):
+                grid[x, y+dy] = color
+            # right border
+            if in_bounds(grid, x+w, y+dy):
+                grid[x+w, y+dy] = color
+
+    output_grid = input_grid.copy()
+    i = 1
+    while True:
+        top_left_x = pixel1[0] - width * i
+        top_left_y = pixel1[1] - width * i
+        w = 2 * (width * i)
+        old_grid = output_grid.copy()
+        draw_square_border(output_grid, top_left_x, top_left_y, w, w, color)
+        if not np.any(old_grid != output_grid):
+            break
+        i += 1
+
+    return output_grid
+
+def generate_input():
+    # 1. make a 28x28 black grid
+    # 2. choose a distance from the center between 1 and 10
+    # 3. make the three initial dots on a grid
+    # 4. blit onto a random spot on the black grid
+    input_grid = np.full((28,28), Color.BLACK)
+    distance = np.random.randint(2, 11)
+    color = np.random.choice(Color.NOT_BLACK)
+    center_x = np.random.randint(distance, 28 - distance)
+    center_y = np.random.randint(distance, 28 - distance)
+    input_grid[center_x, center_y] = color
+    input_grid[center_x - distance, center_y - distance] = color
+    input_grid[center_x + distance, center_y + distance] = color
+    # randomly rotate the input grid sometimes
+    if np.random.rand() < 0.55:
+        input_grid = np.rot90(input_grid)
+
+    return input_grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects, alignment by color
+
+# description:
+# In the input you will see some objects scattered around on a black grid. Each object has a single grey pixel, but everything else is a single other color.
+# To make the output, place each object into the output grid such that the grey pixel is in the center of the output.
+# Equivalently, move the objects to line up all their grey pixels so they overlap.
+# The output grid should be the smallest possible size that contains all the objects (after they have been placed correctly), which for all the inputs here is 3x3.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the objects from the input, convert them into sprites by cropping them
+    # 2. Make a big output grid
+    # 3. Place each sprite into the output grid such that the grey pixel is in the center of the output
+    # 4. Make the output as small as you can to contain all the objects
+
+    # Extract the objects from the input. It is not monochromatic because the grey pixel is different, and they can be connected on the diagonals (connectivity=8)
+    objects = find_connected_components(input_grid, monochromatic=False, connectivity=8)
+
+    # Convert the objects into sprites by cropping them
+    sprites = [crop(obj, background=Color.BLACK) for obj in objects]
+
+    # Make a big output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Place each sprite into the output grid such that the grey pixel is in the center of the output
+    for sprite in sprites:
+        # Find the grey pixel
+        grey_pixel_x, grey_pixel_y = np.argwhere(sprite == Color.GREY)[0]
+
+        # Find the center of the output. We want the grey pixel to end up here.
+        center_x, center_y = output_grid.shape[0] // 2, output_grid.shape[1] // 2
+
+        # Calculate the offset to ensure the grey pixel ends up in the center of the output
+        x, y = center_x - grey_pixel_x, center_y - grey_pixel_y
+        
+        # Place the sprite into the output grid
+        blit_sprite(output_grid, sprite, x, y, background=Color.BLACK)
+
+    # Make the output as small as you can to contain all the objects
+    output_grid = crop(output_grid)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a series of 3x3 objects, each of which has a great pixel at the center, and none of which overlap except for the grey pixels
+    sprites = []
+
+    # To make sure there is no overlap, we keep track of what pixels are already occupied
+    occupied = np.full((3, 3), False)
+
+    n_objects = np.random.randint(2, 4)
+    for _ in range(n_objects):
+        sprite = np.full((3, 3), Color.BLACK)
+        sprite[1, 1] = Color.GREY
+        other_color = random.choice([c for c in Color.NOT_BLACK if c != Color.GREY])
+
+        # Randomly pick a subset of valid pixels to color
+        # To be valid it has to be unoccupied and not grey (it will be black)
+        valid_pixels = np.argwhere(~occupied & (sprite == Color.BLACK))
+        if len(valid_pixels) == 0:
+            break
+
+        n_pixels = np.random.randint(1, len(valid_pixels) + 1)
+        pixels = valid_pixels[np.random.choice(len(valid_pixels), n_pixels, replace=False)]
+        for x, y in pixels:
+            sprite[x, y] = other_color
+            occupied[x, y] = True
+        
+        sprites.append(sprite)
+
+    # Place the sprites randomly on a medium sized canvas but make sure they don't touch each other
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK)
+    for sprite in sprites:
+        x, y = random_free_location_for_sprite(grid, sprite, padding=2, padding_connectivity=8)
+        blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

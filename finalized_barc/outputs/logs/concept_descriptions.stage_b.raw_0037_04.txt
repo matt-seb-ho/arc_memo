@@ -1,0 +1,134 @@
+Certainly! Let's design a puzzle based on the given description of obstacle navigation and fixed direction turns. The middle schoolers will need to understand how to navigate a path, detect obstacles, and apply a consistent rule for detouring around obstacles. Here's how we can implement the puzzle:
+
+### Puzzle Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacle navigation, fixed direction turn, pathfinding
+
+# description:
+# In the input, you will see a grid with a path of a specific color and obstacles of another color.
+# Starting from a given point, navigate the path in a specified direction until an obstacle is encountered.
+# When an obstacle is hit, turn either left or right (specified in the input) and continue moving until the path is clear.
+# Resume the original direction once past the obstacle. The output grid shows the path with consistent detours around obstacles.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Parse the input
+    path_color = Color.BLUE
+    obstacle_color = Color.RED
+    start_color = Color.GREEN
+    turn_direction = 'left'  # Can be 'left' or 'right', assumed for simplicity
+
+    # Find the starting point
+    start_x, start_y = np.argwhere(input_grid == start_color)[0]
+
+    # Define movement directions (dx, dy)
+    directions = {
+        'right': (0, 1),
+        'down': (1, 0),
+        'left': (0, -1),
+        'up': (-1, 0)
+    }
+    direction_order = ['right', 'down', 'left', 'up']
+
+    # Start direction is 'right' for simplicity
+    current_direction = 'right'
+    dx, dy = directions[current_direction]
+
+    # Function to get the next direction when an obstacle is encountered
+    def get_next_direction(cur_dir, turn):
+        index = direction_order.index(cur_dir)
+        if turn == 'left':
+            return direction_order[(index - 1) % 4]
+        else:
+            return direction_order[(index + 1) % 4]
+
+    # Navigate the path
+    x, y = start_x, start_y
+    while True:
+        # Move in the current direction
+        x, y = x + dx, y + dy
+
+        # Check for out of bounds
+        if not (0 <= x < output_grid.shape[0] and 0 <= y < output_grid.shape[1]):
+            break
+
+        # Check if we've reached an obstacle
+        if output_grid[x, y] == obstacle_color:
+            # Turn to avoid obstacle
+            current_direction = get_next_direction(current_direction, turn_direction)
+            dx, dy = directions[current_direction]
+            continue
+
+        # Check if we've reached the end of the path
+        if output_grid[x, y] == Color.BLACK:
+            break
+
+        # Mark the path on the output grid
+        output_grid[x, y] = path_color
+
+    return output_grid
+
+def generate_input():
+    # Create an empty grid
+    width, height = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Define colors
+    path_color = Color.BLUE
+    obstacle_color = Color.RED
+    start_color = Color.GREEN
+
+    # Draw a random path
+    path_length = np.random.randint(5, 10)
+    x, y = np.random.randint(1, width-1), np.random.randint(1, height-1)
+    grid[x, y] = start_color
+
+    current_direction = np.random.choice(['right', 'down'])
+    directions = {
+        'right': (0, 1),
+        'down': (1, 0),
+        'left': (0, -1),
+        'up': (-1, 0)
+    }
+
+    for _ in range(path_length):
+        dx, dy = directions[current_direction]
+        x, y = x + dx, y + dy
+
+        # Ensure the path stays within bounds
+        if not (0 <= x < width and 0 <= y < height):
+            break
+
+        grid[x, y] = path_color
+
+    # Place some obstacles randomly
+    for _ in range(np.random.randint(3, 6)):
+        ox, oy = np.random.randint(1, width-1), np.random.randint(1, height-1)
+        if grid[ox, oy] == Color.BLACK:
+            grid[ox, oy] = obstacle_color
+
+    return grid
+```
+
+### Explanation
+
+- **Concepts**: The puzzle involves navigating a path with obstacles, requiring a consistent method to detour around obstacles by turning left or right.
+- **Description**: The input grid contains a start point, a path, and obstacles. The goal is to navigate this path and avoid obstacles by making consistent turns, then output the completed path.
+- **Main Function**:
+  - Starts from a given point and follows a direction until an obstacle is encountered.
+  - Turns left or right based on the specified rule and continues moving.
+  - Marks the path on the output grid.
+- **Generate Input**:
+  - Creates a randomized grid with a path and obstacles.
+  - Ensures paths and obstacles are placed correctly within the grid. 
+
+This puzzle will challenge students to think about navigation and consistent rules for handling obstacles, developing their logical and spatial reasoning skills.

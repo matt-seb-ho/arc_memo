@@ -1,0 +1,4 @@
+```python
+# concepts: guide object, unique selection, anchor point, hole counting
+# description: Identify a unique guide object based on a distinct attribute (e.g., color or size). Use the guide's anchor point, such as its centroid or top-left corner, as the starting point. From this anchor, count the number of enclosed regions (holes) in the grid. The output is a count of these holes, originating from the guide's position.
+```

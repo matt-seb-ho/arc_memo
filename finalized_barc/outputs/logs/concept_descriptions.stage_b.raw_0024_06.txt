@@ -1,0 +1,70 @@
+To create a puzzle that involves identifying a single connected object in the input grid and recoloring it according to a given color scheme, we'll need to leverage the functions provided in `common.py`. The puzzle will involve detecting connected components in the grid and applying a color transformation to one of the components.
+
+Here's how we can implement this:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# The input grid will contain multiple colored objects. The task is to identify a single connected object randomly and apply a color scheme to recolor the entire object.
+# The color scheme may be a single color applied uniformly or a pattern based on the position within the object.
+# All other grid elements remain unchanged.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+
+    # Select a single object to apply the color scheme
+    chosen_object = random.choice(objects)
+    x, y, width, height = bounding_box(chosen_object)
+
+    # Create a color scheme function, for example, a gradient based on the x coordinate
+    color_scheme = lambda pos: Color.ALL_COLORS[(pos[0] + pos[1]) % len(Color.ALL_COLORS)]
+
+    # Apply the color scheme to the chosen object
+    for x_offset, y_offset in np.argwhere(chosen_object != Color.BLACK):
+        chosen_object[x_offset, y_offset] = color_scheme((x_offset, y_offset))
+
+    # Create the output grid and blit the recolored object onto it
+    output_grid = input_grid.copy()
+    blit_object(output_grid, chosen_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Define the size of the grid
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly generate and place multiple objects in the grid
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj = random_sprite(n=np.random.randint(3, 6), m=np.random.randint(3, 6), color_palette=Color.NOT_BLACK)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1, padding_connectivity=8)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            # If unable to place the object, continue to the next
+            continue
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: This puzzle involves recoloring, connected components, and applying a color scheme.
+2. **Description**: The input grid contains multiple colored objects. The task is to identify a single connected object and apply a color scheme to recolor it.
+3. **`main` Function**: 
+   - Identifies the connected components in the grid.
+   - Selects a single object using random choice.
+   - Applies a color scheme, which is a deterministic function of the position, to recolor the chosen object.
+   - Blits the recolored object back onto the output grid.
+4. **`generate_input` Function**:
+   - Creates a grid of size `n x m`.
+   - Randomly generates and places several objects with random colors on the grid.
+   - Ensures multiple objects are present to provide a meaningful challenge.

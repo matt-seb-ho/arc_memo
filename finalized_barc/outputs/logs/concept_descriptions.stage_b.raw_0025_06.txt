@@ -1,0 +1,85 @@
+Here's a new puzzle that involves grid partitioning, divider lines, and color-based regions. The task is to identify distinct regions separated by divider lines, and produce a grid where each region is represented by a single pixel of the predominant color within that region.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines, which are solid black lines that span the grid.
+# Each region is filled with pixels of a specific color that do not appear in other regions. The task is to identify these regions and treat them as separate entities.
+# The output grid should represent each region with a single pixel of the predominant color within that region.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify divider lines to isolate regions.
+    # 2. Determine the predominant color within each region.
+    # 3. Create an output grid with one pixel per region, using the region's predominant color.
+
+    # 1. Identify divider lines
+    # Find horizontal and vertical black lines that divide the regions
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == Color.BLACK)]
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == Color.BLACK)]
+
+    # Add edges as dividers
+    vertical_dividers = [0] + vertical_dividers + [input_grid.shape[0]]
+    horizontal_dividers = [0] + horizontal_dividers + [input_grid.shape[1]]
+
+    # 2. Determine the predominant color within each region
+    regions_colors = []
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            # Extract the region
+            region = input_grid[vertical_dividers[i]:vertical_dividers[i+1], horizontal_dividers[j]:horizontal_dividers[j+1]]
+
+            # Find the predominant color in the region (ignoring black)
+            unique, counts = np.unique(region[region != Color.BLACK], return_counts=True)
+            if len(unique) > 0:
+                predominant_color = unique[np.argmax(counts)]
+            else:
+                predominant_color = Color.BLACK
+
+            regions_colors.append(predominant_color)
+
+    # 3. Create an output grid with one pixel per region
+    output_grid = np.array(regions_colors).reshape((len(vertical_dividers) - 1, len(horizontal_dividers) - 1))
+    
+    return output_grid
+
+def generate_input():
+    # Generate a grid of random size with divider lines and distinct color regions
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly decide the number of vertical and horizontal regions
+    num_vertical_regions = np.random.randint(2, 5)
+    num_horizontal_regions = np.random.randint(2, 5)
+
+    # Generate random dividers
+    vertical_dividers = randomly_spaced_indices(width, num_vertical_regions - 1, border_size=1, padding=2)
+    horizontal_dividers = randomly_spaced_indices(height, num_horizontal_regions - 1, border_size=1, padding=2)
+
+    # Fill each region with a distinct color
+    colors = np.random.choice(list(Color.NOT_BLACK), (num_vertical_regions, num_horizontal_regions), replace=True)
+    for i, x in enumerate(vertical_dividers + [width]):
+        for j, y in enumerate(horizontal_dividers + [height]):
+            if i > 0 and j > 0:
+                region_color = colors[i-1, j-1]
+                for rx in range(vertical_dividers[i-1], x):
+                    for ry in range(horizontal_dividers[j-1], y):
+                        grid[rx, ry] = region_color
+
+    # Draw divider lines
+    for x in vertical_dividers:
+        draw_line(grid=grid, x=x, y=0, direction=(0, 1), color=Color.BLACK)
+    for y in horizontal_dividers:
+        draw_line(grid=grid, x=0, y=y, direction=(1, 0), color=Color.BLACK)
+
+    return grid
+```
+
+This puzzle challenges students to identify and process distinct regions in a grid, focusing on understanding how divider lines separate different areas and how to determine the predominant color within each partitioned region. The use of randomly generated inputs ensures a variety of scenarios for practicing these concepts.

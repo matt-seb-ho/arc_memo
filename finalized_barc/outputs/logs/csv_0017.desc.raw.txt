@@ -1,0 +1,4 @@
+```python
+# concepts: holes, enclosed regions, flood-fill, background components
+# description: Input consists of a grid with a single object and background (0). Identify holes as fully enclosed 0-regions within the object that are not connected to the grid border. Use flood-fill from the border to detect and exclude non-enclosed regions. The output grid highlights these enclosed holes, typically for further processing or filling.
+```

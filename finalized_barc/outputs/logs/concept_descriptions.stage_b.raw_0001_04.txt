@@ -1,0 +1,93 @@
+Here's an implementation of a puzzle based on the provided description. The task is to identify and fill fully enclosed regions (holes) within objects in a grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# In the input grid, you will see various objects of different colors. These objects may enclose regions of the background color.
+# The task is to identify regions of background color that are fully enclosed by a single object and not connected to the grid border.
+# Fill these "hole" regions with the object's color to produce the output.
+
+def main(input_grid):
+    output_grid = input_grid.copy()
+    background_color = Color.BLACK  # Assuming BLACK is the background
+
+    # Use flood fill from the edges to mark exterior background
+    flooded_grid = input_grid.copy()
+    for x in range(flooded_grid.shape[0]):
+        if flooded_grid[x, 0] == background_color:
+            flood_fill(flooded_grid, x, 0, background_color, -1)
+        if flooded_grid[x, flooded_grid.shape[1] - 1] == background_color:
+            flood_fill(flooded_grid, x, flooded_grid.shape[1] - 1, background_color, -1)
+    for y in range(flooded_grid.shape[1]):
+        if flooded_grid[0, y] == background_color:
+            flood_fill(flooded_grid, 0, y, background_color, -1)
+        if flooded_grid[flooded_grid.shape[0] - 1, y] == background_color:
+            flood_fill(flooded_grid, flooded_grid.shape[0] - 1, y, background_color, -1)
+
+    # Find connected components in the original grid
+    objects = find_connected_components(input_grid, background=background_color, connectivity=8)
+
+    for obj in objects:
+        # Check for interior background regions (holes)
+        interior_mask = object_interior(obj)
+        hole_mask = (flooded_grid == background_color) & interior_mask
+
+        # Fill holes with object's color
+        if np.any(hole_mask):
+            obj_color = obj[np.where(obj != background_color)][0]
+            output_grid[hole_mask] = obj_color
+
+    return output_grid
+
+
+def flood_fill(grid, x, y, target_color, replacement_color):
+    """Simple flood fill algorithm to mark the exterior background."""
+    if grid[x, y] != target_color:
+        return
+    grid[x, y] = replacement_color
+    if x > 0:
+        flood_fill(grid, x - 1, y, target_color, replacement_color)
+    if x < grid.shape[0] - 1:
+        flood_fill(grid, x + 1, y, target_color, replacement_color)
+    if y > 0:
+        flood_fill(grid, x, y - 1, target_color, replacement_color)
+    if y < grid.shape[1] - 1:
+        flood_fill(grid, x, y + 1, target_color, replacement_color)
+
+
+def generate_input():
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    num_objects = np.random.randint(2, 5)
+
+    for _ in range(num_objects):
+        obj_color = np.random.choice(list(Color.NOT_BLACK))
+        n, m = np.random.randint(4, 6), np.random.randint(4, 6)
+        obj = np.full((n, m), obj_color)
+
+        # Create a hollow object by making a hole inside
+        hole_size = np.random.randint(1, min(n, m) - 2)
+        hole_x, hole_y = np.random.randint(1, n - hole_size), np.random.randint(1, m - hole_size)
+        obj[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+
+    return input_grid
+```
+
+### Explanation:
+- **`main` function**: This function performs the transformation of the input grid to the output grid. It marks the exterior background using a flood fill from the borders, identifies holes inside objects, and fills them with the object's color.
+- **`flood_fill` function**: A helper function to mark the exterior background starting from the grid's edges.
+- **`generate_input` function**: It creates random objects with holes and places them on a grid. The objects are generated such that they may enclose regions of the background color.

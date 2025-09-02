@@ -1,0 +1,108 @@
+Certainly! Let's design a puzzle that involves analyzing a sequence of grids to identify a transformation pattern and predict the next state in the sequence. This puzzle will focus on detecting size changes in objects over time.
+
+### Puzzle Details
+
+**Concepts:**
+- Pattern recognition
+- Size transformation
+- Sequence prediction
+
+**Description:**
+The input consists of a sequence of grids representing consecutive time steps with objects, specifically squares, that consistently change in size. The task is to analyze the sequence to detect the size transformation pattern and extrapolate to predict the next grid in the sequence. The output is a single grid that continues the detected pattern logically from the last input grid.
+
+**Example Puzzle Implementation:**
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern recognition, size transformation, sequence prediction
+
+# description:
+# The input consists of a sequence of grids where a square changes its size in a consistent manner (either increasing or decreasing).
+# The task is to detect the size change pattern and predict the next grid in the sequence by applying the detected size change pattern.
+
+def main(input_grids):
+    # The input is a list of grids representing consecutive time steps
+    last_grid = input_grids[-1]
+    
+    # Identify the square object in the last grid
+    objects = find_connected_components(last_grid, monochromatic=True, background=Color.BLACK)
+    assert len(objects) == 1, "exactly one square expected"
+    square = objects[0]
+
+    # Get the bounding box of the square to determine its size
+    x, y, w, h = bounding_box(square)
+    
+    # Calculate the size change pattern from the sequence
+    size_changes = []
+    for i in range(1, len(input_grids)):
+        prev_grid = input_grids[i - 1]
+        curr_grid = input_grids[i]
+        prev_square = find_connected_components(prev_grid, monochromatic=True, background=Color.BLACK)[0]
+        curr_square = find_connected_components(curr_grid, monochromatic=True, background=Color.BLACK)[0]
+        
+        _, _, prev_w, _ = bounding_box(prev_square)
+        _, _, curr_w, _ = bounding_box(curr_square)
+        
+        size_changes.append(curr_w - prev_w)
+    
+    # Determine the most consistent size change
+    size_change = max(set(size_changes), key=size_changes.count)
+
+    # Predict the size of the square in the next grid
+    new_size = max(1, w + size_change)  # Ensure the new size is at least 1
+
+    # Create the next grid
+    grid_size = last_grid.shape
+    next_grid = np.full(grid_size, Color.BLACK)
+
+    # Draw the new square in the center of the grid
+    start_x = (grid_size[0] - new_size) // 2
+    start_y = (grid_size[1] - new_size) // 2
+    for i in range(new_size):
+        for j in range(new_size):
+            next_grid[start_x + i, start_y + j] = Color.TEAL  # Assume the square is teal
+
+    return next_grid
+
+def generate_input():
+    # Randomly choose the size of the grid
+    grid_size = np.random.randint(10, 15)
+    
+    # Randomly choose the initial size of the square
+    initial_size = np.random.randint(2, 5)
+    
+    # Randomly choose the size change (positive for growing, negative for shrinking)
+    size_change = np.random.choice([-1, 1])
+    
+    # Determine the number of steps in the sequence
+    num_steps = np.random.randint(3, 6)
+    
+    # Generate a sequence of grids
+    grids = []
+    current_size = initial_size
+    for _ in range(num_steps):
+        grid = np.full((grid_size, grid_size), Color.BLACK)
+        
+        # Calculate the position to center the square
+        start_x = (grid_size - current_size) // 2
+        start_y = (grid_size - current_size) // 2
+        
+        # Draw the square
+        for i in range(current_size):
+            for j in range(current_size):
+                grid[start_x + i, start_y + j] = Color.TEAL  # Assume the square is teal
+
+        grids.append(grid)
+        
+        # Update the size for the next step
+        current_size = max(1, current_size + size_change)  # Ensure size is at least 1
+    
+    return grids
+```
+
+In this puzzle, we assume a single square object that changes size consistently over time. The solution involves analyzing the size change pattern and predicting the next step. The `generate_input` function creates random sequences of such transformations.

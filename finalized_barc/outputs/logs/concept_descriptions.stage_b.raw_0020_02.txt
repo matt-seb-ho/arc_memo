@@ -1,0 +1,78 @@
+Here's the implementation of the puzzle based on the given description, which involves grid partitioning and slicing:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# Input is a grid containing full-length separator rows or columns of a single color that divide the grid into distinct regions.
+# Identify these separators and use them to partition the grid into contiguous sub-grids.
+# Each sub-grid is formed by slicing the input grid between consecutive separators, excluding the separators themselves.
+# The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect full-length separator rows and columns.
+    # 2. Partition the grid into sub-grids between consecutive separators.
+    # 3. Return the list of sub-grids.
+
+    width, height = input_grid.shape
+    background = Color.BLACK
+
+    # 1. Detecting separator lines
+    vertical_separators = [x for x in range(width) if np.all(input_grid[x, :] == background)]
+    horizontal_separators = [y for y in range(height) if np.all(input_grid[:, y] == background)]
+
+    # Add boundaries as virtual separators
+    vertical_separators = [0] + vertical_separators + [width]
+    horizontal_separators = [0] + horizontal_separators + [height]
+
+    # 2. Extract sub-grids
+    sub_grids = []
+    for i in range(len(vertical_separators) - 1):
+        for j in range(len(horizontal_separators) - 1):
+            x1, x2 = vertical_separators[i], vertical_separators[i + 1]
+            y1, y2 = horizontal_separators[j], horizontal_separators[j + 1]
+
+            # Extracting sub-grid without the separators
+            if x2 > x1 + 1 and y2 > y1 + 1:
+                sub_grid = input_grid[x1+1:x2, y1+1:y2]
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Randomly select the number of separators
+    num_vertical_separators = np.random.randint(1, 4)
+    num_horizontal_separators = np.random.randint(1, 4)
+
+    # Randomly choose separator color
+    separator_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Generate vertical separators
+    vertical_separators = randomly_spaced_indices(width, num_vertical_separators, border_size=1, padding=2)
+    for x in vertical_separators:
+        grid[x, :] = separator_color
+
+    # Generate horizontal separators
+    horizontal_separators = randomly_spaced_indices(height, num_horizontal_separators, border_size=1, padding=2)
+    for y in horizontal_separators:
+        grid[:, y] = separator_color
+
+    return grid
+```
+
+### Explanation
+- **Concepts:** The puzzle involves detecting separator lines and using them to partition a grid into smaller contiguous sub-grids.
+- **Description:** The input grid is divided by full-length separator rows/columns of a single color. The task is to identify these separators, slice the grid into sub-grids between these separators, and return the list of sub-grids.
+- **Main Function:** The `main` function identifies these separator lines and partitions the grid accordingly.
+- **Generate Input:** The `generate_input` function randomly generates a grid with separator rows and columns to create different configurations for input.

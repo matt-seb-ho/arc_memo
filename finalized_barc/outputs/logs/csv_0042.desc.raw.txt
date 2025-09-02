@@ -1,0 +1,4 @@
+```python
+# concepts: guide object, color transfer, line drawing
+# description: Identify a guide object with a unique color in the grid. Use this color to draw a line between two specified points or along a specified path. The line is drawn by overwriting the background cells with the guide object's color. All other non-background cells remain unchanged.
+```

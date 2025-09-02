@@ -1,0 +1,71 @@
+Here is the implementation of the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# The input consists of a grid with various colored objects.
+# To create the output, identify a single connected component (object) within the grid.
+# Apply a given color scheme to recolor the entire object.
+# The color scheme may be a single color or a function that determines the color based on object properties.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=True)
+
+    # Choose a single object to transform (for simplicity, choose the largest one)
+    largest_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Define a color scheme; for simplicity, choose to recolor with a random color from the palette
+    new_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Apply the color scheme to the chosen object
+    largest_object[largest_object != Color.BLACK] = new_color
+
+    # Create the output grid by blitting back all objects
+    output_grid = input_grid.copy()
+    blit_object(output_grid, largest_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size 10x10 with random colored objects
+    grid_size = 10
+    input_grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Generate random objects and place them in the grid
+    num_objects = np.random.randint(3, 6)  # Random number of objects
+    for _ in range(num_objects):
+        obj = random_sprite(n=[2, 3, 4], m=[2, 3, 4], color_palette=[Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW])
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    return input_grid
+```
+
+### Explanation:
+
+1. **Concepts**: This puzzle focuses on identifying connected components in a grid and applying a color scheme to transform one of them. The transformation involves recoloring the largest object detected.
+
+2. **Main Function**: 
+   - Detects all connected components in the input grid.
+   - Selects the largest connected component.
+   - Applies a new color to the selected object using a color scheme (a random color from the available palette).
+   - Outputs the transformed grid with the recolored object.
+
+3. **Generate Input**:
+   - Creates a 10x10 grid filled with black (representing the background).
+   - Randomly generates and places colored objects (sprites) on the grid.
+   - Ensures that the input grid contains several randomly sized and colored objects.
+
+This puzzle encourages students to understand connected components and the application of deterministic transformations based on object properties.

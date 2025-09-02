@@ -1,0 +1,90 @@
+Below is the implementation of the puzzle described:
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# Input is a grid containing various colors, including a target color (cyan). 
+# For each row and column, detect and extract maximal contiguous runs of the target color. 
+# Output these runs as lists of coordinates or slices, representing the start and end of each contiguous sequence of the target color. 
+# Non-target colors and isolated target pixels are ignored. 
+# The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[Tuple[int, int, int, int]]:
+    target_color = Color.TEAL
+    runs = []
+
+    # Detect horizontal runs
+    for row in range(input_grid.shape[0]):
+        start = None
+        for col in range(input_grid.shape[1]):
+            if input_grid[row, col] == target_color:
+                if start is None:
+                    start = col
+            else:
+                if start is not None:
+                    if col - start > 1:
+                        runs.append((row, start, row, col - 1))
+                    start = None
+        if start is not None and input_grid.shape[1] - start > 1:
+            runs.append((row, start, row, input_grid.shape[1] - 1))
+
+    # Detect vertical runs
+    for col in range(input_grid.shape[1]):
+        start = None
+        for row in range(input_grid.shape[0]):
+            if input_grid[row, col] == target_color:
+                if start is None:
+                    start = row
+            else:
+                if start is not None:
+                    if row - start > 1:
+                        runs.append((start, col, row - 1, col))
+                    start = None
+        if start is not None and input_grid.shape[0] - start > 1:
+            runs.append((start, col, input_grid.shape[0] - 1, col))
+
+    return runs
+
+def generate_input() -> np.ndarray:
+    n, m = np.random.randint(5, 15), np.random.randint(5, 15)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Fill the grid with random colors
+    randomly_scatter_points(grid, color=np.random.choice(Color.NOT_BLACK, replace=False), density=0.7)
+
+    # Add some contiguous runs of the target color (cyan)
+    num_runs = np.random.randint(3, 6)
+    for _ in range(num_runs):
+        direction = np.random.choice(['horizontal', 'vertical'])
+        length = np.random.randint(2, min(n, m))
+        if direction == 'horizontal':
+            row = np.random.randint(0, n)
+            start_col = np.random.randint(0, m - length)
+            draw_line(grid, row, start_col, length=length, direction=(0, 1), color=Color.TEAL)
+        else:
+            col = np.random.randint(0, m)
+            start_row = np.random.randint(0, n - length)
+            draw_line(grid, start_row, col, length=length, direction=(1, 0), color=Color.TEAL)
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts:** The primary concepts include detecting contiguous sequences of a specific color (target color "cyan"), scanning rows and columns, and identifying maximal sequences.
+  
+- **Description:** The task requires detecting and extracting maximal contiguous runs of a target color (cyan) within the input grid. The output is a list of tuples representing the start and end coordinates of each contiguous sequence. Non-target colors and isolated target pixels are ignored. 
+
+- **`main` Function:** 
+  - It scans each row and column to identify contiguous runs of the target color.
+  - It uses a start and end index to track contiguous runs, only storing runs longer than one pixel.
+  
+- **`generate_input` Function:**
+  - Creates a random grid size from 5x5 to 15x15.
+  - Fills the grid with random colors, then overlays some contiguous runs of the target color (cyan) in random positions and directions to ensure multiple valid solutions.

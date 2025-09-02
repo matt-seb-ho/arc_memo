@@ -1,0 +1,98 @@
+Certainly! Let's implement the puzzle based on the provided description. We need to partition a grid using full-length separator rows or columns of a single color and then output a list of sub-grids. Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# The input grid contains full-length separator rows or columns of a single color that divide the grid into distinct regions.
+# The task is to identify these separators and use them to partition the grid into contiguous sub-grids.
+# Each sub-grid is formed by slicing the input grid between consecutive separators, excluding the separators themselves.
+# The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    height, width = input_grid.shape
+    separator_color = None
+    
+    # Determine the separator color by finding any row or column with a single color
+    for i in range(height):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            separator_color = input_grid[i, 0]
+            break
+    if separator_color is None:
+        for j in range(width):
+            if np.all(input_grid[:, j] == input_grid[0, j]):
+                separator_color = input_grid[0, j]
+                break
+
+    assert separator_color is not None, "No separator color found"
+    
+    # Find separator rows and columns
+    separator_rows = [i for i in range(height) if np.all(input_grid[i, :] == separator_color)]
+    separator_cols = [j for j in range(width) if np.all(input_grid[:, j] == separator_color)]
+
+    # Ensure the first and last indexes are included for proper slicing
+    if separator_rows[0] != 0:
+        separator_rows = [0] + separator_rows
+    if separator_rows[-1] != height - 1:
+        separator_rows = separator_rows + [height]
+
+    if separator_cols[0] != 0:
+        separator_cols = [0] + separator_cols
+    if separator_cols[-1] != width - 1:
+        separator_cols = separator_cols + [width]
+
+    # Create sub-grids
+    sub_grids = []
+    for i in range(len(separator_rows) - 1):
+        for j in range(len(separator_cols) - 1):
+            row_start, row_end = separator_rows[i] + 1, separator_rows[i + 1]
+            col_start, col_end = separator_cols[j] + 1, separator_cols[j + 1]
+            sub_grid = input_grid[row_start:row_end, col_start:col_end]
+            sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.NOT_BLACK), (height, width))
+
+    # Randomly decide on the separator color
+    separator_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Randomly select the number of separators
+    n_separator_rows = np.random.randint(1, 4)
+    n_separator_cols = np.random.randint(1, 4)
+
+    # Place separator rows and columns
+    separator_rows = randomly_spaced_indices(height, n_separator_rows, border_size=1, padding=1)
+    separator_cols = randomly_spaced_indices(width, n_separator_cols, border_size=1, padding=1)
+
+    for r in separator_rows:
+        grid[r, :] = separator_color
+    for c in separator_cols:
+        grid[:, c] = separator_color
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` function**: 
+  - Detects the separator color by finding any row or column that is fully of one color.
+  - Identifies full-length separator rows and columns.
+  - Slices the input grid into sub-grids between these separators.
+  - Constructs a list of sub-grids, excluding the separators themselves.
+
+- **`generate_input` function**:
+  - Creates a grid of random dimensions with random colors.
+  - Randomly places separator rows and columns with a chosen separator color.
+  - Uses `randomly_spaced_indices` to ensure separators are spaced apart and not adjacent to each other.
+
+This puzzle challenges the solver to figure out how to detect separators and slice the grid accordingly.

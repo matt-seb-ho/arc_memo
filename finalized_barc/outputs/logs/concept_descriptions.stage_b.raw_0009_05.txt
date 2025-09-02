@@ -1,0 +1,90 @@
+Below is the implementation of the puzzle based on the provided description. The puzzle involves identifying a unique guide object based on its unique color among other connected components. Here's the complete code:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, guide object identification
+
+# description:
+# The input grid contains various connected components of different colors.
+# Among all components, identify the guide object which has a unique color that no other object shares.
+# The output grid should only contain this guide object, with all other components ignored.
+
+def main(input_grid):
+    # Find all connected components in the input grid
+    components = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+
+    # Count the occurrences of each color among all components
+    color_count = {}
+    for component in components:
+        color = np.unique(component[component != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    # Identify the unique color that appears only once
+    unique_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            unique_color = color
+            break
+
+    # Find the guide object with the unique color
+    guide_object = None
+    for component in components:
+        if np.any(component == unique_color):
+            guide_object = component
+            break
+
+    # Create an output grid and place the guide object onto it
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+    if guide_object is not None:
+        blit_object(output_grid, guide_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Determine the number of components to generate
+    num_components = np.random.randint(3, 6)
+
+    # Generate random components with random colors
+    colors = list(Color.NOT_BLACK)
+    np.random.shuffle(colors)
+
+    for i in range(num_components):
+        # Create a random sprite
+        sprite_size = np.random.randint(3, 5)
+        sprite = random_sprite(n=sprite_size, m=sprite_size, color_palette=[colors[i]], connectivity=8)
+
+        try:
+            # Place the sprite onto the grid
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If unable to place, retry with a new sprite
+            continue
+
+    # Ensure there is one guide object with a unique color
+    unique_color = colors[num_components - 1]
+    sprite = random_sprite(n=3, m=3, color_palette=[unique_color], connectivity=8)
+    try:
+        x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+        blit_sprite(grid, sprite, x, y)
+    except ValueError:
+        return generate_input()
+
+    return grid
+```
+
+### Key Details:
+- **Concepts**: The puzzle involves selecting the unique color among connected components and identifying the guide object based on this color.
+- **Description**: The input is a grid with connected components of various colors. The output should be a grid with only the guide object, which is the only component with a unique color.

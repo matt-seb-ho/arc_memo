@@ -1,0 +1,86 @@
+Here's an implementation of the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# color runs, recolor, bounding box, symmetry
+
+# description:
+# Identify contiguous horizontal or vertical runs of cyan (color=4) in the grid. For each run, compute k as the minimum of 3 or half the run's length (rounded down).
+# Recolor the first k and last k cells of each run to yellow (color=3), leaving the interior cells unchanged. This transformation applies symmetrically to both ends of each cyan run,
+# effectively capping them with yellow while preserving the run's central portion.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    output_grid = np.copy(input_grid)
+
+    # Iterate over each row and column to find cyan runs
+    for i in range(output_grid.shape[0]):
+        j = 0
+        while j < output_grid.shape[1]:
+            if output_grid[i, j] == Color.CYAN:
+                start = j
+                while j < output_grid.shape[1] and output_grid[i, j] == Color.CYAN:
+                    j += 1
+                end = j
+                length = end - start
+                k = min(3, length // 2)
+                output_grid[i, start:start+k] = Color.YELLOW
+                output_grid[i, end-k:end] = Color.YELLOW
+            else:
+                j += 1
+
+    for j in range(output_grid.shape[1]):
+        i = 0
+        while i < output_grid.shape[0]:
+            if output_grid[i, j] == Color.CYAN:
+                start = i
+                while i < output_grid.shape[0] and output_grid[i, j] == Color.CYAN:
+                    i += 1
+                end = i
+                length = end - start
+                k = min(3, length // 2)
+                output_grid[start:start+k, j] = Color.YELLOW
+                output_grid[end-k:end, j] = Color.YELLOW
+            else:
+                i += 1
+
+    return output_grid
+
+
+def generate_input() -> np.ndarray:
+    # Randomly determine the size of the grid
+    rows = np.random.randint(5, 10)
+    cols = np.random.randint(5, 10)
+
+    # Initialize the grid with a random color
+    grid = np.random.choice(list(Color.ALL_COLORS), (rows, cols))
+
+    # Introduce some contiguous cyan runs
+    num_runs = np.random.randint(1, 5)
+    for _ in range(num_runs):
+        # Decide if the run is horizontal or vertical
+        if np.random.rand() > 0.5:
+            # Horizontal run
+            i = np.random.randint(0, rows)
+            start_j = np.random.randint(0, cols - 3)
+            run_length = np.random.randint(3, cols - start_j)
+            grid[i, start_j:start_j+run_length] = Color.CYAN
+        else:
+            # Vertical run
+            j = np.random.randint(0, cols)
+            start_i = np.random.randint(0, rows - 3)
+            run_length = np.random.randint(3, rows - start_i)
+            grid[start_i:start_i+run_length, j] = Color.CYAN
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts:** The puzzle involves working with contiguous runs of a specific color (cyan) and performing a recoloring operation on the ends of these runs. This involves understanding how to detect contiguous runs and symmetrically modify them.
+  
+- **Description:** The problem is to identify runs of cyan and cap them with yellow at both ends, with the capping length determined by `k`, which is the minimum of 3 or half the run's length. The function `main` applies this transformation deterministically to both horizontal and vertical runs. The `generate_input` function stochastically creates grids with random sizes and random locations of cyan runs, ensuring a variety of input scenarios for testing the transformation.

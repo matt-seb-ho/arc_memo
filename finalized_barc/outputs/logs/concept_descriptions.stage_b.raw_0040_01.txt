@@ -1,0 +1,73 @@
+Here's a new puzzle for you to consider. The puzzle involves detecting monochromatic connected components of a specific color from a grid and filtering them based on a specified target color. The goal is to output a grid where only selected objects composed entirely of the target color are preserved, and all other cells are set to the background color.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# specific color selection, connected components, filtering
+
+# description:
+# The input consists of a grid with multiple objects of various colors. Identify and select all objects
+# that are composed entirely of a specified target color. Output a grid where only these selected objects
+# are preserved in their original positions and colors, while all other grid cells are set to the background color (0).
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Plan:
+    # 1. Detect all monochromatic objects in the input grid.
+    # 2. Filter objects, selecting only those composed entirely of the target color.
+    # 3. Create an output grid with only the selected objects, setting all other cells to background.
+
+    # Step 1: Detect monochromatic objects in the input grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4)
+
+    # Step 2: Filter objects to select those composed entirely of the target color
+    selected_objects = [obj for obj in objects if np.all(obj[obj != Color.BLACK] == target_color)]
+
+    # Step 3: Create output grid with only the selected objects
+    output_grid = np.full_like(input_grid, Color.BLACK)
+    for obj in selected_objects:
+        output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a random grid with multiple colored objects
+    grid_size = (np.random.randint(10, 15), np.random.randint(10, 15))
+    grid = np.full(grid_size, Color.BLACK)
+
+    # Choose a target color for the puzzle
+    target_color = random.choice(list(Color.NOT_BLACK))
+
+    # Populate the grid with random objects, some of which are entirely of the target color
+    num_objects = np.random.randint(5, 10)
+    for _ in range(num_objects):
+        # Generate a random sprite with a mix of colors
+        sprite_color_palette = random.sample(list(Color.NOT_BLACK), np.random.randint(1, 4))
+        sprite = random_sprite(n=3, m=3, color_palette=sprite_color_palette)
+
+        # Randomly decide if this sprite should be of the target color
+        if np.random.rand() < 0.3:
+            sprite[sprite != Color.BLACK] = target_color
+
+        # Try to place the sprite on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=4)
+            grid = blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    return grid, target_color
+```
+
+### Explanation:
+
+- **Concepts:** This puzzle involves identifying connected components that are monochromatic, filtering them based on a specified target color, and producing a grid that displays only those filtered components.
+  
+- **Main Function:** The `main` function uses `find_connected_components` to detect all objects in the grid, then filters these objects to select those entirely composed of the target color. It then creates an output grid where only selected objects are preserved.
+
+- **Input Generation:** The `generate_input` function creates a grid with multiple randomly colored objects. Some objects are composed entirely of the target color to ensure that the puzzle can be solved by identifying and preserving these objects.
+
+This setup provides a challenge for middle-schoolers to explore connected components and filtering based on a specific color, practicing problem-solving and logical reasoning.

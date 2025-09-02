@@ -1,0 +1,4 @@
+```python
+# concepts: obstacle navigation, fixed direction turn, pathfinding
+# description: Input is a grid with a path and obstacles. Starting from a given point, navigate the path until an obstacle is encountered. When an obstacle is hit, turn in the specified direction ('left' or 'right') and continue moving until the path is clear. Resume the original direction once past the obstacle. The output grid shows the path with consistent detours around obstacles, always turning the same way as specified.
+```

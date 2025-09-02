@@ -1,0 +1,4 @@
+```python
+# concepts: orientation detection, recolor, connected components, bounding box
+# description: Input is a single connected object on a grid. Determine the object's orientation by identifying the missing corner in its bounding box (top-left, top-right, bottom-left, bottom-right). Recolor the entire object uniformly based on this orientation using a fixed color map: top-left to red (3), top-right to yellow (4), bottom-left to green (2), and bottom-right to blue (1). The background and any other grid content remain unchanged.
+```

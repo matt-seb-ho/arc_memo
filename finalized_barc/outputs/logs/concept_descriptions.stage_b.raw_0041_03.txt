@@ -1,0 +1,72 @@
+Certainly! Let's create a new puzzle based on the description you've provided. We'll design a puzzle where the middle schoolers have to identify a guide object and use it as a starting point for a specific transformation.
+
+### Puzzle Description:
+
+**Concepts:**
+- Guide object identification
+- Position-based transformation
+- Pattern identification
+
+**Description:**
+In the input, you will find a grid filled with colored pixels and one distinct "guide" object with a unique color (e.g., TEAL). The task is to identify this guide object and apply a transformation starting from its position. The transformation involves changing all pixels in the same row and column as the guide object to a new color (e.g., RED), except for the guide object itself.
+
+Here's how this puzzle can be implemented:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# Concepts:
+# guide object, position-based transformation, row and column manipulation
+
+# Description:
+# In the input, you will see a grid with various colored pixels and a distinct guide object of a unique color (e.g., TEAL).
+# The task is to locate the guide object and transform all other pixels in the same row and column to a new color (e.g., RED),
+# leaving the guide object itself unchanged.
+
+def main(input_grid):
+    # Find the guide object, which is the only one with the color TEAL
+    guide_objects = detect_objects(grid=input_grid, colors=[Color.TEAL], monochromatic=True, connectivity=4)
+    assert len(guide_objects) == 1, "There should be exactly one guide object"
+    
+    guide_object = guide_objects[0]
+    guide_x, guide_y, _, _ = bounding_box(guide_object, background=Color.BLACK)
+
+    # Create the output grid as a copy of the input grid
+    output_grid = input_grid.copy()
+
+    # Change all pixels in the same row and column as the guide object to RED
+    output_grid[guide_x, :] = Color.RED
+    output_grid[:, guide_y] = Color.RED
+
+    # Restore the guide object to its original color
+    output_grid[guide_x, guide_y] = Color.TEAL
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid of random size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # Randomly fill the grid with colors
+    for i in range(n):
+        for j in range(m):
+            grid[i, j] = np.random.choice(list(Color.NOT_BLACK))
+
+    # Select a random position for the guide object
+    guide_x, guide_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[guide_x, guide_y] = Color.TEAL
+
+    return grid
+```
+
+### Explanation:
+
+- **Guide Object Identification:** The guide object is identified by its unique color, TEAL, using `detect_objects`.
+- **Transformation:** Once the guide object's position is known, the transformation changes all pixels in the same row and column to RED, while keeping the guide object TEAL.
+- **Generate Input:** The `generate_input` function creates a random grid with various colors and places a single TEAL pixel as the guide object.
+
+This puzzle encourages students to understand object detection, grid manipulation, and the concept of row and column transformations, all derived from identifying and using a guide object.

@@ -1,0 +1,89 @@
+To implement the puzzle for detecting and normalizing the orientation of a pointer-shaped object, we'll follow these steps:
+
+1. **Generate Input:**
+   - Create a grid with a single pointer-shaped object on a background.
+   - Randomly choose the size, shape, and orientation of the pointer.
+
+2. **Determine Pointer's Orientation:**
+   - Find the pointer object in the grid using connected components.
+   - Calculate the centroid of the pointer.
+   - Identify the tip of the pointer (usually the most extreme point in a certain direction).
+   - Compute the vector from the centroid to the tip to determine its orientation.
+
+3. **Normalize Orientation:**
+   - Rotate and/or flip the pointer to match a canonical orientation (e.g., pointing upwards).
+   - Quantize the direction into one of the cardinal directions (N, S, E, W).
+
+4. **Implement `main` and `generate_input`:**
+    - `main`: Perform the transformation and output the determined direction.
+    - `generate_input`: Create random pointer-shaped objects and place them on the grid.
+
+Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# Input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation.
+# Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W).
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Find the pointer object in the input grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    assert len(objects) == 1  # Ensure there is only one object
+    pointer = objects[0]
+
+    # Compute the centroid of the pointer
+    pointer_pixels = np.argwhere(pointer != Color.BLACK)
+    centroid = np.mean(pointer_pixels, axis=0)
+
+    # Determine the tip of the pointer (farthest from the centroid)
+    distances = np.linalg.norm(pointer_pixels - centroid, axis=1)
+    tip_index = np.argmax(distances)
+    tip_location = pointer_pixels[tip_index]
+
+    # Compute the vector from centroid to the tip
+    vector = tip_location - centroid
+
+    # Quantize the vector to one of the cardinal directions
+    if abs(vector[0]) > abs(vector[1]):
+        direction = 'E' if vector[0] > 0 else 'W'
+    else:
+        direction = 'S' if vector[1] > 0 else 'N'
+
+    # Return the direction
+    return direction
+
+def generate_input():
+    # Create a grid with random dimensions
+    width, height = np.random.randint(5, 15, size=2)
+    input_grid = np.full((width, height), Color.BLACK)
+
+    # Choose a random color for the pointer
+    pointer_color = np.random.choice(Color.NOT_BLACK)
+
+    # Generate a pointer-shaped sprite
+    pointer_length = np.random.randint(3, min(width, height) // 2)
+    pointer_sprite = np.full((pointer_length, pointer_length), pointer_color)
+    tip_index = np.random.choice([(0, pointer_length - 1), (pointer_length - 1, 0), 
+                                  (pointer_length - 1, pointer_length - 1), (0, 0)])
+    pointer_sprite[tip_index] = Color.BLACK
+
+    # Place the pointer in a random location on the grid
+    x, y = random_free_location_for_sprite(input_grid, pointer_sprite, padding=1)
+    blit_sprite(input_grid, pointer_sprite, x, y)
+
+    return input_grid
+```
+
+This implementation detects the orientation of a pointer object on a grid and determines its facing direction. The `generate_input` function creates random pointer shapes to test the transformation.

@@ -1,0 +1,93 @@
+## Puzzle Implementation
+
+In this puzzle, you will identify a distinct guide object within the grid, which will be used as a starting point for a transformation. The guide object is determined by its unique color, and the transformation involves rotating all other objects around this guide object by 90 degrees clockwise.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, rotation, position-based transformation
+
+# description:
+# In the input, you will see a grid with various colored objects. One of these objects is the guide, identified by its unique color.
+# To make the output, use the guide object's position as the pivot to rotate all other objects by 90 degrees clockwise around it.
+
+def main(input_grid):
+    # Detect all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Identify the guide object by its unique color
+    color_counts = {}
+    for obj in objects:
+        color = object_colors(obj, background=Color.BLACK)[0]
+        if color not in color_counts:
+            color_counts[color] = 0
+        color_counts[color] += 1
+    
+    # The guide object is the one with a unique color
+    guide_color = next(color for color, count in color_counts.items() if count == 1)
+    guide_object = next(obj for obj in objects if guide_color in object_colors(obj, background=Color.BLACK))
+    
+    # Find the position of the guide object
+    guide_x, guide_y, _, _ = bounding_box(guide_object, background=Color.BLACK)
+
+    # Prepare the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Rotate each object around the guide object's position
+    for obj in objects:
+        if guide_color in object_colors(obj, background=Color.BLACK):
+            blit_object(output_grid, obj, background=Color.BLACK)
+        else:
+            # Calculate the object's center
+            x, y, w, h = bounding_box(obj, background=Color.BLACK)
+            center_x, center_y = x + w // 2, y + h // 2
+
+            # Calculate new position after 90 degrees clockwise rotation around the guide object
+            new_x = guide_x - (center_y - guide_y)
+            new_y = guide_y + (center_x - guide_x)
+
+            # Translate the object to the new position
+            translated_obj = translate(obj, new_x - x, new_y - y, background=Color.BLACK)
+            blit_object(output_grid, translated_obj, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly select colors, ensuring one is unique
+    num_objects = np.random.randint(3, 6)
+    colors = np.random.choice(Color.NOT_BLACK, num_objects + 1, replace=False)
+    guide_color = colors[0]
+    other_colors = colors[1:]
+
+    # Create and place a guide object
+    guide_sprite = random_sprite(2, 2, color_palette=[guide_color], symmetry='not_symmetric')
+    x, y = random_free_location_for_sprite(grid, guide_sprite, background=Color.BLACK, padding=1)
+    blit_sprite(grid, guide_sprite, x, y)
+
+    # Create and place other objects
+    for color in other_colors:
+        sprite_size = np.random.randint(2, 4)
+        sprite = random_sprite(sprite_size, sprite_size, color_palette=[color], symmetry='not_symmetric')
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1)
+        blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves detecting a unique guide object and using its position as a pivot to rotate other objects.
+- **Input/Output Description**: The input grid contains various colored objects, including a uniquely colored guide object. The output grid results from rotating all non-guide objects 90 degrees clockwise around the guide object's position.
+- **Implementation Details**: 
+  - Use `find_connected_components` to detect objects.
+  - Identify the guide object by its unique color.
+  - Compute the new position for each non-guide object using a rotation transformation around the guide object's position.
+  - Use `translate` and `blit_object` to apply transformations and build the output grid.
+- **Random Input Generation**: Ensures at least one unique guide object and several other objects of different colors, placed randomly on the grid.

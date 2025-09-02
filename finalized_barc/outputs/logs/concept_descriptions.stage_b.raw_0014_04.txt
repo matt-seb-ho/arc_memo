@@ -1,0 +1,90 @@
+Here's an implementation of the puzzle described, using the given `common.py` library. The puzzle involves identifying connected components in a grid, determining their colors, and then highlighting or isolating the object whose color is unique.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, object identification, guide object
+
+# description:
+# In the input grid, you will see various objects each having a different color. 
+# The task is to identify all connected components and determine their colors. 
+# Select the object whose color is unique (not shared by any other object) as the guide object.
+# The output should be the grid with only the guide object highlighted, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+
+    # Map colors to the number of objects with that color
+    color_count = {}
+    for obj in objects:
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    # Identify the unique color (appears exactly once)
+    unique_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            unique_color = color
+            break
+
+    # Create the output grid with the same dimensions, filled with black
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Highlight the guide object (unique color)
+    for obj in objects:
+        if unique_color in obj:
+            blit_object(output_grid, obj, background=Color.BLACK)
+            break
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random dimensions
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    # Choose a subset of colors to use
+    colors = np.random.choice(list(Color.NOT_BLACK), size=np.random.randint(3, 6), replace=False)
+
+    # Place random objects with these colors
+    for color in colors:
+        sprite = random_sprite(n=np.random.randint(2, 5), m=np.random.randint(2, 5), color_palette=[color], density=0.5)
+        try:
+            x, y = random_free_location_for_sprite(input_grid, sprite, padding=1)
+            blit_sprite(input_grid, sprite, x=x, y=y)
+        except ValueError:
+            continue
+
+    # Ensure at least one color is unique
+    unique_color = np.random.choice(colors)
+    unique_sprite = random_sprite(n=np.random.randint(2, 5), m=np.random.randint(2, 5), color_palette=[unique_color], density=0.5)
+    try:
+        x, y = random_free_location_for_sprite(input_grid, unique_sprite, padding=1)
+        blit_sprite(input_grid, unique_sprite, x=x, y=y)
+    except ValueError:
+        return generate_input()
+
+    return input_grid
+```
+
+### Explanation:
+
+- **Concepts**: This puzzle involves identifying unique colors from connected components in a grid and isolating the corresponding object.
+- **Description**: The task is to find the unique color in the grid and isolate the object with that color, while keeping other objects unchanged.
+- **`main` Function**:
+  - Uses `find_connected_components` to identify objects.
+  - Counts occurrences of each color to find a unique one.
+  - Creates an output grid where only the object with the unique color is highlighted.
+- **`generate_input` Function**:
+  - Creates a grid and populates it with objects having random colors.
+  - Ensures at least one color is unique by adding an extra object with that color.
+
+This implementation uses the `common.py` functions effectively to manipulate and analyze the grid, ensuring the puzzle's requirement of identifying and isolating a uniquely colored object is met.

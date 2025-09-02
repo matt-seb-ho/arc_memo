@@ -1,0 +1,93 @@
+Here is a new puzzle implementation based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole filling, guide object, target object, enclosed regions, non-overlapping placement
+
+# description:
+# The input consists of a guide object with enclosed holes and a separate target object. Identify interior holes within the guide object (regions not connected to the border).
+# Fill these holes using the target object by fitting its pixels into the hole geometry without overlapping existing non-background pixels.
+# Continue filling until all holes are filled or no more legal placements are possible. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+def main(input_grid):
+    # Detect the guide and target objects
+    objects = detect_objects(input_grid, monochromatic=False, connectivity=8)
+    
+    # Assume the first object is the guide and the second is the target
+    guide = objects[0]
+    target = objects[1]
+
+    # Create a copy of the input grid for the output
+    output_grid = input_grid.copy()
+
+    # Find the interior holes in the guide object
+    interior_mask = object_interior(guide, background=Color.BLACK)
+    guide_mask = guide != Color.BLACK
+    holes_mask = interior_mask & ~guide_mask
+
+    # Extract the bounding box for the guide object
+    guide_x, guide_y, guide_width, guide_height = bounding_box(guide)
+
+    # Create a cropped version of the guide to work with
+    cropped_guide = crop(guide, background=Color.BLACK)
+
+    # Fill the holes using the target object
+    def fill_holes(cropped_guide, target):
+        target_sprite = crop(target, background=Color.BLACK)
+        for x, y in np.argwhere(holes_mask):
+            x_offset = x - guide_x
+            y_offset = y - guide_y
+            try:
+                # Check if the target can fit in the current hole without overlapping
+                if np.all((cropped_guide[x_offset:x_offset + target_sprite.shape[0], y_offset:y_offset + target_sprite.shape[1]] == Color.BLACK) | (target_sprite == Color.BLACK)):
+                    blit_sprite(cropped_guide, target_sprite, x_offset, y_offset, background=Color.BLACK)
+            except ValueError:
+                # If placement is not possible, continue to next hole
+                continue
+
+    fill_holes(cropped_guide, target)
+
+    # Blit the updated guide back to the output grid
+    blit_sprite(output_grid, cropped_guide, guide_x, guide_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a random size grid
+    grid_size = np.random.randint(15, 25)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Generate a random guide object with enclosed holes
+    guide_size = np.random.randint(10, 15)
+    guide = random_sprite(guide_size, guide_size, density=0.6, color_palette=[Color.GREY], background=Color.BLACK)
+
+    # Create holes inside the guide
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 5)
+        hole = random_sprite(hole_size, hole_size, density=0.8, color_palette=[Color.BLACK], background=Color.GREY)
+        hole_x, hole_y = np.random.randint(1, guide_size - hole_size, size=2)
+        guide[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = hole
+
+    # Blit the guide object onto the grid
+    guide_x, guide_y = random_free_location_for_sprite(grid, guide, padding=1)
+    blit_sprite(grid, guide, guide_x, guide_y, background=Color.BLACK)
+
+    # Generate a random target object
+    target_size = np.random.randint(2, 4)
+    target = random_sprite(target_size, target_size, density=0.7, color_palette=[Color.RED], background=Color.BLACK)
+
+    # Blit the target object onto the grid at a random free location
+    target_x, target_y = random_free_location_for_sprite(grid, target, padding=1)
+    blit_sprite(grid, target, target_x, target_y, background=Color.BLACK)
+
+    return grid
+```
+
+This puzzle involves detecting a guide object with enclosed holes and filling those holes using a separate target object. The `generate_input` function creates random guide objects with holes and a target object placed randomly in the grid. The `main` function identifies the holes and attempts to fill them using the target object, ensuring no overlaps with existing non-background pixels.

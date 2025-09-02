@@ -1,0 +1,66 @@
+Let's implement the puzzle based on the provided description. The puzzle involves scanning a grid and checking for specific patterns (2x2 windows with all cells matching a target color). We will implement two functions: `main` for the transformation and `generate_input` for generating stochastic input grids.
+
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# Input is a grid with various colors. For each 2x2 window in the grid, check if all cells match a specified target color.
+# Return a grid of the same size where each 2x2 window is True if every cell matches the target color, otherwise False.
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Create a boolean output grid of the same size as input grid
+    output_grid = np.zeros_like(input_grid, dtype=bool)
+    
+    # Define the dimensions of the grid
+    rows, cols = input_grid.shape
+
+    # Iterate through each 2x2 window
+    for i in range(rows - 1):
+        for j in range(cols - 1):
+            # Extract the 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+            
+            # Check if all elements in the window match the target color
+            if np.all(window == target_color):
+                # Mark the top-left corner of the 2x2 window as True
+                output_grid[i, j] = True
+    
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Randomly choose the grid dimensions between 5x5 and 10x10
+    n, m = random.randint(5, 10), random.randint(5, 10)
+
+    # Create an empty grid
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly select a target color from the available colors (excluding black)
+    target_color = random.choice(Color.NOT_BLACK)
+
+    # Fill the grid with random colors
+    for i in range(n):
+        for j in range(m):
+            grid[i, j] = random.choice(Color.NOT_BLACK)
+
+    return grid, target_color
+```
+
+### Explanation:
+- **Main Function**:
+  - Iterates through each possible 2x2 window in the grid.
+  - Checks if all elements in the window are the same as the `target_color`.
+  - Marks the top-left corner of the window in the `output_grid` as `True` if the condition is met.
+
+- **Generate Input Function**:
+  - Generates a grid of random dimensions between 5x5 and 10x10.
+  - Fills the grid with random colors from the available color set.
+  - Randomly selects a target color, ensuring it's not black, to check against in the `main` function.
+
+This puzzle challenges students to understand pattern detection within a 2D grid using window scanning techniques.

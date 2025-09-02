@@ -1,0 +1,69 @@
+Let's create a new puzzle based on the concepts of boolean masks, predicate evaluation, pattern recognition, and template creation. We'll use the provided common functions to generate the puzzle.
+
+### Puzzle Description
+
+**Concepts:** boolean mask, predicate evaluation, pattern recognition, template creation
+
+**Description:** 
+The input is a grid region (block) and a predicate function. Evaluate the predicate at each cell in the block to produce a boolean mask, where each mask cell is True if the predicate is satisfied at that location, otherwise False. This mask serves as a reusable template for identifying the pattern in other grid regions.
+
+Here's how we can implement this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# boolean mask, predicate evaluation, pattern recognition, template creation
+
+# description:
+# Input is a grid region (block) and a predicate function. Evaluate the predicate at each cell in the block to produce a boolean mask,
+# where each mask cell is True if the predicate is satisfied at that location, otherwise False. This mask serves as a reusable template
+# for identifying the pattern in other grid regions.
+
+def main(input_grid):
+    # Define a simple predicate function for demonstration.
+    # This predicate returns True if the color is not black.
+    def predicate(color):
+        return color != Color.BLACK
+
+    # Initialize an output grid with the same shape as the input grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Evaluate the predicate function on each cell of the input grid
+    mask = np.vectorize(predicate)(input_grid)
+
+    # Fill the corresponding cells in the output grid with a color (e.g., yellow) where the mask is True
+    output_grid[mask] = Color.YELLOW
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a random grid size
+    n, m = np.random.randint(5, 15), np.random.randint(5, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly scatter a few colors into the grid
+    num_colors = np.random.randint(1, 5)
+    colors = np.random.choice(list(Color.NOT_BLACK), num_colors, replace=False)
+
+    for color in colors:
+        randomly_scatter_points(grid, color=color, density=0.3)
+
+    return grid
+```
+
+### Explanation
+
+- **Predicate Function:** We define a simple predicate function that checks if a cell's color is not black. This is a placeholder and can be replaced with any logical condition.
+  
+- **Boolean Mask:** Using `np.vectorize`, we apply the predicate to each cell in the input grid to produce a boolean mask.
+
+- **Output Grid:** We create an output grid of the same size as the input grid. For each `True` value in the mask, we set the corresponding cell in the output grid to a specific color (e.g., yellow), highlighting the pattern identified by the predicate.
+
+- **Input Generation:** The `generate_input` function creates a grid filled with black and randomly scatters some non-black colors. This provides a varied input to test the pattern recognition and template creation.
+
+This puzzle encourages students to understand how predicates can be used to identify patterns and how boolean masks can simplify complex tasks in grid transformations.

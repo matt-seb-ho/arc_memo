@@ -1,0 +1,4 @@
+```python
+# concepts: contiguous run detection, row/column scanning, maximal sequences, color filtering
+# description: Input is a grid containing various colors, including a target color (cyan). For each row and column, detect and extract maximal contiguous runs of the target color. Output these runs as lists of coordinates or slices, representing the start and end of each contiguous sequence of the target color. Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+```

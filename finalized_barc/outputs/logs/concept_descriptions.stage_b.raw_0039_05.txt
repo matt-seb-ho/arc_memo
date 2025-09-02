@@ -1,0 +1,109 @@
+Certainly! Let's create a new puzzle based on the concepts of "obstacles," "path blocking," and "line drawing." The puzzle will involve drawing a line from a start point to an end point while avoiding obstacles, ensuring no part of the line overlaps with any obstacle.
+
+Here's the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing
+
+# description:
+# In the input, you will see a grid with a start point marked in green and an endpoint marked in red, along with several obstacles in grey.
+# Draw a path from the start point to the endpoint using blue, avoiding the obstacles by navigating around them.
+# The output grid should show the path drawn from the start to the endpoint while all other grid content remains unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start and end points
+    # 2. Use a pathfinding algorithm (e.g., BFS) to find a path from start to end avoiding obstacles
+    # 3. Draw the path on the grid using the color blue
+
+    # Identify the start (green) and end (red) points
+    start_point = np.argwhere(input_grid == Color.GREEN)[0]
+    end_point = np.argwhere(input_grid == Color.RED)[0]
+
+    # Identify obstacle positions
+    obstacle_positions = np.argwhere(input_grid == Color.GREY)
+
+    # Copy the grid to the output
+    output_grid = np.copy(input_grid)
+
+    # Pathfinding function
+    def bfs_find_path(start, end, obstacles):
+        # Queue for BFS
+        queue = [start]
+        visited = set()
+        paths = {tuple(start): []}
+
+        while queue:
+            current = queue.pop(0)
+            if tuple(current) in visited:
+                continue
+            visited.add(tuple(current))
+
+            # If we reach the endpoint, return the path
+            if np.array_equal(current, end):
+                return paths[tuple(current)]
+
+            # Explore neighboring positions
+            for direction in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                neighbor = current + direction
+                if (0 <= neighbor[0] < input_grid.shape[0]) and (0 <= neighbor[1] < input_grid.shape[1]):
+                    if (tuple(neighbor) not in visited) and (tuple(neighbor) not in map(tuple, obstacles)):
+                        queue.append(neighbor)
+                        paths[tuple(neighbor)] = paths[tuple(current)] + [neighbor]
+
+        return None
+
+    # Find path avoiding obstacles
+    path = bfs_find_path(start_point, end_point, obstacle_positions)
+
+    # Draw the path on the output grid
+    if path:
+        for step in path:
+            output_grid[step[0], step[1]] = Color.BLUE
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid of random size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly place the start point (green)
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[start_x, start_y] = Color.GREEN
+
+    # Randomly place the end point (red), ensuring it's not the same as the start point
+    end_x, end_y = start_x, start_y
+    while end_x == start_x and end_y == start_y:
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[end_x, end_y] = Color.RED
+
+    # Scatter some obstacles (grey) on the grid, avoiding start and end points
+    obstacle_density = np.random.uniform(0.1, 0.2)
+    for _ in range(int(obstacle_density * n * m)):
+        while True:
+            obs_x, obs_y = np.random.randint(0, n), np.random.randint(0, m)
+            if grid[obs_x, obs_y] == Color.BLACK:
+                grid[obs_x, obs_y] = Color.GREY
+                break
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**: 
+  - The puzzle involves pathfinding and obstacle avoidance.
+  - The transformation involves drawing a line from a start to an endpoint while avoiding obstacles.
+
+- **Description**:
+  - The input grid contains a start point (green), an endpoint (red), and several obstacles (grey).
+  - The goal is to draw a path from the start to the endpoint using blue, avoiding the grey obstacles.
+  - The `main` function uses BFS for pathfinding, ensuring the path avoids obstacles.
+  - The `generate_input` function creates random grids with a start, an endpoint, and some obstacles.

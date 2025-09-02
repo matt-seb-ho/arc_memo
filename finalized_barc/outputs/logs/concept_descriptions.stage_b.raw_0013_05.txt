@@ -1,0 +1,71 @@
+Here is an implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input grid contains a single object, which is a contiguous region of non-background color, that may fully enclose areas of background color (holes).
+# The transformation involves identifying these holes, which are regions of background color fully enclosed by the object, and not touching the grid border.
+# The output grid should have these holes marked or filled by a target color, preserving the enclosing object and any other non-hole regions.
+
+def main(input_grid):
+    # Identify all connected components in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+    output_grid = input_grid.copy()
+
+    # Assume there's only one main object in the grid
+    main_object = objects[0]
+    interior_mask = object_interior(main_object, background=Color.BLACK)
+    boundary_mask = object_boundary(main_object, background=Color.BLACK)
+    holes = interior_mask & ~boundary_mask
+
+    # Fill the holes with the target color, e.g., Color.RED
+    for x, y in np.argwhere(holes):
+        output_grid[x, y] = Color.RED
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid of size 15x15 with a single object enclosing potential holes
+    grid_size = 15
+    grid = np.zeros((grid_size, grid_size), dtype=int)
+
+    # Generate a random object with potential holes
+    obj_size = np.random.randint(5, 10)
+    object_sprite = random_sprite(obj_size, obj_size, color_palette=[Color.TEAL], connectivity=8)
+    interior_mask = object_interior(object_sprite, background=Color.BLACK)
+    boundary_mask = object_boundary(object_sprite, background=Color.BLACK)
+    interior_but_not_edges = interior_mask & ~boundary_mask
+    object_sprite[interior_but_not_edges] = np.random.choice([Color.BLACK, Color.TEAL], p=[0.3, 0.7])
+
+    # Place the object on the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, object_sprite, border_size=1, padding=1)
+    except ValueError:
+        return generate_input()  # Retry if no suitable location
+
+    blit_sprite(grid, object_sprite, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+### Explanation:
+
+1. **`main` Function:**
+   - This function identifies the interior of the main object on the grid and distinguishes between its boundary and fully enclosed holes. 
+   - The holes are identified as regions of background color that are not part of the boundary but lie within the object's interior.
+   - These holes are then filled with a target color, `Color.RED` in this case, while leaving other parts of the grid unchanged.
+
+2. **`generate_input` Function:**
+   - This function generates a stochastic input grid containing a single main object potentially enclosing holes.
+   - The grid is filled with one random object, ensuring some holes are formed by setting some interior pixels to the background color (`Color.BLACK`).
+   - The object is placed randomly on the grid, ensuring no border contact to facilitate clear hole identification.
+
+This implementation demonstrates a transformation involving identifying and modifying enclosed regions within a connected component on a grid.

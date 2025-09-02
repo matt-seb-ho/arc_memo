@@ -1,0 +1,65 @@
+Sure, I will create a puzzle based on the description provided. This puzzle will involve detecting a guide object in a grid and using its position as a reference to transform the grid.
+
+### Puzzle Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, position-based transformation, mirroring
+
+# description:
+# In the input grid, you will find a guide object represented by a unique color (e.g., Color.TEAL).
+# The task is to identify this guide object and use its position to perform a transformation.
+# Specifically, reflect the entire grid across the horizontal axis that passes through the guide object's position.
+
+def main(input_grid):
+    # Find the guide object (Color.TEAL) in the grid
+    guide_object = detect_objects(grid=input_grid, colors=[Color.TEAL], monochromatic=True, connectivity=8)[0]
+    
+    # Get the position of the guide object
+    guide_x, guide_y, _, _ = bounding_box(guide_object, background=Color.BLACK)
+    
+    # Create a copy of the input grid
+    output_grid = input_grid.copy()
+    
+    # Reflect the grid across the horizontal axis through the guide object's position
+    for i in range(input_grid.shape[0]):
+        if i < guide_x:
+            output_grid[i, :] = input_grid[2 * guide_x - i, :]
+    
+    return output_grid
+
+def generate_input():
+    # Create a grid with random size
+    n, m = np.random.randint(6, 10), np.random.randint(6, 10)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Place random colored objects in the grid
+    num_objects = np.random.randint(1, 5)
+    for _ in range(num_objects):
+        color = np.random.choice([c for c in Color.ALL_COLORS if c != Color.BLACK and c != Color.TEAL])
+        sprite = random_sprite(n=np.random.randint(1, 3), m=np.random.randint(1, 3), color_palette=[color])
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8)
+            blit_sprite(grid, sprite, x, y)
+        except:
+            continue
+    
+    # Place the guide object (Color.TEAL) at a random location
+    guide_x, guide_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[guide_x, guide_y] = Color.TEAL
+    
+    return grid
+```
+
+### Explanation
+
+- **Guide Object**: The guide object is represented by a unique color (Color.TEAL) and is placed randomly within the grid.
+- **Transformation**: The transformation involves reflecting the grid horizontally across the axis passing through the guide object's position. This operation is deterministic, as it strictly depends on the guide object's position.
+- **Input Generation**: The `generate_input` function creates a grid of random size populated with random colored objects and a guide object. The size and position of objects vary each time, ensuring diverse input scenarios.
+
+This puzzle helps middle-schoolers understand how to use an object's position as a reference to apply transformations in a grid.

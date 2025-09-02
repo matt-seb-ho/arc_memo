@@ -1,0 +1,109 @@
+Let's implement the puzzle as described in the problem statement. Our task is to identify holes that are fully enclosed within an object (not connected to the border) and highlight these holes in the output grid. We'll use flood-fill to differentiate between enclosed and non-enclosed regions.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# The input consists of a grid with a single object and background (0). Identify holes as fully enclosed 0-regions within the object that are not connected to the grid border. 
+# Use flood-fill from the border to detect and exclude non-enclosed regions. The output grid highlights these enclosed holes, typically for further processing or filling.
+
+def main(input_grid):
+    # Create an output grid that will store the result
+    output_grid = input_grid.copy()
+
+    # Flood-fill from the border to identify non-enclosed regions
+    def flood_fill_from_border(grid, x, y, target_color, replacement_color):
+        if target_color == replacement_color:
+            return
+        if grid[x, y] != target_color:
+            return
+
+        grid[x, y] = replacement_color
+        stack = [(x, y)]
+        while stack:
+            cx, cy = stack.pop()
+            for nx, ny in [(cx+1, cy), (cx-1, cy), (cx, cy+1), (cx, cy-1)]:
+                if 0 <= nx < grid.shape[0] and 0 <= ny < grid.shape[1]:
+                    if grid[nx, ny] == target_color:
+                        grid[nx, ny] = replacement_color
+                        stack.append((nx, ny))
+
+    # Mark all non-enclosed 0-regions starting from the border
+    border_color = Color.MAROON  # Temporary color for flood-filled non-enclosed regions
+    for i in range(input_grid.shape[0]):
+        if input_grid[i, 0] == 0:
+            flood_fill_from_border(output_grid, i, 0, 0, border_color)
+        if input_grid[i, -1] == 0:
+            flood_fill_from_border(output_grid, i, -1, 0, border_color)
+
+    for j in range(input_grid.shape[1]):
+        if input_grid[0, j] == 0:
+            flood_fill_from_border(output_grid, 0, j, 0, border_color)
+        if input_grid[-1, j] == 0:
+            flood_fill_from_border(output_grid, -1, j, 0, border_color)
+
+    # Find and highlight enclosed holes
+    enclosed_hole_color = Color.YELLOW
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            if output_grid[i, j] == 0:
+                flood_fill_from_border(output_grid, i, j, 0, enclosed_hole_color)
+
+    # Restore non-enclosed regions to the original color
+    output_grid[output_grid == border_color] = 0
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with random size from 10x10 to 20x20
+    n = np.random.randint(10, 21)
+    input_grid = np.full((n, n), 0)
+
+    # Create a random object with holes inside
+    object_size = np.random.randint(5, min(n, 10))
+    obj = random_sprite(object_size, object_size, color_palette=[Color.BLUE], background=0)
+
+    # Randomly place the object in the grid
+    try:
+        x, y = random_free_location_for_sprite(input_grid, obj, background=0, border_size=1, padding=1)
+        blit_sprite(input_grid, obj, x, y, background=0)
+    except ValueError:
+        return generate_input()
+
+    # Create random holes inside the object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 5)
+        hole = random_sprite(hole_size, hole_size, color_palette=[0], background=Color.BLUE)
+        try:
+            hx, hy = random_free_location_for_sprite(obj, hole, background=Color.BLUE, border_size=1, padding=1)
+            blit_sprite(obj, hole, hx, hy, background=Color.BLUE)
+        except ValueError:
+            continue
+
+    return input_grid
+```
+
+### Explanation:
+
+- **`main` Function**:
+  - We first create a copy of the input grid for the output.
+  - We perform a flood-fill from the border to identify and mark regions of the background that are not enclosed (using a temporary color).
+  - We then iterate through the grid to fill in any truly enclosed regions (holes) with a designated color.
+  - Finally, we restore the non-enclosed regions to their original state.
+
+- **`generate_input` Function**:
+  - Generates a grid of random size.
+  - Places a random object in the grid.
+  - Creates random holes within the object ensuring they are not connected to the object's boundary.
+
+This setup ensures that when the `main` function is called with the output of `generate_input`, it will correctly identify and highlight enclosed regions.

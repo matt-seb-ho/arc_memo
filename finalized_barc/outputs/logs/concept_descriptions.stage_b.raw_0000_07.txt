@@ -1,0 +1,80 @@
+Here is a new puzzle implementation based on the provided description of counting enclosed regions (holes) within a guide object:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole counting, enclosed regions, guide object, connectivity
+
+# description:
+# The input grid contains a single guide object of a specific color, which may enclose regions of the background color (e.g., 0).
+# Count the number of enclosed regions (holes) within the guide object that are not of the guide object's color.
+# The connectivity (4 or 8) determines whether regions are enclosed. The output is the integer count of such holes.
+
+def main(input_grid):
+    # Define the guide object's color.
+    guide_color = Color.BLUE
+
+    # Find the guide object.
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+    guide_object = None
+    for obj in objects:
+        if np.any(obj == guide_color):
+            guide_object = obj
+            break
+
+    if guide_object is None:
+        return 0  # No guide object found, return 0 holes.
+
+    # Find interior of the guide object.
+    interior_mask = object_interior(guide_object, background=Color.BLACK)
+
+    # Identify background regions within the interior.
+    interior_background = (guide_object == Color.BLACK) & interior_mask
+
+    # Find connected components within the interior.
+    holes = find_connected_components(interior_background, background=0, connectivity=4, monochromatic=True)
+
+    # Return the count of enclosed background regions.
+    return len(holes)
+
+
+def generate_input():
+    # Create a grid with a random size.
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Define the guide object's color.
+    guide_color = Color.BLUE
+
+    # Create a guide object (e.g., a rectangle) with a possible hole inside.
+    n, m = np.random.randint(5, grid_size - 2), np.random.randint(5, grid_size - 2)
+    guide_object = np.full((n, m), guide_color)
+
+    # Randomly decide how many holes to create inside the guide object.
+    num_holes = np.random.randint(1, 4)
+
+    for _ in range(num_holes):
+        # Create a small hole within the guide object.
+        hole_size = np.random.randint(1, min(n, m) // 2)
+        hole_x, hole_y = np.random.randint(1, n - hole_size), np.random.randint(1, m - hole_size)
+        guide_object[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    # Find a random location for the guide object in the grid.
+    try:
+        x, y = random_free_location_for_sprite(grid, guide_object, padding=1)
+        blit_sprite(grid, guide_object, x, y, background=Color.BLACK)
+    except ValueError:
+        return generate_input()  # Retry if no location found.
+
+    return grid
+```
+
+### Key Points:
+- **Guide Object**: The puzzle revolves around a singular guide object, determined by a specific color (e.g., `Color.BLUE`).
+- **Enclosed Regions**: The goal is to count the number of enclosed regions within this guide object that are not of the guide object's color.
+- **Connectivity**: The puzzle uses 4-connectivity to determine enclosed regions.
+- **Stochastic Input Generation**: The `generate_input` function creates grids with a guide object of random size and random enclosed holes to ensure diverse test cases.

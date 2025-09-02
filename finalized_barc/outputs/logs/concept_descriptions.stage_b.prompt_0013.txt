@@ -1,0 +1,545 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+holes, enclosed regions, flood-fill, connected components
+
+Description: 
+Input consists of a grid with a single object enclosing empty spaces (holes). Identify holes as background-color (0) regions fully enclosed by the object, not touching the grid border. Use flood-fill from the border to exclude non-enclosed regions. Output the grid with holes marked or filled by a target object or color, while preserving the enclosing object and other non-hole regions.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit(grid, sprite, x=0, y=0, background=None):
+    """
+    Copies the sprite into the grid at the specified location. Modifies the grid in place.
+
+    background: color treated as transparent. If specified, only copies the non-background pixels of the sprite.
+    """
+
+def blit_object(grid, obj, background=Color.BLACK):
+    """
+    Draws an object onto the grid using its current location.
+
+    Example usage:
+    blit_object(output_grid, an_object, background=background_color)
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def object_position(obj, background=Color.BLACK, anchor='upper left'):
+    """
+    (x,y) position of the provided object. By default, the upper left corner.
+
+    anchor: "upper left", "upper right", "lower left", "lower right", "center", "upper center", "lower center", "left center", "right center"
+
+    Example usage:
+    x, y = object_position(obj, background=background_color, anchor="upper left")
+    middle_x, middle_y = object_position(obj, background=background_color, anchor="center")
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def object_interior(grid, background=Color.BLACK):
+    """
+    Computes the interior of the object (including edges)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's interior.
+
+    Example usage:
+    interior = object_interior(obj, background=Color.BLACK)
+    for x, y in np.argwhere(interior):
+        # x,y is either inside the object or at least on its edge
+    """
+
+def object_boundary(grid, background=Color.BLACK):
+    """
+    Computes the boundary of the object (excluding interior)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's boundary.
+
+    Example usage:
+    boundary = object_boundary(obj, background=Color.BLACK)
+    assert np.all(obj[boundary] != Color.BLACK)
+    """
+
+def object_neighbors(grid, background=Color.BLACK, connectivity=4):
+    """
+    Computes a mask of the points that neighbor or border the object, but are not part of the object.
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's border neighbors5.
+
+    Example usage:
+    neighbors = object_neighbors(obj, background=Color.BLACK)
+    assert np.all(obj[neighbors] == Color.BLACK)
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# filling, topology
+
+# description:
+# The input is a black 12x12 grid containing a few grey squares. Each square has a "hole" in it, a contiguous black region of pixels.
+# To create the output, fill in the hole of each grey object with red if the hole is a square. Otherwise, leave the hole as is.
+
+def main(input_grid):
+    # get the grey squares
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # create an output grid to store the result
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # for each grey square, fill in the hole if it is a square
+    for obj in objects:
+        # to check if the grey object contains a square hole, we can check if the bounding box of the hole is a square.
+        # To do so, first crop the object, then find the black hole inside
+        sprite = crop(obj, background=Color.BLACK)
+        hole_mask = (sprite == Color.BLACK) & (object_interior(sprite, background=Color.BLACK))
+
+        # check if the mask is square
+        def is_square(thing):
+            """thing can be a mask or a sprite or an object"""
+            thing = crop(thing)
+            return np.sum(thing != Color.BLACK) == thing.shape[0] * thing.shape[1] and thing.shape[0] == thing.shape[1]
+        
+        if is_square(hole_mask):
+            sprite[hole_mask] = Color.RED
+
+        # get location of object so we can blit the possibly edited sprite back into the grid
+        x, y = object_position(obj, background=Color.BLACK)
+        blit_sprite(output_grid, sprite, x, y)
+
+    return output_grid
+
+
+def generate_input():
+    # create a 12x12 black grid
+    grid = np.full((12, 12), Color.BLACK)
+
+    # add 2-3 grey squares.
+    # For each grey square, add a hole in the middle.
+    # 50% chance the hole is a square, otherwise it's a random contiguous object.
+    # The hole should not overlap with the border of the square.
+
+    num_grey_squares = np.random.randint(2, 4)
+
+    for _ in range(num_grey_squares):
+        # create grey square, and try to find a location for it
+        length = np.random.randint(4, 6)
+        grey_square = np.full((length, length), Color.GREY)
+        try:
+            x, y = random_free_location_for_sprite(grid, grey_square, padding=1)
+        except ValueError:
+            # we were unable to find a space for a square; try over from scratch
+            return generate_input()
+
+        # # add a hole in the middle.
+        # # 50% chance the hole is a square, otherwise it's a random contiguous object.
+        # # The hole should not overlap with the border of the square.
+        has_square_hole = np.random.choice([True, False])
+        if has_square_hole:
+            hole_size = np.random.randint(1, length - 1)
+            hole_x, hole_y = np.random.randint(1, length - hole_size), np.random.randint(1, length - hole_size)
+            grey_square[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+        else:
+            hole_obj = random_sprite(length-2, length-2, color_palette=[Color.BLACK], background=Color.GREY)
+            grey_square[1:-1, 1:-1] = hole_obj
+
+        grid = blit_sprite(grid, grey_square, x, y)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects, topology
+
+# description:
+# In the input grid, you will see various blue objects. Some are "hollow" and contain a fully-enclosed region, while others do not have a middle that is separate from outside the object, and fully enclosed.
+# To create the output grid, copy the input grid. Then, change the color of all "hollow" shapes to be green.
+
+def main(input_grid):
+    objects = find_connected_components(input_grid, connectivity=4)
+    output_grid = input_grid.copy()
+    for object in objects:
+        if is_hollow(object):
+            object[object != Color.BLACK] = Color.GREEN
+        blit_object(output_grid, object, background=Color.BLACK)
+
+    return output_grid
+
+def is_hollow(object):
+    # to check if it contains a fully enclosed region, find everything that is enclosed by the object (in its interior), but not actually part of the object
+    interior_mask = object_interior(object)
+    object_mask = object != Color.BLACK
+    hollow_mask = interior_mask & ~object_mask
+    return np.any(hollow_mask)
+
+
+def generate_input():
+    n = np.random.randint(10, 28)
+    input_grid = np.full((n, n), Color.BLACK)
+    # create a bunch of random objects. all objects are either (1) hollow, in which case they are the border of a rectangle of some size, or (2) not hollow, in which case they are a subset of a border of a rectangle of some size.
+    # make sure we place at least one hollow and nonhollow object. then add random objects until somewhat full.
+
+    def random_hollow_object():
+        n, m = np.random.randint(3, 7), np.random.randint(3, 7)
+        obj = np.full((n, m), Color.BLUE)
+        obj[1:n-1, 1:m-1] = Color.BLACK
+        return obj
+
+    def random_nonhollow_object():
+        obj = random_hollow_object()
+        # remove a random number of dots from it
+        size = np.count_nonzero(obj)
+        new_size = np.random.randint(1, size)
+        xs, ys = np.where(obj != Color.BLACK)
+        for i in range(size - new_size):
+            obj[xs[i], ys[i]] = Color.BLACK
+
+        return obj
+
+    try:
+        # add one hollow and one nonhollow object, then add random objects until somewhat full.
+        obj = random_hollow_object()
+        x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+        blit_sprite(input_grid, obj, x=x, y=y)
+
+        obj = random_nonhollow_object()
+        x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+        blit_sprite(input_grid, obj, x=x, y=y)
+    except ValueError:
+        return generate_input()
+
+    while True:
+        obj = random_hollow_object() if np.random.rand() < 0.5 else random_nonhollow_object()
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            return input_grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# topology
+
+# description:
+# The input grid is a square grid with black and green pixels. The input grid should have regions that are enclosed by the green pixels. 
+# To produce the output, you need to find the enclosed regions in the input grid, and then color them yellow. 
+                
+def main(input_grid):
+    # Create initial output grid template based on input grid.
+    output_grid = input_grid.copy()
+
+    # Find enclosed regions
+    interior_mask = object_interior(input_grid)
+    boundary_mask = object_boundary(input_grid)
+    inside_but_not_on_edge = interior_mask & ~boundary_mask
+
+    # Color enclosed regions
+    for x, y in np.argwhere(inside_but_not_on_edge):
+        if output_grid[x, y] == Color.BLACK:
+            output_grid[x, y] = Color.YELLOW
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a square grid of arbitrary size with black background, size from 5x5 to 20x20
+    n = random.randint(10, 20)
+    grid = np.zeros((n, n), dtype=int)
+
+    # Generate some random green sprites, and then hollow out the interior
+    n_objects = random.randint(1, 3)
+    for _ in range(n_objects):
+        n, m = random.randint(4, 10), random.randint(4, 10)
+        sprite = random_sprite(n, m, color_palette=[Color.GREEN], connectivity=8)
+        interior_mask = object_interior(sprite)
+        boundary_mask = object_boundary(sprite)
+        interior_but_not_edges = interior_mask & ~boundary_mask
+        sprite[interior_but_not_edges] = Color.BLACK
+
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+        except:
+            continue
+
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# filling
+
+# description:
+# The input consists of a black grid containing a few hollow grey rectangles. Each rectangle has 1-3 grey horizontal or vertical lines emanating off of it (at most one per side), either travelling to the border or stopping at another rectangle.
+# To create the output, fill in the hollow grey rectangles with yellow.
+
+def main(input_grid):
+    # extract objects using grey as background
+    objects = find_connected_components(input_grid, background=Color.GREY, connectivity=4, monochromatic=True)
+
+    # create an output grid to store the result
+    output_grid = np.full(input_grid.shape, Color.GREY)
+
+    # for each object, fill it in if it is a rectangle
+    for obj in objects:
+        # to check if the object is a rectangle,
+        # we can check if the cropped object is entirely black
+        sprite = crop(obj, background=Color.GREY)
+        is_rectangle = np.all(sprite == Color.BLACK)
+
+        if is_rectangle:
+            # we also need to make sure the rectangle isn't caused from an emanating line.
+            # to do so, check for grey pixels around the border of the grey
+            # border adjacent to a corner (aka the x/y value is one less than the max)
+            border = object_neighbors(obj, background=Color.GREY, connectivity=8)
+            # to get the border of the border, make a copy,
+            # add yellow where the border is,
+            # then find the border of this new object
+            obj2 = obj.copy()
+            obj2[border] = Color.YELLOW
+            border2 = object_neighbors(obj2, background=Color.GREY, connectivity=8)
+            x, y, w, h = bounding_box(obj2, background=Color.GREY)
+
+            pixels_to_check = [
+                (x2, y2) for x2 in range(obj.shape[0]) for y2 in range(obj.shape[1])
+                if (border2[x2, y2]
+                    # check if pixel is adjacent to a corner
+                    and (x2 in [x, x + w-1] or y2 in [y, y + h-1]))
+            ]
+
+            if not any(input_grid[x, y] == Color.GREY for x, y in pixels_to_check):
+                # good rectangle!
+                # fill in the original object with yellow
+                obj[obj == Color.BLACK] = Color.YELLOW
+
+        blit_object(output_grid, obj, background=Color.GREY)
+
+    return output_grid
+
+
+def generate_input():
+    # create a 10-20x10-20 black grid
+    # to make it possible to place rectangles that go offscreen,
+    n = np.random.randint(10, 21)
+    m = np.random.randint(10, 21)
+    n, m = 8, 8
+    # add a pixel of padding, which we will remove later
+    n += 1
+    m += 1
+    grid = np.full((n, m), Color.BLACK)
+
+    # add 2-4 grey rectangles with hollow insides
+    # each rectangle can be 3-7x3-7
+    # if we can't find a space, just stop adding new rectangles
+    # num_rectangles = np.random.randint(2, 5)
+    num_rectangles = 1
+
+    # store the rectangles so we can add lines to them later
+    rectangles = []
+    for _ in range(num_rectangles):
+        r_n = np.random.randint(3, 8)
+        r_m = np.random.randint(3, 8)
+        rectangle = np.full((r_n, r_m), Color.GREY)
+        try:
+            x, y = random_free_location_for_sprite(grid, rectangle, padding=1)
+        except ValueError:
+            break
+
+        # make the rectangle hollow, but mark it yellow, so we don't place another rectangle inside of it.
+        # later we will convert yellow back to black
+        rectangle[1:-1, 1:-1] = Color.YELLOW
+        blit(grid, rectangle, x, y)
+        rectangles.append((rectangle, (x, y)))
+
+    # now draw 1-3 lines emanating from the rectangles
+    # a line from another rectangle might emanate into the rectangle, so check for existing lines before adding one
+    for rectangle, (x, y) in rectangles:
+        # num_lines = np.random.randint(1, 4)
+        num_lines = 0
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        indices = np.random.choice(len(directions), num_lines, replace=False)
+        directions = [directions[i] for i in indices]
+
+        for direction in directions:
+            # if there's already a line here, don't draw another one
+            # to check, look for grey pixel within 1 pixel of the rectangle
+            w, h = rectangle.shape
+
+            bordering_pixels = find_bordering_pixels_in_direction(x, y, w, h, direction)
+            bordering_pixels = np.array([(x, y) for x, y in bordering_pixels if 0 <= x < n and 0 <= y < m])
+            if len(bordering_pixels) == 0:
+                continue
+
+            if any(grid[x, y] == Color.GREY for x, y in bordering_pixels):
+                continue
+
+            # now draw a line emanating outwards at a random bordering pixel
+            # ignore the extreme most bordering pixels (assumes they are returned in order)
+            bordering_pixels = bordering_pixels[1:-1]
+
+            ix = np.random.choice(range(len(bordering_pixels)))
+            start_pixel = bordering_pixels[ix]
+            draw_line(grid, start_pixel[0], start_pixel[1], direction=direction, color=Color.GREY, stop_at_color=[Color.GREY])
+
+    # convert yellow back to black
+    grid[grid == Color.YELLOW] = Color.BLACK
+
+    # remove the pixel of padding
+    grid = grid[1:-1, 1:-1]
+
+    return grid
+
+
+
+def find_bordering_pixels_in_direction(x, y, w, h, direction):
+    dx, dy = direction
+    if dx == 1:  # right
+        bordering_pixels = [(x + w, y + i) for i in range(h)]
+    elif dx == -1:  # left
+        bordering_pixels = [(x - 1, y + i) for i in range(h)]
+    elif dy == 1:  # down
+        bordering_pixels = [(x + i, y + h) for i in range(w)]
+    elif dy == -1:  # up
+        bordering_pixels = [(x + i, y - 1) for i in range(w)]
+
+    return np.array(bordering_pixels)
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

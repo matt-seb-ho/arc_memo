@@ -1,0 +1,73 @@
+Here's a new puzzle design based on the concepts of holes, enclosed regions, flood-fill, and background components. The puzzle involves identifying and highlighting fully enclosed holes within a single object in a grid. 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# The input grid consists of a single object on a black background (0), with some internal regions that are also black (0).
+# These internal black regions might be fully enclosed "holes" by the object itself, or they might be connected to the grid's border via the black background.
+# The task is to find and highlight those fully enclosed holes by changing their color to red, leaving the rest of the grid unchanged.
+
+def main(input_grid):
+    # Create a copy of the input grid for processing
+    output_grid = input_grid.copy()
+
+    # Identify all connected components using black (0) as the background
+    connected_components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Create a mask for flood-fill from the border
+    border_flood_fill = np.zeros_like(input_grid, dtype=bool)
+    flood_fill_stack = [(0, 0)]  # Start flood-fill from a corner
+    while flood_fill_stack:
+        x, y = flood_fill_stack.pop()
+        if border_flood_fill[x, y] or input_grid[x, y] != Color.BLACK:
+            continue
+        border_flood_fill[x, y] = True
+        # Check 4-connectivity neighbors
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1]:
+                flood_fill_stack.append((nx, ny))
+
+    # Process each connected component
+    for component in connected_components:
+        # Check if the component is fully enclosed
+        is_hole = np.all(component[border_flood_fill] == Color.BLACK)
+        if is_hole:
+            # Highlight the hole by coloring it red
+            component[component == Color.BLACK] = Color.RED
+        # Blit the component back onto the output grid
+        blit_object(output_grid, component, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a 12x12 grid with a single object on a black background
+    grid = np.full((12, 12), Color.BLACK)
+
+    # Randomly generate a single object with possible enclosed holes
+    object_size = np.random.randint(6, 10)
+    obj = random_sprite(object_size, object_size, color_palette=[Color.BLUE], background=Color.BLACK)
+    
+    # Randomly create holes within the object
+    num_holes = np.random.randint(1, 3)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, object_size // 2)
+        hole_x, hole_y = np.random.randint(1, object_size - hole_size, size=2)
+        obj[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    # Place the object onto the grid
+    x, y = 1, 1  # Place the object with a buffer from the grid edges
+    blit_sprite(grid, obj, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+This puzzle involves identifying fully enclosed regions within an object and highlights them by changing their color. The `main` function processes the input grid to identify these regions and color them red. The `generate_input` function creates a grid with a random object and potential holes, providing varied and challenging inputs for the puzzle solver.

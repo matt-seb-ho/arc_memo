@@ -1,0 +1,52 @@
+Here's a new puzzle based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# In the input grid, you will see various colored objects. Choose one single connected component (object) randomly and apply a recolor scheme to it. 
+# The recolor scheme is to change the entire object to a single random color from the available color palette. All other objects remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=False)
+    
+    # Choose one object randomly
+    chosen_object = np.random.choice(objects)
+    
+    # Select a random color from the available color palette, excluding black
+    new_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Recolor the chosen object
+    chosen_object[chosen_object != Color.BLACK] = new_color
+    
+    # Create the output grid and place the recolored object back
+    output_grid = input_grid.copy()
+    blit_object(output_grid, chosen_object, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+    
+    # Generate random objects with random colors and place them in the grid
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj = random_sprite(n=np.random.randint(3, 6), m=np.random.randint(3, 6), color_palette=list(Color.NOT_BLACK))
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+    
+    return input_grid
+```
+
+This puzzle involves selecting a single connected component from a grid of colored objects, then recoloring that entire object using a random color from the available palette. The rest of the grid remains unchanged. The `generate_input` function is stochastic, ensuring a variety of different inputs for each run.

@@ -1,0 +1,4 @@
+```python
+# concepts: hole filling, guide object, target object, enclosed regions, non-overlapping placement
+# description: Input consists of a guide object with enclosed holes and a separate target object. Identify interior holes within the guide object (regions not connected to the border). Fill these holes using the target object by fitting its pixels or blocks into the hole geometry without overlapping existing non-background pixels. Continue filling until all holes are filled or no more legal placements are possible. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+```

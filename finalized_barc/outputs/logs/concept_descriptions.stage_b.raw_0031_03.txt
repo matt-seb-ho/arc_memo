@@ -1,0 +1,90 @@
+Let's create a puzzle based on the idea of identifying and manipulating connected components in a grid. The puzzle will focus on object identification, translation, erasure, and grid manipulation.
+
+### Puzzle Description:
+
+**Concepts:**
+- Object identification
+- Bounding box calculation
+- Object translation
+- Erasure
+
+**Description:**
+The input is a grid with a single connected object of random color among a black background. The task is to identify the object's bounding box, erase it from its original position, and then translate it to a new specified position on the grid. The new position will be provided as part of the input, and the object must maintain its original shape and colors after being moved.
+
+Here's how you might implement this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, translation, erasure, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0).
+# Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates.
+# Redraw the object at the new position, preserving its shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+
+def main(input_grid, new_position):
+    # Plan:
+    # 1. Extract the single object from the input grid
+    # 2. Calculate the bounding box of the object
+    # 3. Erase the object from its original position
+    # 4. Move the object to the new position
+    # 5. Return the modified grid
+
+    background_color = Color.BLACK
+
+    # Extract the connected component (object) from the input grid
+    objects = find_connected_components(input_grid, background=background_color, connectivity=4, monochromatic=False)
+    assert len(objects) == 1, "There should be exactly one object in the input grid."
+
+    # Get the object and its bounding box
+    obj = objects[0]
+    x, y, width, height = bounding_box(obj, background=background_color)
+
+    # Create a copy of the input grid to modify
+    output_grid = np.copy(input_grid)
+
+    # Erase the object from its original position
+    output_grid[x:x + width, y:y + height] = background_color
+
+    # Calculate the new position to translate the object to
+    new_x, new_y = new_position
+
+    # Translate the object and blit it onto the output grid at the new position
+    translated_obj = translate(obj, new_x - x, new_y - y, background=background_color)
+    blit_object(output_grid, translated_obj, background=background_color)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with a single random object
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random sprite (object)
+    sprite_width, sprite_height = np.random.randint(2, 5), np.random.randint(2, 5)
+    sprite_color = np.random.choice(list(Color.NOT_BLACK))
+    sprite = random_sprite(sprite_width, sprite_height, color_palette=[sprite_color], background=Color.BLACK)
+
+    # Find a random free location for the sprite on the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1)
+
+    # Blit the sprite onto the grid
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    # Determine a new random position for the object to be moved to
+    new_x, new_y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+
+    return grid, (new_x, new_y)
+```
+
+### Explanation:
+- **Object Identification**: We use `find_connected_components` to identify the object in the grid.
+- **Bounding Box Calculation**: The `bounding_box` function is used to find the dimensions and location of the object.
+- **Translation and Erasure**: The object is erased from its original position using a simple assignment of the background color. It is then translated to a new specified position using `translate` and `blit_object`.
+- **Grid Manipulation**: The object is redrawn at the new location, ensuring it retains its original shape and color. The `generate_input` function creates random objects and determines a new position to which the object will be moved.

@@ -1,0 +1,92 @@
+Certainly! Let's implement the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# Input is a grid containing various colors, including a target color (cyan).
+# For each row and column, detect and extract maximal contiguous runs of the target color.
+# Output these runs as lists of coordinates or slices, representing the start and end of each contiguous sequence of the target color.
+# Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    runs = []
+
+    target_color = Color.TEAL
+
+    # Function to detect runs in a line (1D array)
+    def detect_runs(line):
+        runs_in_line = []
+        start = None
+
+        for i, color in enumerate(line):
+            if color == target_color:
+                if start is None:
+                    start = i
+            else:
+                if start is not None:
+                    runs_in_line.append((start, i - 1))
+                    start = None
+
+        # Check if the run ends at the last element
+        if start is not None:
+            runs_in_line.append((start, len(line) - 1))
+
+        return runs_in_line
+
+    # Check rows
+    for row_index, row in enumerate(input_grid):
+        row_runs = detect_runs(row)
+        for start_col, end_col in row_runs:
+            runs.append(((row_index, start_col), (row_index, end_col)))
+
+    # Check columns
+    for col_index in range(input_grid.shape[1]):
+        column = input_grid[:, col_index]
+        col_runs = detect_runs(column)
+        for start_row, end_row in col_runs:
+            runs.append(((start_row, col_index), (end_row, col_index)))
+
+    return runs
+
+
+def generate_input() -> np.ndarray:
+    # Generate a grid with random dimensions between 10x10 and 20x20
+    n, m = np.random.randint(10, 21), np.random.randint(10, 21)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly scatter points of various colors including the target color (cyan)
+    for color in Color.NOT_BLACK:
+        if color == Color.TEAL:
+            density = 0.3  # Higher density for the target color to ensure some runs
+        else:
+            density = 0.1  # Lower density for other colors
+        
+        randomly_scatter_points(grid, color=color, density=density, background=Color.BLACK)
+
+    # Optionally draw some horizontal or vertical lines of the target color
+    num_lines = np.random.randint(1, 4)
+    for _ in range(num_lines):
+        if np.random.rand() > 0.5:  # Decide to draw horizontal or vertical line
+            # Horizontal Line
+            x = np.random.randint(0, n)
+            y_start = np.random.randint(0, m - 3)
+            length = np.random.randint(3, m - y_start + 1)
+            draw_line(grid, x, y_start, length=length, direction=(0, 1), color=Color.TEAL)
+        else:
+            # Vertical Line
+            y = np.random.randint(0, m)
+            x_start = np.random.randint(0, n - 3)
+            length = np.random.randint(3, n - x_start + 1)
+            draw_line(grid, x_start, y, length=length, direction=(1, 0), color=Color.TEAL)
+    
+    return grid
+```
+
+This code defines a puzzle where the goal is to detect maximal contiguous runs of a specific target color (cyan) in a grid. The `main` function processes both rows and columns to find these runs and returns them as a list of coordinate pairs indicating start and end positions. The `generate_input` function creates grids with varying dimensions and densities of colored pixels, ensuring some lines of the target color are present to facilitate interesting test cases.

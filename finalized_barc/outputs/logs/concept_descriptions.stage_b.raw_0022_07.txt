@@ -1,0 +1,84 @@
+Let's create a new puzzle that involves identifying a sequence of transformations applied to a set of colored shapes over several timesteps. The goal is to extrapolate the pattern or transformation and generate the next grid in the sequence.
+
+**Concepts**: pattern extrapolation, sequence prediction, shape transformation, color change
+
+**Description**: 
+Input consists of a sequence of grids representing consecutive time steps, where objects (colored shapes) exhibit a consistent transformation pattern in terms of position, shape, or color. Analyze the sequence to identify the evolving pattern, such as linear movement, rotation, scaling, or color transition. Extrapolate the identified pattern to predict and generate the next grid in the sequence. The output is a single grid that continues the detected pattern logically from the last input grid.
+
+Here is the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern extrapolation, sequence prediction, shape transformation, color change
+
+# description:
+# Input consists of a sequence of grids representing consecutive time steps, where objects (colored shapes) exhibit a consistent transformation pattern in terms of position, shape, or color. Analyze the sequence to identify the evolving pattern, such as linear movement, rotation, scaling, or color transition. Extrapolate the identified pattern to predict and generate the next grid in the sequence. The output is a single grid that continues the detected pattern logically from the last input grid.
+
+def main(input_grids: List[np.ndarray]) -> np.ndarray:
+    # Analyze the sequence of input grids to determine the transformation pattern
+    num_grids = len(input_grids)
+    assert num_grids >= 2, "There should be at least two grids to determine the pattern"
+
+    # Assume all grids are of the same size
+    grid_shape = input_grids[0].shape
+    output_grid = np.full(grid_shape, Color.BLACK)
+
+    # Extract the objects from the last two grids
+    objects_prev = find_connected_components(input_grids[-2], monochromatic=True, background=Color.BLACK)
+    objects_last = find_connected_components(input_grids[-1], monochromatic=True, background=Color.BLACK)
+
+    # Determine the transformation pattern
+    for obj_prev, obj_last in zip(objects_prev, objects_last):
+        # Get positions and colors
+        x_prev, y_prev = object_position(obj_prev)
+        x_last, y_last = object_position(obj_last)
+        color = object_colors(obj_last)[0]
+        
+        # Calculate the movement vector (dx, dy)
+        dx, dy = x_last - x_prev, y_last - y_prev
+
+        # Extrapolate the next position
+        x_next, y_next = x_last + dx, y_last + dy
+
+        # Ensure the next position is within bounds
+        if 0 <= x_next < grid_shape[0] and 0 <= y_next < grid_shape[1]:
+            # Blit the object to the next position in the output grid
+            blit_sprite(output_grid, obj_last, x=x_next, y=y_next, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input() -> List[np.ndarray]:
+    # Generate a sequence of grids with a consistent transformation pattern
+    num_grids = np.random.randint(3, 5)
+    grid_shape = (10, 10)
+    grids = [np.full(grid_shape, Color.BLACK) for _ in range(num_grids)]
+
+    # Randomly choose the number and color of objects
+    num_objects = np.random.randint(1, 4)
+    colors = np.random.choice(list(Color.NOT_BLACK), size=num_objects, replace=False)
+
+    for i in range(num_objects):
+        # Randomly initialize the shape and position of the object
+        size = np.random.randint(1, 3)
+        sprite = np.full((size, size), colors[i])
+        x, y = np.random.randint(0, grid_shape[0] - size), np.random.randint(0, grid_shape[1] - size)
+        
+        # Apply a consistent transformation across grids
+        dx, dy = np.random.choice([-1, 0, 1], size=2)  # Movement vector
+
+        for t in range(num_grids):
+            # Place the object on the grid
+            grids[t] = blit_sprite(grids[t], sprite, x=x + t*dx, y=y + t*dy, background=Color.BLACK)
+
+    return grids
+```
+
+**Explanation**:
+
+- **Main Function**: Analyzes the sequence of input grids to determine the pattern of transformation (movement) of each object and applies that transformation to predict the next grid in the sequence.
+- **Generate Input**: Creates a sequence of grids where a set of objects are transformed consistently according to a random movement vector. This function ensures that each run generates a new set of sequences, providing variety for the puzzle solver.

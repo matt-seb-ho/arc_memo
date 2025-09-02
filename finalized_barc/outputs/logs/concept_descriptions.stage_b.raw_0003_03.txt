@@ -1,0 +1,75 @@
+Here's an implementation of a puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# output grid shape, guide object, bounding box, zero-initialized grid
+
+# description:
+# The input is a grid containing one or more colored objects. The output grid's dimensions are determined by a specified rule: 
+# either a fixed size or derived from the bounding box of a specified guide object. In this case, the guide object is the largest colored object in the grid.
+# The output is initialized to zero (background color), and the dimensions adhere to the defined shape rule.
+
+def main(input_grid):
+    # Step 1: Identify the largest object in the grid to use as the guide object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Sort objects by size and choose the largest one as the guide
+    largest_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    
+    # Step 2: Determine the bounding box of the guide object
+    guide_bounding_box = crop(largest_object, background=Color.BLACK)
+    
+    # Step 3: Calculate the dimensions of the output grid based on the guide object
+    output_shape = guide_bounding_box.shape
+    
+    # Step 4: Create a new grid with the calculated dimensions, initialized to zero (background color)
+    output_grid = np.full(output_shape, Color.BLACK, dtype=int)
+    
+    return output_grid
+
+def generate_input():
+    # Create a random grid with multiple objects
+    n = np.random.randint(10, 15)
+    m = np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # Generate a random number of objects (2-5)
+    num_objects = np.random.randint(2, 6)
+
+    for _ in range(num_objects):
+        # Create random sprites with dimensions between 2-5
+        w = np.random.randint(2, 6)
+        h = np.random.randint(2, 6)
+        sprite = random_sprite(w, h, color_palette=[np.random.choice(Color.NOT_BLACK)])
+        
+        # Blit each sprite onto a random location on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8)
+            blit_sprite(grid, sprite, x, y)
+        except:
+            continue  # If no space is found, skip this sprite
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts Used**: 
+   - **Output grid shape**: The output grid's shape is determined by the largest object found within the input grid.
+   - **Guide object**: The largest object acts as the guide to determine the dimensions of the output grid.
+   - **Bounding box**: The bounding box of the guide object defines the size of the output grid.
+   - **Zero-initialized grid**: The output grid is initialized with the background color (Color.BLACK).
+
+2. **Transformation Process**:
+   - **Input**: A grid with multiple colored objects.
+   - **Output**: A grid whose dimensions are derived from the largest object's bounding box, initialized to zero (background color).
+
+3. **Generate Input**:
+   - **Random Grid**: A grid is created with multiple random objects.
+   - **Objects**: Random colored objects are generated and placed on the grid without overlapping.
+
+This puzzle challenges players to identify the largest object in a grid and use its bounding box to shape a new zero-initialized grid.

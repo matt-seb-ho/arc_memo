@@ -1,0 +1,55 @@
+Here is an implementation of the puzzle based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern matching, boolean mask, predicate evaluation, exact match
+
+# description:
+# In the input, you will see a colored 3x3 grid (window) and a boolean mask (pattern_mask) of the same size.
+# Apply a predicate function to each cell in the window to create a boolean mask.
+# Return True (a 1x1 grid with a blue pixel) if this generated mask exactly matches the given pattern_mask element-wise, with no rotations or flips allowed. Otherwise, return False (a 1x1 grid with an orange pixel).
+
+def main(window, pattern_mask):
+    # Define the predicate function: in this case, we'll check if the color is not black
+    predicate = lambda color: color != Color.BLACK
+
+    # Generate a boolean mask by applying the predicate to each cell in the window
+    generated_mask = np.vectorize(predicate)(window)
+
+    # Compare the generated mask with the pattern_mask
+    if np.array_equal(generated_mask, pattern_mask):
+        # If they match exactly, output a 1x1 grid with a blue pixel
+        return np.array([[Color.BLUE]])
+    else:
+        # Otherwise, output a 1x1 grid with an orange pixel
+        return np.array([[Color.ORANGE]])
+
+def generate_input():
+    # Create a random 3x3 grid (window) of colors
+    window = np.random.choice(list(Color.ALL_COLORS), size=(3, 3))
+
+    # Create a random boolean mask (pattern_mask) of the same size
+    pattern_mask = np.random.choice([True, False], size=(3, 3))
+
+    return window, pattern_mask
+```
+
+### Explanation:
+
+1. **Main Function**:
+   - **Predicate Function**: The predicate function checks if a color in the grid is not black.
+   - **Boolean Mask Generation**: We use `np.vectorize` to apply the predicate function to each element of the `window` grid, generating a boolean mask.
+   - **Comparison**: The generated mask is compared with the given `pattern_mask` using `np.array_equal`.
+   - **Output**: A 1x1 grid with a blue pixel is returned if the masks match, otherwise, a 1x1 grid with an orange pixel is returned.
+
+2. **Generate Input Function**:
+   - **Window Generation**: A 3x3 grid of random colors is created using `np.random.choice`.
+   - **Pattern Mask Generation**: A corresponding 3x3 boolean mask is created with random `True` or `False` values.
+   - **Outputs**: The `window` and `pattern_mask` are returned as inputs for testing the `main` function. 
+
+This puzzle requires students to understand and implement the process of generating and comparing boolean masks based on a predicate applied to colored grids.

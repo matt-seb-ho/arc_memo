@@ -1,0 +1,76 @@
+Here is a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# In the input grid, you will see multiple colored objects on a black background. 
+# Each object is a connected component of the same color.
+# To make the output, extract all connected components and apply a filter to select only the objects with an even number of pixels. 
+# The output should be a list of the selected objects, each represented by its bounding box and constituent pixels. Non-selected objects are excluded from the output.
+
+def main(input_grid):
+    # Get all unique colors except black
+    colors = [color for color in np.unique(input_grid) if color != Color.BLACK]
+
+    # List to store selected objects
+    selected_objects = []
+
+    # Process each color
+    for color in colors:
+        # Detect connected components of the current color
+        objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+        # Filter objects with even number of pixels
+        for obj in objects:
+            if np.sum(obj != Color.BLACK) % 2 == 0:
+                # Crop the object to get its bounding box and constituent pixels
+                cropped_obj = crop(obj, background=Color.BLACK)
+                selected_objects.append(cropped_obj)
+
+    return selected_objects
+
+def generate_input():
+    # Create a grid with random dimensions
+    n, m = np.random.randint(8, 12), np.random.randint(8, 12)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Random number of objects
+    num_objects = np.random.randint(3, 6)
+
+    for _ in range(num_objects):
+        # Random object size
+        size = np.random.randint(2, 4)
+        # Random object color
+        obj_color = random.choice(list(Color.NOT_BLACK))
+
+        # Create a random sprite with the selected color
+        sprite = random_sprite(n=size, m=size, color_palette=[obj_color], connectivity=4)
+
+        # Try to place the sprite in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=4)
+        except ValueError:
+            continue
+
+        # Place the sprite in the grid
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+**Explanation:**
+
+- **Concepts:** This puzzle involves object selection, connected components, and filtering based on a specific criterion (even number of pixels).
+
+- **Description:** The input is a grid containing multiple colored objects. Each object is a connected component of the same color. The task is to extract all connected components and filter them based on the number of pixels being even. The output is a list of filtered objects, represented by their bounding boxes and constituent pixels. Non-selected objects are not included in the output.
+
+- **`main` function:** This function extracts connected components for each color, filters objects with even numbers of pixels, and returns the selected objects.
+
+- **`generate_input` function:** This function stochastically generates a grid with random-sized sprites of random colors and places them in the grid, ensuring there are enough examples of different connected components for testing the transformation.

@@ -1,0 +1,81 @@
+To design the specified puzzle, let's implement the `main` function that partitions a grid based on separator rows and columns, and the `generate_input` function that stochastically generates such grids.
+
+### Puzzle Implementation
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# The input grid contains full-length separator rows or columns of a single color that divide the grid into distinct regions.
+# The task is to identify these separators and use them to partition the grid into contiguous sub-grids.
+# Each sub-grid is formed by slicing the input grid between consecutive separators, excluding the separators themselves.
+# The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Identify the background color
+    unique_colors = np.unique(input_grid)
+    background_color = [color for color in unique_colors if np.all(input_grid == color, axis=0).any() or np.all(input_grid == color, axis=1).any()]
+    assert background_color, "No separator color found"
+    separator_color = background_color[0]
+
+    # Find the separator lines
+    vertical_separators = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == separator_color)]
+    horizontal_separators = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == separator_color)]
+
+    # Add edges as separators
+    vertical_separators = [0] + vertical_separators + [input_grid.shape[0]]
+    horizontal_separators = [0] + horizontal_separators + [input_grid.shape[1]]
+
+    # Deduplicate successive lines
+    vertical_separators = [x for i, x in enumerate(vertical_separators) if i == 0 or x != vertical_separators[i - 1]]
+    horizontal_separators = [y for i, y in enumerate(horizontal_separators) if i == 0 or y != horizontal_separators[i - 1]]
+
+    # Extract sub-grids
+    sub_grids = []
+    for i in range(1, len(vertical_separators)):
+        for j in range(1, len(horizontal_separators)):
+            x1, x2 = vertical_separators[i-1]+1, vertical_separators[i]
+            y1, y2 = horizontal_separators[j-1]+1, horizontal_separators[j]
+            sub_grid = input_grid[x1:x2, y1:y2]
+            if sub_grid.size > 0:
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly determine grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.random.choice(list(Color.ALL_COLORS), (width, height))
+
+    # Choose a separator color
+    separator_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly place vertical and horizontal separators
+    num_vertical_separators = np.random.randint(2, 5)
+    num_horizontal_separators = np.random.randint(2, 5)
+
+    vertical_positions = randomly_spaced_indices(width, num_vertical_separators, border_size=1, padding=1)
+    horizontal_positions = randomly_spaced_indices(height, num_horizontal_separators, border_size=1, padding=1)
+
+    for x in vertical_positions:
+        grid[x, :] = separator_color
+
+    for y in horizontal_positions:
+        grid[:, y] = separator_color
+
+    return grid
+```
+
+### Explanation
+
+- **`main` Function**: This function first identifies the separator color by checking for full-length rows or columns of a single color. It then finds the indices of these separator lines and uses them to slice the grid into sub-grids, excluding the separators themselves. The sub-grids are then collected into a list, which is returned as the output.
+
+- **`generate_input` Function**: This function stochastically generates a grid with random dimensions and populates it with random colors. It then introduces separator lines of a randomly chosen color by drawing full-length lines at random positions, ensuring that the grid can be partitioned into distinct regions.
+
+This puzzle will challenge middle-schoolers to think about grid partitioning and how to detect and utilize separators to create sub-grids.

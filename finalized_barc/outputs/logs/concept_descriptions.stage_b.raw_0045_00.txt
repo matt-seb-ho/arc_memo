@@ -1,0 +1,66 @@
+Here's the implementation of the puzzle based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# sliding window, color presence, pattern matching, window selection
+
+# description:
+# Input is a grid with various colors. Slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors. Output the coordinates of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+
+def main(input_grid: np.ndarray, required_colors: Set[str]) -> Tuple[int, int]:
+    """
+    Slide a 3x3 window over the grid and find the first window that contains at least one cell of each required color.
+    Return the top-left coordinates of this window.
+    """
+
+    # Get the dimensions of the input grid
+    rows, cols = input_grid.shape
+
+    # Iterate over each possible 3x3 window in the grid
+    for i in range(rows - 2):
+        for j in range(cols - 2):
+            # Extract the 3x3 window
+            window = input_grid[i:i+3, j:j+3]
+            # Get the set of colors present in this window
+            window_colors = set(window.flatten())
+            # Check if all required colors are present in the window
+            if required_colors.issubset(window_colors):
+                return (i, j)
+    
+    # If no suitable window is found, return None
+    return None
+
+def generate_input() -> Tuple[np.ndarray, Set[str]]:
+    """
+    Generate a random input grid and a set of required colors.
+    """
+    # Define grid size
+    grid_size = random.randint(5, 10)
+
+    # Create a random grid of colors excluding black
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(grid_size, grid_size))
+
+    # Randomly choose 3 to 5 required colors from the available color set
+    required_colors = set(random.sample(list(Color.NOT_BLACK), random.randint(3, 5)))
+
+    return grid, required_colors
+```
+
+### Explanation:
+
+- **Concepts**: This puzzle involves sliding a 3x3 window over a grid to find a window that contains at least one cell of each color from a specified set of required colors.
+  
+- **Description**: The input is a grid with various colors and a set of required colors. The task is to slide a 3x3 window over the grid and identify the first window that contains at least one cell of each required color. The output is the coordinates of the top-left corner of this window.
+
+- **Implementation Details**:
+  - The `main` function iterates over each possible 3x3 window within the grid bounds.
+  - For each window, it checks if the set of required colors is a subset of the colors present in the window.
+  - If such a window is found, it returns the top-left coordinates of the window.
+  - The `generate_input` function creates a random grid and a set of required colors, ensuring diversity and unpredictability in each input instance.
+
+This puzzle challenges students to understand pattern matching and window-based selection criteria, utilizing logical reasoning to solve spatial problems.

@@ -1,0 +1,111 @@
+Here's a new puzzle implementation based on the provided description. The goal is to navigate a path on a grid, avoiding obstacles, and making consistent turns when encountering them.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacle navigation, fixed direction turn, pathfinding
+
+# description:
+# The input grid contains a colored path and obstacles. You start from a specific point and move along the path in a set direction.
+# When an obstacle is encountered, you turn in the specified direction ('left' or 'right') and continue until the path clears.
+# Resume the original direction after passing the obstacle. The output grid shows the path with detours around obstacles,
+# consistently turning the specified way.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start point and the initial direction
+    # 2. Navigate the path while encountering obstacles, making turns as specified
+    # 3. Return the grid with the completed path
+
+    # Set up the colors and initial direction
+    path_color = Color.RED
+    obstacle_color = Color.GREY
+    start_color = Color.GREEN
+    direction = 'right'  # or 'left', depending on the puzzle specification
+
+    # Determine the initial starting point and direction based on the input grid
+    start_objects = find_connected_components(input_grid, background=Color.BLACK, monochromatic=True)
+    start_object = [obj for obj in start_objects if start_color in object_colors(obj)][0]
+    x, y = object_position(start_object, anchor="center")
+
+    # Define the initial movement direction (e.g., right)
+    move_direction = (0, 1)  # moving right initially
+
+    def turn_left(direction):
+        # Define how to turn left based on current direction
+        dx, dy = direction
+        return (-dy, dx)
+
+    def turn_right(direction):
+        # Define how to turn right based on current direction
+        dx, dy = direction
+        return (dy, -dx)
+
+    # Create a copy of the input grid for output
+    output_grid = input_grid.copy()
+
+    # Navigate the path
+    while True:
+        # Check if the current position is valid
+        if not (0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1]):
+            break
+
+        # Mark the path on the output grid
+        output_grid[x, y] = path_color
+
+        # Move in the current direction
+        next_x, next_y = x + move_direction[0], y + move_direction[1]
+
+        # Check for obstacles
+        if (0 <= next_x < input_grid.shape[0] and 0 <= next_y < input_grid.shape[1]) and input_grid[next_x, next_y] == obstacle_color:
+            # Turn in the specified direction
+            if direction == 'left':
+                move_direction = turn_left(move_direction)
+            else:  # direction == 'right'
+                move_direction = turn_right(move_direction)
+        else:
+            # No obstacle, continue in the same direction
+            x, y = next_x, next_y
+
+    return output_grid
+
+def generate_input():
+    # Generate an input grid with a path and obstacles
+
+    # Define grid size
+    n = np.random.randint(10, 15)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Define colors
+    path_color = Color.RED
+    obstacle_color = Color.GREY
+    start_color = Color.GREEN
+
+    # Create a path
+    x, y = np.random.randint(1, n-1), np.random.randint(1, n-1)
+    grid[x, y] = start_color
+
+    # Generate a random path
+    for _ in range(np.random.randint(5, 10)):
+        direction = np.random.choice([(0, 1), (1, 0), (0, -1), (-1, 0)])
+        length = np.random.randint(2, 5)
+        x, y = draw_line(grid, x, y, length=length, direction=direction, color=path_color, stop_at_color=[obstacle_color])
+
+    # Place obstacles randomly
+    for _ in range(np.random.randint(5, 10)):
+        ox, oy = np.random.randint(0, n), np.random.randint(0, n)
+        if grid[ox, oy] == Color.BLACK:
+            grid[ox, oy] = obstacle_color
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: This puzzle involves navigating a grid with obstacles, making turns in specified directions, and ensuring a consistent path finding.
+2. **Description**: The grid contains a path and obstacles. Starting from a designated point, the path is navigated by avoiding obstacles and making consistent turns. The output is a grid showing the path with detours around obstacles.
+3. **Main Function**: It includes identifying the starting point and direction, navigating the path, and making turns as specified.
+4. **Generate Input**: Randomly creates a grid with a path colored in red and obstacles in grey. The path starts from a green point and includes random turns and obstacles.

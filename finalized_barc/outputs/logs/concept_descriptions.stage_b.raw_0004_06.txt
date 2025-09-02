@@ -1,0 +1,83 @@
+To implement the puzzle based on the given description, we need to break down the task into manageable parts and utilize the provided library functions. Here's a step-by-step approach to design the puzzle:
+
+1. **Identify the Guide Object:** We need to uniquely identify a guide object based on a distinct attribute, such as color or size. For simplicity, let's assume the guide object is uniquely identified by having a specific color that no other object has in the grid.
+
+2. **Determine the Anchor Point:** Once the guide object is identified, determine an anchor point, such as the centroid or top-left corner of the guide object. We'll use the `object_position` function for this purpose.
+
+3. **Count Enclosed Regions (Holes):** Starting from the anchor point of the guide object, count the number of enclosed regions (holes) in the grid. A hole is defined as a fully enclosed black region inside the grid.
+
+4. **Output the Count of Holes:** The output should be a grid with the same size as the input, with the count of the holes originating from the guide's position marked in a distinctive way, for example, by placing the count in a specific location on the grid.
+
+Let's implement the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# In the input grid, there is a uniquely colored guide object. The task is to identify this guide object, find its anchor point, 
+# and then count the number of enclosed regions (holes) in the grid from this anchor point. The output should display the count of these holes.
+
+def main(input_grid):
+    # Step 1: Identify the guide object
+    # Assume the guide object is uniquely colored. Find the color that appears in only one object.
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    
+    # Determine the unique color for the guide object
+    color_count = {}
+    for obj in objects:
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+    
+    guide_color = next(color for color, count in color_count.items() if count == 1)
+    guide_object = next(obj for obj in objects if np.any(obj == guide_color))
+
+    # Step 2: Determine the anchor point of the guide object
+    anchor_x, anchor_y = object_position(guide_object, background=Color.BLACK, anchor="center")
+
+    # Step 3: Count the number of enclosed regions (holes) in the grid
+    # We will consider enclosed black regions that are not part of the background
+    hole_count = 0
+    for obj in objects:
+        if np.all(obj == Color.BLACK):
+            interior_mask = object_interior(obj, background=Color.BLACK)
+            if np.any(interior_mask):
+                hole_count += 1
+
+    # Step 4: Output the count of holes
+    # Create an output grid and place the count in a specific location, e.g., at the top-left corner
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+    output_grid[0, 0] = hole_count  # Place the count in the top-left corner
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid with various objects and exactly one uniquely colored guide object
+    n, m = np.random.randint(10, 15, size=2)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Add random objects to the grid
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        sprite = random_sprite(np.random.randint(2, 5), np.random.randint(2, 5), color_palette=list(Color.NOT_BLACK))
+        x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+        blit_sprite(grid, sprite, x, y)
+
+    # Add a uniquely colored guide object
+    unique_color = np.random.choice([c for c in Color.NOT_BLACK if not np.any(grid == c)])
+    guide_sprite = random_sprite(np.random.randint(2, 4), np.random.randint(2, 4), color_palette=[unique_color])
+    x, y = random_free_location_for_sprite(grid, guide_sprite, padding=1, border_size=1)
+    blit_sprite(grid, guide_sprite, x, y)
+
+    return grid
+```
+
+This implementation captures the essence of the puzzle, where the main task is to identify a unique guide object, determine an anchor point, and count the enclosed regions (holes) from that point. The `generate_input` function creates a grid with random objects and a uniquely colored guide object, ensuring the puzzle is solvable and interesting each time it's run.

@@ -1,0 +1,93 @@
+Let's implement the puzzle based on the provided description, which focuses on obstacles, path blocking, and line drawing. The transformation involves drawing a line between two points, ensuring no overlap with obstacles.
+
+We'll use the following steps to create the puzzle:
+
+1. **Identify Obstacles**: Find the areas on the grid that act as obstacles.
+2. **Select Start and End Points**: Choose two points on the grid that will serve as the start and end of the line.
+3. **Path Calculation**: Determine a path from the start to the end point, avoiding obstacles.
+4. **Draw the Path**: Implement the path on the grid while ensuring no overlap with obstacles.
+
+Here is the code implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing
+
+# description:
+# Identify obstacles as distinct objects in the grid that block the path of line drawing. When drawing a line between two points, the line must navigate around these obstacles, ensuring no part of the line overlaps with any obstacle. The output grid shows the line drawn from start to end, avoiding obstacles, while all other grid content remains unchanged.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Identify obstacle objects
+    obstacles = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    # Find the start and end points for the line drawing
+    # Assume for simplicity that the start and end points are specific colors (e.g., start is GREEN and end is RED)
+    start_points = np.argwhere(input_grid == Color.GREEN)
+    end_points = np.argwhere(input_grid == Color.RED)
+
+    if len(start_points) == 0 or len(end_points) == 0:
+        return output_grid  # No valid start or end points
+
+    # Select the first start and end point for simplicity
+    start_x, start_y = start_points[0]
+    end_x, end_y = end_points[0]
+
+    # Implement a simple pathfinding algorithm avoiding obstacles
+    # We'll use a basic DFS or BFS for simplicity
+    def is_valid(x, y):
+        # Check if a position is valid (inside grid and not an obstacle)
+        if not (0 <= x < input_grid.shape[0] and 0 <= y < input_grid.shape[1]):
+            return False
+        return input_grid[x, y] != Color.BLACK and all(obj[x, y] == Color.BLACK for obj in obstacles)
+
+    def dfs_path(x, y, path):
+        if (x, y) == (end_x, end_y):
+            return path
+        directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # right, down, left, up
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if is_valid(nx, ny) and (nx, ny) not in path:
+                result = dfs_path(nx, ny, path + [(nx, ny)])
+                if result is not None:
+                    return result
+        return None
+
+    # Find a path from start to end
+    path = dfs_path(start_x, start_y, [(start_x, start_y)])
+    if path is not None:
+        for x, y in path:
+            output_grid[x, y] = Color.BLUE  # Color the path with a specific color
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random obstacles and start/end points
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # Scatter obstacles randomly
+    randomly_scatter_points(grid, color=Color.GREY, density=0.2, background=Color.BLACK)
+
+    # Place start and end points
+    start_x, start_y = random.randint(0, n-1), random.randint(0, m-1)
+    end_x, end_y = random.randint(0, n-1), random.randint(0, m-1)
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    return grid
+```
+
+### Explanation:
+
+- **Obstacle Identification**: We use `find_connected_components` to identify areas in the grid that act as obstacles.
+- **Path Calculation**: A simple depth-first search (DFS) is used to find a path from a green start point to a red end point while avoiding obstacles.
+- **Line Drawing**: The path is drawn on the grid using a specified color (blue in this case) to indicate the path between the start and end points.
+- **Stochastic Input Generation**: `generate_input` creates a grid with randomly placed obstacles and start/end points. This ensures a variety of scenarios for the middle-schoolers to solve.

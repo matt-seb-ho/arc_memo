@@ -1,0 +1,117 @@
+Let's create a new puzzle based on the provided description:
+
+### Puzzle Overview:
+**Concepts:** Obstacle navigation, fixed direction turn, pathfinding
+
+**Description:** 
+The input is a grid with a path and obstacles. Starting from a given point, navigate the path until an obstacle is encountered. When an obstacle is hit, turn in the specified direction ('left' or 'right') and continue moving until the path is clear. Resume the original direction once past the obstacle. The output grid shows the path with consistent detours around obstacles, always turning the same way as specified.
+
+### Implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacle navigation, fixed direction turn, pathfinding
+
+# description:
+# Start from a given point on a grid with obstacles. Navigate the path, turning in the specified direction ('left' or 'right') when an obstacle is encountered.
+# Continue moving until the path is clear, then resume the original direction. The output grid shows the path with consistent detours around obstacles.
+
+def main(input_grid):
+    # copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Parse the input
+    start_color = Color.RED
+    obstacle_color = Color.GREY
+    path_color = Color.BLUE
+    direction_choice = 'right'  # can be 'left' or 'right'
+
+    # Find the starting point
+    start_pos = np.argwhere(input_grid == start_color)[0]
+    x, y = start_pos
+
+    # Determine initial direction (assume starting direction is down (1, 0))
+    direction = (1, 0)
+
+    # Function to turn left or right
+    def turn(direction, choice):
+        dx, dy = direction
+        if choice == 'right':
+            return (-dy, dx)
+        elif choice == 'left':
+            return (dy, -dx)
+
+    # Follow the path
+    while True:
+        # Move to the next cell
+        next_x, next_y = x + direction[0], y + direction[1]
+
+        # Check bounds
+        if not (0 <= next_x < input_grid.shape[0] and 0 <= next_y < input_grid.shape[1]):
+            break
+
+        # Check for obstacle
+        if input_grid[next_x, next_y] == obstacle_color:
+            # Turn in the specified direction
+            direction = turn(direction, direction_choice)
+            continue
+
+        # Mark the path
+        output_grid[next_x, next_y] = path_color
+
+        # Move to the next position
+        x, y = next_x, next_y
+
+        # Check if there's a need to turn back to the original direction
+        if input_grid[x, y] != obstacle_color:
+            # If the path is clear, continue in the same direction
+            continue
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with a random path and obstacles
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Define colors
+    start_color = Color.RED
+    obstacle_color = Color.GREY
+    path_color = Color.BLUE
+
+    # Randomly place the start point
+    start_x, start_y = np.random.randint(1, width - 1), np.random.randint(1, height - 1)
+    grid[start_x, start_y] = start_color
+
+    # Randomly place obstacles
+    num_obstacles = np.random.randint(5, 10)
+    for _ in range(num_obstacles):
+        obs_x, obs_y = np.random.randint(0, width), np.random.randint(0, height)
+        grid[obs_x, obs_y] = obstacle_color
+
+    # Create a random path
+    current_x, current_y = start_x, start_y
+    direction = (1, 0)
+    for _ in range(np.random.randint(10, 20)):
+        # Move in the current direction
+        next_x, next_y = current_x + direction[0], current_y + direction[1]
+
+        # Check bounds and avoid obstacles
+        if 0 <= next_x < width and 0 <= next_y < height and grid[next_x, next_y] != obstacle_color:
+            grid[next_x, next_y] = path_color
+            current_x, current_y = next_x, next_y
+        else:
+            # Turn randomly
+            direction = turn(direction, np.random.choice(['left', 'right']))
+
+    return grid
+```
+
+### Explanation:
+- **Main Function:** The main function simulates navigation from a starting point while handling obstacles by turning in a specified direction. The path is marked on the output grid.
+- **Generate Input:** The input generation function creates a grid with a random starting point, obstacles, and path that the main function will navigate.

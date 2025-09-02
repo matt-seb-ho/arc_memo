@@ -1,0 +1,86 @@
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# The input is a grid containing full-length separator rows or columns of a single color. These separators divide the grid into distinct regions.
+# The task is to identify these separators and use them to partition the grid into contiguous sub-grids. Each sub-grid is formed by slicing the input grid between consecutive separators, excluding the separators themselves.
+# The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    separator_color = None
+
+    # Detect separator color by finding any complete row or column of the same color
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            separator_color = input_grid[i, 0]
+            break
+
+    for j in range(input_grid.shape[1]):
+        if np.all(input_grid[:, j] == input_grid[0, j]):
+            separator_color = input_grid[0, j]
+            break
+
+    assert separator_color is not None, "No separator color found"
+
+    # Partition the grid into sub-grids
+    horizontal_separators = [i for i in range(input_grid.shape[0]) if np.all(input_grid[i, :] == separator_color)]
+    vertical_separators = [j for j in range(input_grid.shape[1]) if np.all(input_grid[:, j] == separator_color)]
+
+    # Add edges as separators
+    horizontal_separators = [0] + horizontal_separators + [input_grid.shape[0]]
+    vertical_separators = [0] + vertical_separators + [input_grid.shape[1]]
+
+    sub_grids = []
+    for h in range(len(horizontal_separators) - 1):
+        for v in range(len(vertical_separators) - 1):
+            x1, x2 = horizontal_separators[h], horizontal_separators[h + 1]
+            y1, y2 = vertical_separators[v], vertical_separators[v + 1]
+            if x2 - x1 > 1 and y2 - y1 > 1:
+                sub_grid = input_grid[x1 + 1:x2, y1 + 1:y2]
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Choose a random separator color
+    separator_color = random.choice(list(Color.NOT_BLACK))
+    
+    # Randomly determine the number of horizontal and vertical separators
+    num_horizontal_separators = np.random.randint(1, 4)
+    num_vertical_separators = np.random.randint(1, 4)
+
+    # Get random indices for where to place separators
+    horizontal_indices = randomly_spaced_indices(max_len=width, n_indices=num_horizontal_separators, border_size=1, padding=2)
+    vertical_indices = randomly_spaced_indices(max_len=height, n_indices=num_vertical_separators, border_size=1, padding=2)
+
+    # Place horizontal separators
+    for x in horizontal_indices:
+        grid[x, :] = separator_color
+
+    # Place vertical separators
+    for y in vertical_indices:
+        grid[:, y] = separator_color
+
+    return grid
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle involves partitioning a grid based on identified separator rows or columns, using those separators to slice the grid.
+
+2. **Description**: The input grid is divided by full-length separator rows or columns of a single color. The task is to partition the grid into contiguous sub-grids by slicing between these separators and return these sub-grids as a list.
+
+3. **Implementation**: 
+   - **Separator Detection**: The `main` function first identifies the separator color by checking for full-length rows or columns of the same color.
+   - **Grid Partitioning**: It then determines the indices for horizontal and vertical separators and slices the grid into sub-grids between these separators.
+   - **Input Generation**: The `generate_input` function creates a grid of random colors and places separator rows and columns at random indices using a randomly chosen separator color.
+
+This implementation provides a clear transformation from input to output by detecting and using separators effectively.

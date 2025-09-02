@@ -1,0 +1,71 @@
+To design the puzzle based on the description provided, we will create a puzzle where the player must identify a guide object with a unique color and use this color to draw a line between two specified points on the grid. Here's how we can implement this:
+
+1. The `generate_input` function will create a grid with a guide object (a distinct color), two specified points (start and end), and a background.
+2. The `main` function will take the input grid, identify the guide object, and draw a line between the start and end points using the guide object's color. The line will overwrite the background but leave any non-background cells unchanged.
+
+Let's implement this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, line drawing
+
+# description:
+# In the input grid, there is a guide object of a unique color and two specific points marked in red and blue respectively.
+# The task is to draw a line from the red point to the blue point using the color of the guide object. 
+# The line should overwrite any background cells but not affect other colored cells.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    
+    # Identify the guide object by finding the unique color that isn't background, red, or blue
+    guide_color = None
+    for obj in objects:
+        unique_colors = set(np.unique(obj))
+        unique_colors -= {Color.BLACK, Color.RED, Color.BLUE}
+        if unique_colors:
+            guide_color = unique_colors.pop()
+            break
+    
+    assert guide_color is not None, "Guide object not found"
+
+    # Find the positions of the red and blue points
+    red_position = np.argwhere(input_grid == Color.RED)[0]
+    blue_position = np.argwhere(input_grid == Color.BLUE)[0]
+
+    # Copy the input grid to output grid
+    output_grid = np.copy(input_grid)
+    
+    # Draw the line using the guide color
+    draw_line(output_grid, red_position[0], red_position[1], end_x=blue_position[0], end_y=blue_position[1], color=guide_color, stop_at_color=[Color.RED, Color.BLUE])
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with a random size between 10x10 and 20x20
+    n = np.random.randint(10, 20)
+    grid = np.full((n, n), Color.BLACK, dtype=int)
+    
+    # Generate a random guide object
+    guide_sprite = random_sprite(np.random.randint(2, 5), np.random.randint(2, 5), color_palette=[np.random.choice(list(Color.NOT_BLACK - {Color.RED, Color.BLUE}))])
+    x, y = random_free_location_for_sprite(grid, guide_sprite, border_size=1)
+    blit_sprite(grid, guide_sprite, x, y)
+
+    # Mark two points with red and blue
+    red_x, red_y = random_free_location_for_sprite(grid, np.ones((1, 1)), padding=1, border_size=1)
+    grid[red_x, red_y] = Color.RED
+    
+    blue_x, blue_y = random_free_location_for_sprite(grid, np.ones((1, 1)), padding=1, border_size=1)
+    grid[blue_x, blue_y] = Color.BLUE
+    
+    return grid
+```
+
+In this puzzle implementation:
+- The `generate_input` function creates a grid with a guide object, and two points marked in red and blue.
+- The `main` function identifies the guide color and draws a line between the red and blue points using the guide color. The line is drawn over the background but leaves other colored areas unchanged. This implementation will provide middle schoolers a fun challenge in identifying the guide object and using its color to connect points on the grid!

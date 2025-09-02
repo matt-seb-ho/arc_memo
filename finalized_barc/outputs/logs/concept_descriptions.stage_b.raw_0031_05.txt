@@ -1,0 +1,90 @@
+To design a new puzzle involving color grids, let's consider a puzzle that deals with the concept of reflection and symmetry.
+
+**Concepts:**
+- Reflection
+- Symmetry
+- Grid manipulation
+
+**Description:**
+The input grid contains objects of different colors. Each object should be reflected across a specified axis of symmetry (horizontal or vertical) that goes through the center of the grid. The output grid should display the reflected objects while preserving the original objects' colors and shapes.
+
+Below is the implementation of the `generate_input` and `main` functions for this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# reflection, symmetry, grid manipulation
+
+# description:
+# The input grid contains objects of different colors. Each object should be reflected across a specified axis of symmetry (horizontal or vertical) that goes through the center of the grid.
+# The output grid should display the reflected objects while preserving the original objects' colors and shapes.
+
+def main(input_grid):
+    # Create an output grid of the same size as the input grid
+    output_grid = np.copy(input_grid)
+
+    # Randomly decide the axis of symmetry: 0 for horizontal, 1 for vertical
+    axis_of_symmetry = np.random.choice([0, 1])
+
+    # Reflect objects across the chosen axis of symmetry
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+
+    for obj in objects:
+        # Find the bounding box of the object
+        x, y, width, height = bounding_box(obj, background=Color.BLACK)
+
+        # Determine reflection based on the axis of symmetry
+        if axis_of_symmetry == 0:  # Horizontal reflection
+            # Flip the object vertically
+            reflected_obj = np.flipud(obj)
+            # Calculate new position
+            new_x = 2 * (input_grid.shape[0] // 2) - x - height
+            new_y = y
+        else:  # Vertical reflection
+            # Flip the object horizontally
+            reflected_obj = np.fliplr(obj)
+            # Calculate new position
+            new_x = x
+            new_y = 2 * (input_grid.shape[1] // 2) - y - width
+
+        # Place the reflected object onto the output grid
+        blit_object(output_grid, translate(reflected_obj, new_x - x, new_y - y, background=Color.BLACK), background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with a random size between 10x10 and 20x20
+    n, m = np.random.randint(10, 21), np.random.randint(10, 21)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random number of objects (2 to 5)
+    num_objects = np.random.randint(2, 6)
+    for _ in range(num_objects):
+        # Create a random object with random size and color
+        obj_width, obj_height = np.random.randint(2, 5), np.random.randint(2, 5)
+        color = random.choice(Color.NOT_BLACK)
+        obj = np.full((obj_width, obj_height), color)
+
+        # Find a random free location for the object and place it on the grid
+        x, y = random_free_location_for_sprite(grid, obj, background=Color.BLACK, padding=1)
+        blit_sprite(grid, obj, x, y)
+
+    return grid
+```
+
+### Explanation:
+1. **`main` Function**:
+   - Determines the axis of symmetry (horizontal or vertical) through the grid center.
+   - Finds connected components (objects) in the input grid.
+   - Reflects each object across the chosen axis and places it in the output grid.
+
+2. **`generate_input` Function**:
+   - Creates a grid with random dimensions and fills it with randomly sized and colored objects.
+   - Ensures objects do not overlap by using `random_free_location_for_sprite` before placing each object on the grid.
+
+This puzzle encourages students to explore the concepts of symmetry and reflection in a grid-based environment, providing a visual and logical challenge.

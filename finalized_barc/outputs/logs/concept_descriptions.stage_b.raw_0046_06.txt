@@ -1,0 +1,60 @@
+Certainly! Let's design a puzzle based on the description provided. The goal is to match a generated boolean mask from a 3x3 grid with a given pattern_mask without allowing any transformations like rotations or flips.
+
+Here's how the implementation would look:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern matching, boolean mask, predicate evaluation, exact match
+
+# description:
+# You are given a 3x3 grid (window) of colors and a boolean mask (pattern_mask) of the same size.
+# A predicate function is applied to each cell in the window to create a boolean mask.
+# Return a 1x1 grid with a green pixel if the generated mask matches the given pattern_mask exactly.
+# Otherwise, return a 1x1 grid with a red pixel. No rotations or flips are allowed in matching.
+
+def main(input_data: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+    window, pattern_mask = input_data
+    # Define a predicate function; for example, check if the color is not black
+    predicate = lambda color: color != Color.BLACK
+    
+    # Create a boolean mask by applying the predicate to each cell in the window
+    generated_mask = np.vectorize(predicate)(window)
+    
+    # Check if the generated mask matches the pattern_mask exactly
+    if np.array_equal(generated_mask, pattern_mask):
+        # If they match, return a 1x1 grid with a green pixel
+        return np.full((1,1), Color.GREEN)
+    else:
+        # Otherwise, return a 1x1 grid with a red pixel
+        return np.full((1,1), Color.RED)
+
+def generate_input() -> Tuple[np.ndarray, np.ndarray]:
+    # Generate a 3x3 grid with random colors
+    window = np.random.choice(list(Color.NOT_BLACK), size=(3, 3))
+    
+    # Generate a random boolean pattern mask
+    pattern_mask = np.random.choice([True, False], size=(3, 3))
+    
+    return window, pattern_mask
+```
+
+### Explanation:
+
+- **Main Function**: 
+  - We receive a tuple of a 3x3 grid (`window`) and a boolean mask (`pattern_mask`).
+  - A predicate function is used to evaluate each color in the grid. For simplicity, I've used a predicate that checks if the color is not black.
+  - We apply this predicate to generate a boolean mask from the grid.
+  - The generated boolean mask is then compared to the pattern_mask using `np.array_equal`.
+  - If they match, we return a 1x1 grid with a green pixel. Otherwise, a red pixel.
+
+- **Generate Input Function**:
+  - We generate random colors for the 3x3 grid.
+  - A random boolean mask is generated as the `pattern_mask`.
+  - Both the grid and the mask are returned as a tuple to be used as input to the `main` function.
+
+This puzzle teaches students about pattern matching and boolean logic, as they must determine how to create a matching boolean mask from a color grid using a given predicate.

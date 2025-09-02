@@ -1,0 +1,4 @@
+```python
+# concepts: output grid shape, guide object, bounding box, zero-initialized grid
+# description: Determine the output grid's shape based on a specified rule: either a fixed size or derived from a guide object's bounding box. Allocate a new grid with the calculated dimensions, initialized to zero (background color). The output grid's dimensions are independent of the input's specific content but adhere to the defined shape rule.
+```

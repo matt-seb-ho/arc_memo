@@ -1,0 +1,56 @@
+Certainly! Here is the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# sliding window, color presence, pattern matching, window selection
+
+# description:
+# The input is a grid with various colors. Slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors. Output the coordinates of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+
+def main(input_grid: np.ndarray, required_colors: Set[int]) -> Tuple[int, int]:
+    """Find the first 3x3 window containing all the required colors."""
+    rows, cols = input_grid.shape
+    
+    # Iterate over each possible top-left corner of a 3x3 window
+    for x in range(rows - 2):
+        for y in range(cols - 2):
+            # Extract the 3x3 window
+            window = input_grid[x:x+3, y:y+3]
+            # Flatten the window and create a set of colors present in it
+            colors_in_window = set(window.flatten())
+            
+            # Check if all required colors are present in the window
+            if required_colors.issubset(colors_in_window):
+                return (x, y)  # Return the top-left corner of the first valid window
+    
+    return (-1, -1)  # Return invalid coordinates if no such window exists
+
+
+def generate_input() -> Tuple[np.ndarray, Set[int]]:
+    """Generate random input grid and required colors."""
+    grid_size = np.random.randint(5, 10)  # Random grid size between 5x5 to 10x10
+    grid = np.random.choice(list(Color.NOT_BLACK), (grid_size, grid_size))
+    
+    # Randomly choose some colors from the available colors to be the required colors
+    required_colors_count = np.random.randint(1, 4)  # Random number of required colors between 1 and 3
+    required_colors = set(np.random.choice(list(Color.NOT_BLACK), required_colors_count, replace=False))
+    
+    return grid, required_colors
+```
+
+### Explanation:
+- **Main Function:** 
+  - Iterates over all possible 3x3 subgrids (windows) in the input grid.
+  - For each window, it checks if all the required colors are present.
+  - Returns the coordinates (top-left corner) of the first window that meets the criteria.
+
+- **Generate Input Function:** 
+  - Generates a random grid of a size between 5x5 to 10x10 with random colors.
+  - Randomly selects a set of required colors from the available colors, ensuring that there are between 1 and 3 required colors.
+
+This structure allows for a deterministic transformation in `main` while enabling stochastic input generation with `generate_input`. This setup provides a clear and logical approach to solving the puzzle based on the concepts and description provided.

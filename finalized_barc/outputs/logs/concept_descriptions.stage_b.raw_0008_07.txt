@@ -1,0 +1,62 @@
+Sure! Let's implement a new puzzle based on the provided description. This puzzle will involve identifying connected components within a grid and recoloring them according to a given color scheme. Specifically, the transformation will focus on applying a color scheme to a single connected component identified from the grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# In the input grid, you will see various colored objects. Choose a random single connected component (object) from the grid, and apply a specific color scheme to recolor the entire object. 
+# The color scheme for recoloring will be a gradient of colors, changing from the edge to the center of the object. All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=False)
+
+    # Choose a random object to recolor
+    if objects:
+        selected_object = np.random.choice(objects)
+
+        # Recolor the object using a gradient scheme
+        output_grid = input_grid.copy()
+        gradient_colors = list(Color.NOT_BLACK)  # A gradient using all colors except black
+        gradient_colors.sort()  # Ensuring a consistent gradient order
+
+        # Calculate the distance of each pixel from the center of the object
+        obj_center = np.mean(np.argwhere(selected_object != Color.BLACK), axis=0)
+        distances = np.linalg.norm(np.argwhere(selected_object != Color.BLACK) - obj_center, axis=1)
+        max_distance = distances.max()
+
+        # Apply gradient colors based on distance
+        for idx, (x, y) in enumerate(np.argwhere(selected_object != Color.BLACK)):
+            distance_ratio = distances[idx] / max_distance
+            color_index = int(distance_ratio * (len(gradient_colors) - 1))
+            output_grid[x, y] = gradient_colors[color_index]
+
+        return output_grid
+    else:
+        return input_grid.copy()
+
+def generate_input():
+    # Grid size
+    n = np.random.randint(10, 15)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    # Add random objects to the grid
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj = random_sprite(list(range(2, 5)), list(range(2, 5)), color_palette=list(Color.NOT_BLACK), connectivity=8)
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1, padding_connectivity=8)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+
+    return input_grid
+```
+
+In this puzzle, we start by detecting all connected components within the grid. We then randomly select one of these components and apply a gradient color scheme to recolor it. The colors transition smoothly from the edge of the object to its center. The `generate_input` function creates random objects on a grid to serve as inputs for the transformation, ensuring variability for each puzzle instance.

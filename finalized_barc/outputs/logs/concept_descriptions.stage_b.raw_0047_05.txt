@@ -1,0 +1,87 @@
+Here's the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# Input is a grid containing various colors, including a target color (cyan). For each row and column, detect and extract maximal contiguous runs of the target color. 
+# Output these runs as lists of coordinates or slices, representing the start and end of each contiguous sequence of the target color. 
+# Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[Tuple[int, int, int]]:
+    target_color = Color.TEAL
+    
+    # Function to find contiguous runs in a 1D array
+    def find_runs(line):
+        runs = []
+        start = None
+        for i, color in enumerate(line):
+            if color == target_color:
+                if start is None:
+                    start = i
+            else:
+                if start is not None:
+                    if i - start > 1:  # Ensure it's a maximal run
+                        runs.append((start, i - 1))
+                    start = None
+        if start is not None and len(line) - start > 1:
+            runs.append((start, len(line) - 1))
+        return runs
+
+    output_runs = []
+
+    # Check rows for contiguous runs
+    for row_idx, row in enumerate(input_grid):
+        row_runs = find_runs(row)
+        for start, end in row_runs:
+            output_runs.append((row_idx, start, end))
+
+    # Check columns for contiguous runs
+    for col_idx in range(input_grid.shape[1]):
+        column = input_grid[:, col_idx]
+        col_runs = find_runs(column)
+        for start, end in col_runs:
+            output_runs.append((start, col_idx, end))
+
+    return output_runs
+
+def generate_input() -> np.ndarray:
+    # Create a grid of random size (5-10 x 5-10) with random colors including target color (cyan)
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+    
+    # Introduce some random contiguous runs of the target color
+    num_runs = np.random.randint(1, 4)
+    for _ in range(num_runs):
+        orientation = np.random.choice(['horizontal', 'vertical'])
+        if orientation == 'horizontal':
+            row = np.random.randint(n)
+            start_col = np.random.randint(m // 2)
+            end_col = np.random.randint(start_col + 1, m)
+            grid[row, start_col:end_col] = Color.TEAL
+        else:  # vertical
+            col = np.random.randint(m)
+            start_row = np.random.randint(n // 2)
+            end_row = np.random.randint(start_row + 1, n)
+            grid[start_row:end_row, col] = Color.TEAL
+    
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: This puzzle involves detecting contiguous runs of a specific color in a grid, focusing on maximal sequences. It involves scanning rows and columns.
+
+2. **Description**: The goal is to identify contiguous sequences of a target color (cyan) in a grid, ignoring isolated pixels. The output is a list of tuples indicating the start and end indices of these sequences.
+
+3. **Main Function**: The `main` function processes the input grid, scanning each row and column to detect maximal contiguous sequences of the target color. It uses a helper function `find_runs` to extract these sequences.
+
+4. **Input Generation**: The `generate_input` function creates a grid with random colors, including some intentional contiguous runs of the target color. This ensures that each generated input grid has potential sequences for detection. 
+
+This puzzle provides a practical example of pattern recognition and sequence extraction within a grid.

@@ -1,0 +1,99 @@
+Here's the implementation for the puzzle described, focusing on stripe detection, 2x2 block search, color matching, and index retrieval:
+
+### Puzzle Code:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# stripe detection, 2x2 block search, color matching, index retrieval
+
+# description:
+# Input consists of multiple horizontal stripes separated by black rows. Each stripe may contain various colored blocks.
+# Identify the stripe containing a 2x2 block of a specific target color (magenta).
+# Return the index of this stripe (0-based) that contains the target 2x2 block.
+# Only one stripe will contain the target block, ensuring a unique index is returned.
+
+def main(input_grid):
+    target_color = Color.MAGENTA
+    
+    # Scan through the input grid to find horizontal stripes
+    stripe_indices = []
+    is_in_stripe = False
+    current_stripe_start = 0
+    
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i] == Color.BLACK):
+            if is_in_stripe:
+                stripe_indices.append((current_stripe_start, i))
+                is_in_stripe = False
+        else:
+            if not is_in_stripe:
+                current_stripe_start = i
+                is_in_stripe = True
+    
+    if is_in_stripe:
+        stripe_indices.append((current_stripe_start, input_grid.shape[0]))
+    
+    # Check each stripe for the presence of a 2x2 block of the target color
+    for stripe_index, (start, end) in enumerate(stripe_indices):
+        for x in range(start, end - 1):
+            for y in range(input_grid.shape[1] - 1):
+                if (input_grid[x, y] == target_color and 
+                    input_grid[x+1, y] == target_color and
+                    input_grid[x, y+1] == target_color and 
+                    input_grid[x+1, y+1] == target_color):
+                    return stripe_index
+
+    # If no such block is found, return -1 (this should not happen as per the problem statement)
+    return -1
+
+def generate_input():
+    # Create a grid with horizontal stripes separated by black rows
+    num_stripes = np.random.randint(3, 6)
+    height_per_stripe = np.random.randint(3, 6)
+    width = np.random.randint(10, 15)
+    
+    total_height = num_stripes * (height_per_stripe + 1) - 1
+    grid = np.zeros((total_height, width), dtype=int)
+
+    # Fill each stripe with random colors
+    for stripe_index in range(num_stripes):
+        start_row = stripe_index * (height_per_stripe + 1)
+        for x in range(start_row, start_row + height_per_stripe):
+            grid[x, :] = np.random.choice(list(Color.NOT_BLACK), width)
+
+    # Choose a random stripe to contain the 2x2 magenta block
+    target_stripe = np.random.randint(num_stripes)
+    start_row = target_stripe * (height_per_stripe + 1)
+    magenta_x = np.random.randint(start_row, start_row + height_per_stripe - 1)
+    magenta_y = np.random.randint(width - 1)
+    
+    # Set a 2x2 block of magenta in the chosen stripe
+    grid[magenta_x, magenta_y] = Color.MAGENTA
+    grid[magenta_x + 1, magenta_y] = Color.MAGENTA
+    grid[magenta_x, magenta_y + 1] = Color.MAGENTA
+    grid[magenta_x + 1, magenta_y + 1] = Color.MAGENTA
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle involves detecting horizontal stripes, checking for a specific 2x2 block of a target color (magenta), and returning the index of the stripe containing the block.
+
+2. **Description**: The input grid consists of horizontal stripes separated by black rows. Each stripe can contain various colors. The task is to find the stripe with a 2x2 magenta block and return its index.
+
+3. **Implementation**:
+   - **`main` function**: 
+     - Detects and iterates through the horizontal stripes.
+     - Searches for a 2x2 magenta block in each stripe.
+     - Returns the index of the stripe containing the magenta block.
+   - **`generate_input` function**: 
+     - Creates a grid with random horizontal stripes.
+     - Randomly places a 2x2 magenta block in one of the stripes.
+
+This design ensures that the puzzle is both interesting and solvable for middle-schoolers, providing a mix of pattern recognition and search algorithm practice.

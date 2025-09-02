@@ -1,0 +1,77 @@
+Sure, let's create a new puzzle based on the description provided:
+
+**Concepts:**
+- Object selection
+- Connected components
+- Filtering
+
+**Description:**
+In the input grid, you'll see several connected components (objects) of various sizes and colors. Your task is to extract and filter these objects based on a specific size criterion: only retain objects that have an area greater than a predetermined threshold. The output should be a list of the selected objects, each represented by its bounding box and constituent pixels. Non-selected objects should be excluded from the output.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# In the input grid, connected components (objects) of various sizes and colors are placed randomly.
+# The task is to filter and retain only those objects that have an area greater than a specified threshold.
+# The output should be a list of the selected objects, each represented by its bounding box and constituent pixels.
+
+def main(input_grid):
+    # Define the area threshold for filtering
+    area_threshold = 5
+
+    # Find all connected components in the input grid
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    # List to store selected objects
+    selected_objects = []
+
+    # Filter components based on the area criterion
+    for component in components:
+        # Calculate the area of the component by counting non-background pixels
+        area = np.sum(component != Color.BLACK)
+        
+        # Retain component if its area is greater than the threshold
+        if area > area_threshold:
+            # Crop the component to obtain its bounding box
+            cropped_component = crop(component, background=Color.BLACK)
+            selected_objects.append(cropped_component)
+
+    return selected_objects
+
+
+def generate_input():
+    # Create a grid with random dimensions between 10 and 20
+    n, m = np.random.randint(10, 21), np.random.randint(10, 21)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Define a number of components to place
+    num_components = np.random.randint(3, 7)
+
+    for _ in range(num_components):
+        # Generate a random sprite with varied colors and size
+        n_sprite, m_sprite = np.random.randint(2, 5), np.random.randint(2, 5)
+        color_palette = random.sample(Color.NOT_BLACK, np.random.randint(1, 3))
+        sprite = random_sprite(n=n_sprite, m=m_sprite, color_palette=color_palette, connectivity=4)
+
+        # Try to place the sprite in the grid at a random location
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no suitable location is found, continue with the next sprite
+            continue
+
+    return grid
+```
+
+In this puzzle:
+- The `main` function extracts all connected components in the input grid and filters them based on their area.
+- Only components with an area greater than a specified threshold are retained and returned.
+- The `generate_input` function creates a grid with random components of various sizes and colors, ensuring variability for each puzzle instance.

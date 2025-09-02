@@ -1,0 +1,85 @@
+To create the puzzle based on the given description, we will implement a Python code block using the provided `common.py` library for handling 2D grids and colors. This puzzle will involve identifying the orientation of a single connected object on a grid by detecting which corner in its bounding box is missing, then recoloring the object based on its orientation. Let's implement the functions `generate_input` and `main` accordingly:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, recolor, connected components, bounding box
+
+# description:
+# The input grid contains a single connected object. The task is to determine the object's orientation by identifying the missing corner in its bounding box:
+# top-left, top-right, bottom-left, or bottom-right. Recolor the entire object uniformly based on this orientation using a fixed color map:
+# - top-left to red (3)
+# - top-right to yellow (4)
+# - bottom-left to green (2)
+# - bottom-right to blue (1)
+# The background and any other grid content remain unchanged.
+
+def main(input_grid):
+    # Extract the single connected object from the input grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+    
+    # There should be exactly one object
+    assert len(objects) == 1, "The input should contain exactly one connected object"
+    obj = objects[0]
+    
+    # Determine the bounding box of the object
+    x, y, width, height = bounding_box(obj)
+    
+    # Identify the missing corner
+    missing_corners = [(x, y), (x, y + height - 1), (x + width - 1, y), (x + width - 1, y + height - 1)]
+    present_corners = set(np.argwhere(obj != Color.BLACK).tolist())
+    missing_corner = next(corner for corner in missing_corners if corner not in present_corners)
+    
+    # Map the missing corner to the appropriate color
+    orientation_to_color = {
+        (x, y): Color.RED,         # top-left
+        (x, y + height - 1): Color.YELLOW,  # top-right
+        (x + width - 1, y): Color.GREEN,   # bottom-left
+        (x + width - 1, y + height - 1): Color.BLUE    # bottom-right
+    }
+    
+    # Get the new color for the object based on its missing corner
+    new_color = orientation_to_color[missing_corner]
+    
+    # Recolor the object uniformly
+    obj[obj != Color.BLACK] = new_color
+    
+    # Create the output grid and place the recolored object
+    output_grid = np.copy(input_grid)
+    blit_object(output_grid, obj, background=Color.BLACK)
+    
+    return output_grid
+
+
+def generate_input():
+    # Define grid dimensions
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate a random connected object with a missing corner
+    object_size = np.random.randint(3, min(n, m) // 2)
+    obj = random_sprite(object_size, object_size, density=0.7, color_palette=[Color.GREY], connectivity=8)
+    
+    # Manually remove one corner to create a missing corner effect
+    x, y, width, height = bounding_box(obj, background=Color.BLACK)
+    missing_corners = [(x, y), (x, y + height - 1), (x + width - 1, y), (x + width - 1, y + height - 1)]
+    missing_corner = np.random.choice(len(missing_corners))
+    obj[missing_corners[missing_corner]] = Color.BLACK
+    
+    # Place the object randomly in the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, obj, padding=1, padding_connectivity=8)
+        blit_sprite(grid, obj, x, y, background=Color.BLACK)
+    except ValueError:
+        pass  # In rare cases, there might not be enough space; retrying the generation is recommended
+    
+    return grid
+```
+
+In this implementation:
+- `generate_input` creates a single connected object with a missing corner and places it on a grid.
+- `main` identifies the object's orientation by detecting the missing corner of its bounding box and recolors the object accordingly using a predefined color map. The output grid retains the original background and other grid content unchanged.

@@ -1,0 +1,86 @@
+Here's a new puzzle implementation based on the description provided. The objective is to identify holes fully enclosed by an object and fill them with a target color, while excluding regions touching the grid's border.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input grid contains a single object of a random color that encloses empty spaces (holes). These holes are regions of the background color (0) that are fully enclosed by the object and do not touch the grid's border. 
+# The task is to identify these enclosed holes and fill them with a specified target color. The output grid should preserve the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create a copy of the input grid to serve as the output grid
+    output_grid = input_grid.copy()
+
+    # Get the background color
+    background_color = Color.BLACK
+
+    # Identify all connected components in the grid
+    components = find_connected_components(input_grid, background=background_color, connectivity=8)
+
+    # Determine the target color to fill holes with
+    target_color = Color.RED
+
+    # Flood fill from the border to exclude non-enclosed regions
+    border_filled = np.zeros_like(input_grid, dtype=bool)
+    for i in range(input_grid.shape[0]):
+        if input_grid[i, 0] == background_color:
+            flood_fill(border_filled, input_grid, i, 0, background_color)
+        if input_grid[i, -1] == background_color:
+            flood_fill(border_filled, input_grid, i, input_grid.shape[1] - 1, background_color)
+    for j in range(input_grid.shape[1]):
+        if input_grid[0, j] == background_color:
+            flood_fill(border_filled, input_grid, 0, j, background_color)
+        if input_grid[-1, j] == background_color:
+            flood_fill(border_filled, input_grid, input_grid.shape[0] - 1, j, background_color)
+
+    # Fill the enclosed holes with the target color
+    for component in components:
+        if np.all(component != border_filled):
+            # The component is fully enclosed and not touching the border
+            output_grid[component == background_color] = target_color
+
+    return output_grid
+
+
+def flood_fill(filled, grid, x, y, target_color):
+    if filled[x, y] or grid[x, y] != target_color:
+        return
+    filled[x, y] = True
+    if x > 0:
+        flood_fill(filled, grid, x - 1, y, target_color)
+    if x < grid.shape[0] - 1:
+        flood_fill(filled, grid, x + 1, y, target_color)
+    if y > 0:
+        flood_fill(filled, grid, x, y - 1, target_color)
+    if y < grid.shape[1] - 1:
+        flood_fill(filled, grid, x, y + 1, target_color)
+
+
+def generate_input():
+    n = np.random.randint(10, 15)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create a random colored enclosing object
+    enclosing_color = np.random.choice(list(Color.ALL_COLORS - {Color.BLACK}))
+    enclosing_object = random_sprite(n - 4, n - 4, color_palette=[enclosing_color], connectivity=8)
+
+    # Ensure the object is hollow by marking interior as black
+    interior_mask = object_interior(enclosing_object)
+    enclosing_object[interior_mask] = Color.BLACK
+
+    # Place the enclosing object randomly within the grid
+    x, y = random_free_location_for_sprite(grid, enclosing_object, border_size=2)
+    blit_sprite(grid, enclosing_object, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+In this puzzle, the `main` function identifies holes in the grid that are fully enclosed by an object and not touching the grid's border. These holes are then filled with a specified target color, while the enclosing object and other regions remain unchanged. The `generate_input` function creates a grid with a randomly colored enclosing object, ensuring that there are hollow spaces inside that could be treated as potential holes.
+
+This puzzle encourages middle-schoolers to explore concepts like flood-fill algorithms and connected components in a visually engaging way.

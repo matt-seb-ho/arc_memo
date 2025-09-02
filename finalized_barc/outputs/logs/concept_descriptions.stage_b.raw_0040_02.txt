@@ -1,0 +1,71 @@
+Here's a new puzzle that involves identifying and selecting objects of a specific color from a grid, and only preserving those objects in the output. The concepts involve specific color selection, connected components, and filtering. 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# specific color selection, connected components, filtering
+
+# description:
+# The input consists of multiple objects of various colors on a grid. 
+# Identify and select all objects that are composed entirely of a specified target color.
+# Output a grid where only these selected objects are preserved in their original positions and colors,
+# while all other grid cells are set to background color (0).
+
+def main(input_grid: np.ndarray, target_color) -> np.ndarray:
+    # Plan:
+    # 1. Detect all connected components in the grid using 4-way connectivity.
+    # 2. Filter out components that are not entirely the target color.
+    # 3. Create an output grid with only the selected objects preserved.
+
+    # Extract objects using 4-way connectivity
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=True)
+
+    # Create an empty grid for output
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Iterate over each object and check if it's composed entirely of the target color
+    for obj in objects:
+        if np.all(obj[obj != Color.BLACK] == target_color):
+            # If the object is entirely the target color, draw it onto the output grid
+            output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input() -> np.ndarray:
+    # Create a grid of size 10x10 filled with black
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Choose a random target color from available colors excluding black
+    target_color = random.choice(Color.NOT_BLACK)
+    other_colors = [color for color in Color.NOT_BLACK if color != target_color]
+
+    # Place a few objects of the target color
+    for _ in range(3):
+        obj = random_sprite(list(range(1, 4)), list(range(1, 4)), color_palette=[target_color])
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            break
+
+    # Place some objects of other colors
+    for _ in range(3):
+        obj = random_sprite(list(range(1, 4)), list(range(1, 4)), color_palette=other_colors)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            break
+
+    return grid, target_color
+```
+
+### Explanation:
+- **`main` function:** This function identifies objects composed entirely of a specified `target_color` and preserves these objects in the output grid. All other cells are set to the background color, black.
+  
+- **`generate_input` function:** This function generates a 10x10 grid with several objects of random colors. A random color is selected as the `target_color`, and a few objects are generated entirely of this color. Other objects are generated using different colors. This ensures variability in the test cases for the transformation function.

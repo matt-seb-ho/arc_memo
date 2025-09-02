@@ -1,0 +1,80 @@
+Certainly! Let's create a puzzle based on the description provided, which involves detecting dividers in a grid and extracting contiguous sub-grids. Below is the implementation of the puzzle using the `common.py` library functions.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider detection, grid slicing, connected components, sub-grid extraction
+
+# description:
+# Input is a grid potentially divided by uninterrupted full rows or columns of a single color (e.g., grey).
+# Identify these divider lines and use them to split the grid into contiguous sub-grids. 
+# Each sub-grid is extracted as a separate region between dividers. Discard any empty sub-grids. 
+# The output is a list of these non-empty sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Identify the color used for dividers.
+    divider_color = None
+    for x in range(input_grid.shape[0]):
+        if np.all(input_grid[x, :] == input_grid[x, 0]):
+            divider_color = input_grid[x, 0]
+            break
+        if np.all(input_grid[:, x] == input_grid[0, x]):
+            divider_color = input_grid[0, x]
+            break
+            
+    assert divider_color is not None, "No divider color found"
+
+    # Find the horizontal and vertical divider lines
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == divider_color)]
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == divider_color)]
+
+    # Include edges to ensure full coverage
+    horizontal_dividers = [-1] + horizontal_dividers + [input_grid.shape[1]]
+    vertical_dividers = [-1] + vertical_dividers + [input_grid.shape[0]]
+
+    # Extract sub-grids between dividers
+    sub_grids = []
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            x1, x2 = vertical_dividers[i] + 1, vertical_dividers[i + 1]
+            y1, y2 = horizontal_dividers[j] + 1, horizontal_dividers[j + 1]
+            sub_grid = input_grid[x1:x2, y1:y2]
+            if np.any(sub_grid != divider_color):
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(Color.NOT_BLACK, size=(width, height))
+
+    # Choose a color to act as the divider
+    divider_color = Color.GREY
+
+    # Randomly determine the number of dividers
+    num_h_dividers = np.random.randint(1, min(width, 5))
+    num_v_dividers = np.random.randint(1, min(height, 5))
+
+    # Randomly place horizontal and vertical dividers
+    h_indices = randomly_spaced_indices(max_len=height, n_indices=num_h_dividers, border_size=1, padding=1)
+    v_indices = randomly_spaced_indices(max_len=width, n_indices=num_v_dividers, border_size=1, padding=1)
+
+    # Draw the dividers
+    for h in h_indices:
+        grid[:, h] = divider_color
+    for v in v_indices:
+        grid[v, :] = divider_color
+
+    return grid
+```
+
+### Explanation:
+- **Concepts:** The puzzle focuses on divider detection, grid slicing, connected components, and extracting sub-grids.
+- **Description:** The input grid contains potential horizontal or vertical dividers of a single color. The task is to detect these dividers, slice the grid into non-empty contiguous sub-grids, and return them in their original order. The implementation uses functions like `randomly_spaced_indices` and `np.all` to determine dividers and extract sub-grids.
+
+This solution provides a clear and engaging puzzle for middle-schoolers by encouraging them to explore concepts of grid division and connected components in a 2D space.

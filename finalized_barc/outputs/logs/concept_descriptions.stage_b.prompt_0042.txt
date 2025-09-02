@@ -1,0 +1,545 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+guide object, color transfer, line drawing
+
+Description: 
+Identify a guide object with a unique color in the grid. Use this color to draw a line between two specified points or along a specified path. The line is drawn by overwriting the background cells with the guide object's color. All other non-background cells remain unchanged.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_object(grid, obj, background=Color.BLACK):
+    """
+    Draws an object onto the grid using its current location.
+
+    Example usage:
+    blit_object(output_grid, an_object, background=background_color)
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def randomly_spaced_indices(max_len, n_indices, border_size=1, padding=1):
+    """
+    Generate randomly-spaced indices guaranteed to not be adjacent.
+    Useful for generating random dividers.
+
+    padding: guaranteed empty space in between indices
+    border_size: guaranteed empty space at the border
+
+    Example usage:
+    x_indices = randomly_spaced_indices(grid.shape[0], num_dividers, border_size=1, padding=2) # make sure each region is at least 2 pixels wide
+    for x in x_indices:
+        grid[x, :] = divider_color
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def object_interior(grid, background=Color.BLACK):
+    """
+    Computes the interior of the object (including edges)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's interior.
+
+    Example usage:
+    interior = object_interior(obj, background=Color.BLACK)
+    for x, y in np.argwhere(interior):
+        # x,y is either inside the object or at least on its edge
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects separated by lines, color correspond to position
+
+# description:
+# In the input you will see several gray lines that separate the grid into several parts.
+# To make the output grid, you should color the upper left part with blue, the lower right part with green,
+# and the middle part with red.
+
+def main(input_grid):
+    # Find all the black rectangles separated by gray lines
+    black_rectangles = find_connected_components(grid=input_grid, connectivity=4, monochromatic=False, background=Color.GRAY)
+
+    # Get the bounding box of each black rectangle
+    rectangles_lists = []
+    for rectangle in black_rectangles:
+        x, y, w, h = bounding_box(grid=rectangle, background=Color.GRAY)
+        rectangles_lists.append({'x': x, 'y': y, 'w': w, 'h': h})
+
+    # Sort the rectangles by x and y position
+    rectangles_lists = sorted(rectangles_lists, key=lambda rec: rec['x'])
+    rectangles_lists = sorted(rectangles_lists, key=lambda rec: rec['y'])
+    
+    left_upper_rectangle, middle_rectangle, right_bottom_rectangle = rectangles_lists[0], rectangles_lists[len(rectangles_lists) // 2], rectangles_lists[-1]
+
+    # Color the left upper part with blue
+    blue_grid = np.full((left_upper_rectangle['w'], left_upper_rectangle['h']), Color.BLUE)
+
+    # Color the right lower part with green
+    green_grid = np.full((right_bottom_rectangle['w'], right_bottom_rectangle['h']), Color.GREEN)
+
+    # Color the middle part with red
+    red_grid = np.full((middle_rectangle['w'], middle_rectangle['h']), Color.RED)
+
+    # Place the blue, green, and red grid on the input grid
+    output_grid = input_grid.copy()
+    output_grid = blit_sprite(grid=input_grid, sprite=blue_grid, x=left_upper_rectangle['x'], y=left_upper_rectangle['y'])
+    output_grid = blit_sprite(grid=input_grid, sprite=green_grid, x=right_bottom_rectangle['x'], y=right_bottom_rectangle['y'])
+    output_grid = blit_sprite(grid=input_grid, sprite=red_grid, x=middle_rectangle['x'], y=middle_rectangle['y'])
+            
+    return output_grid
+
+def generate_input():
+    # Generate a square grid as the black background
+    grid_len = np.random.randint(10, 20)
+    n, m = grid_len, grid_len
+    grid = np.zeros((n, m), dtype=int)
+
+    # Get the number of horizontal and vertical lines
+    line_nums = [2, 4]
+    line_num = np.random.choice(line_nums)
+
+    # Generate the gray lines' positions with interval between each line to form several rectangles
+    # If padding is True, the lines will be padded with 1 grid on both sides
+    vertical_lines = randomly_spaced_indices(max_len=n, n_indices=line_num, border_size=1, padding=4)
+    horizontal_lines = randomly_spaced_indices(max_len=m, n_indices=line_num, border_size=1, padding=2)
+
+    # Draw the gray vertical and horizontal lines on the grid
+    for vertical_line in vertical_lines:
+        draw_line(grid=grid, x=vertical_line, y=0, direction=(0, 1), color=Color.GRAY)
+    
+    for horizontal_line in horizontal_lines:
+        draw_line(grid=grid, x=0, y=horizontal_line, direction=(1, 0), color=Color.GRAY)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# direction, lines, pointing
+
+# description:
+# In the input, you will see several objects of the same color that are in an arrowhead shape and facing different directions.
+# The goal is to find the directions of the arrowheads and draw lines that would represent the path they had been moving in to go in that direction.
+
+def main(input_grid):
+    # copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # find the objects in the input grid
+    objects = find_connected_components(input_grid, connectivity=8)
+
+    # for each object, find the direction the arrowhead is pointing in by finding the relative mean position of colored and black pixels in the bounding box of the object
+    for obj in objects:
+        # find the bounding box of the object
+        x, y, w, h = bounding_box(obj)
+
+        # crop the object to extract the sprite
+        sprite = crop(obj)
+
+        # find the color of the object
+        color = np.unique(obj[obj != Color.BLACK])[0]
+
+        # find the mean position of the colored pixels
+        mean_pos = np.mean(np.argwhere(sprite != Color.BLACK), axis=0)
+
+        # find the mean position of all the black pixels
+        mean_black_pos = np.mean(np.argwhere(sprite == Color.BLACK), axis=0)
+
+        # find the direction the arrowhead is pointing in, it is from the mean position of the colored pixels to the mean position of the black pixels
+        direction = np.sign(mean_black_pos - mean_pos).astype(int)
+
+        # draw a line in the direction the arrowhead is pointing in from the corresponding corner of the bounding box
+        # list the corners of the bounding box
+        corners = [(x - 1, y - 1), (x + w, y - 1), (x - 1, y + h), (x + w, y + h)]
+        # compute the center of the object
+        center = (x + w / 2, y + h / 2)
+        # if the direction of the corner from the center of the object matches the direction we want to draw a line in, then draw a line
+        for corner in corners:
+            # check if the corner is in the direction that the arrowhead is pointing
+            vector_to_corner = np.array(corner) - np.array(center)
+            if np.all(np.sign(vector_to_corner) == direction):
+                draw_line(output_grid, corner[0], corner[1], length=None, color=color, direction=direction)
+
+    return output_grid
+
+def generate_input():
+    # make a 10x10 grid as background
+    grid = np.zeros((10, 10), dtype=int)
+
+    # choose the color of the arrowheads
+    color = np.random.choice(Color.NOT_BLACK)
+
+    # make the arrowheads by making a 2x2 square then removing one of the corners randomly and placing it randomly on the grid
+    for i in range(4):
+        # make at arrowhead
+        arrowhead = np.full((2, 2), color)
+        corner = np.random.randint(4)
+        arrowhead[corner // 2, corner % 2] = Color.BLACK
+        
+        # place it in a random free location with 1 cell padding
+        x, y = random_free_location_for_sprite(grid, arrowhead, padding=1)
+        blit_sprite(grid, arrowhead, x=x, y=y)
+ 
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects, topology
+
+# description:
+# In the input grid, you will see various blue objects. Some are "hollow" and contain a fully-enclosed region, while others do not have a middle that is separate from outside the object, and fully enclosed.
+# To create the output grid, copy the input grid. Then, change the color of all "hollow" shapes to be green.
+
+def main(input_grid):
+    objects = find_connected_components(input_grid, connectivity=4)
+    output_grid = input_grid.copy()
+    for object in objects:
+        if is_hollow(object):
+            object[object != Color.BLACK] = Color.GREEN
+        blit_object(output_grid, object, background=Color.BLACK)
+
+    return output_grid
+
+def is_hollow(object):
+    # to check if it contains a fully enclosed region, find everything that is enclosed by the object (in its interior), but not actually part of the object
+    interior_mask = object_interior(object)
+    object_mask = object != Color.BLACK
+    hollow_mask = interior_mask & ~object_mask
+    return np.any(hollow_mask)
+
+
+def generate_input():
+    n = np.random.randint(10, 28)
+    input_grid = np.full((n, n), Color.BLACK)
+    # create a bunch of random objects. all objects are either (1) hollow, in which case they are the border of a rectangle of some size, or (2) not hollow, in which case they are a subset of a border of a rectangle of some size.
+    # make sure we place at least one hollow and nonhollow object. then add random objects until somewhat full.
+
+    def random_hollow_object():
+        n, m = np.random.randint(3, 7), np.random.randint(3, 7)
+        obj = np.full((n, m), Color.BLUE)
+        obj[1:n-1, 1:m-1] = Color.BLACK
+        return obj
+
+    def random_nonhollow_object():
+        obj = random_hollow_object()
+        # remove a random number of dots from it
+        size = np.count_nonzero(obj)
+        new_size = np.random.randint(1, size)
+        xs, ys = np.where(obj != Color.BLACK)
+        for i in range(size - new_size):
+            obj[xs[i], ys[i]] = Color.BLACK
+
+        return obj
+
+    try:
+        # add one hollow and one nonhollow object, then add random objects until somewhat full.
+        obj = random_hollow_object()
+        x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+        blit_sprite(input_grid, obj, x=x, y=y)
+
+        obj = random_nonhollow_object()
+        x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+        blit_sprite(input_grid, obj, x=x, y=y)
+    except ValueError:
+        return generate_input()
+
+    while True:
+        obj = random_hollow_object() if np.random.rand() < 0.5 else random_nonhollow_object()
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            return input_grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+import time
+
+# concepts:
+# path finding
+
+
+# description:
+# In the input you will see teal pixels and a short green line and a short red line.
+# Find a path starting from the green line and ending at the red line and color that path green, with the following constraints:
+# You can't go through a teal pixel; you can only change direction when you hit a teal pixel; you have to start in the direction of the green line.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the start and end points of the pathfinding problem
+    # 2. Define the state space, initial state(s), successor function, and goal test
+    # 3. Run bfs to find the shortest path from start to end
+    # 4. Color the path green
+
+    # 1. Parse the input, based on color
+    # There is the start object, end object, and barriers object
+    background = Color.BLACK
+    start_object = input_grid.copy()
+    start_object[start_object != Color.GREEN] = background
+    end_object = input_grid.copy()
+    end_object[end_object != Color.RED] = background
+    barriers_object = input_grid.copy()
+    barriers_object[barriers_object != Color.TEAL] = background
+
+    # Determine the orientation of the start object
+    x_coordinates = {x for x, y in np.argwhere(start_object == Color.GREEN)}
+    y_coordinates = {y for x, y in np.argwhere(start_object == Color.GREEN)}
+    # vertical line?
+    if len(x_coordinates) == 1:
+        possible_orientations = [(0, 1), (0, -1)]
+    # horizontal line?
+    elif len(y_coordinates) == 1:
+        possible_orientations = [(1, 0), (-1, 0)]
+    else:
+        assert False, "Start object is not horizontal/vertical"
+    
+    # 2. Define the state space, initial state(s), successor function, and goal test
+    # A state is a tuple of (x, y, orientation)
+    # orientation is a tuple of (dx, dy)
+        
+    # Initially we begin at a point on the line, along the orientation of the line
+    initial_states = [(x, y, orientation)
+                      for x, y in np.argwhere(start_object == Color.GREEN)
+                      for orientation in possible_orientations]
+    
+
+    def successors(state):
+        x, y, orientation = state
+        dx, dy = orientation
+
+        if not (0 <= x + dx < input_grid.shape[0] and 0 <= y + dy < input_grid.shape[1]):
+            return
+
+        if barriers_object[x + dx, y + dy] == background:
+            yield (x + dx, y + dy, orientation)
+        if barriers_object[x + dx, y + dy] != background:
+            # right angle turns
+            new_orientations = [(dy, dx), (-dy, -dx)]
+            for new_orientation in new_orientations:
+                yield (x, y, new_orientation)
+    
+    def is_goal(state):
+        x, y, (dx, dy) = state
+        if not (0 <= x + dx < end_object.shape[0] and 0 <= y + dy < end_object.shape[1]):
+            return False
+        return end_object[x + dx, y + dy] == Color.RED
+    
+    # 3. Run bfs to find the shortest path from start to end
+    queue = list(initial_states)
+    visited = set(initial_states)
+    parent = {}
+    while queue:
+        state = queue.pop(0)        
+        if is_goal(state):
+            break        
+        for successor in successors(state):
+            if successor not in visited:
+                visited.add(successor)
+                parent[successor] = state
+                queue.append(successor)
+
+    assert is_goal(state), "No path found"
+    
+    path = []
+    while state in parent:
+        path.append(state)
+        state = parent[state]
+
+    # 4. Color the path green
+    # draw on top of the input grid
+    output_grid = input_grid.copy()
+    for x, y, _ in path:
+        output_grid[x, y] = Color.GREEN
+
+    return output_grid
+
+def generate_input():
+    # We want to first generate a successful path and add some noise teal pixels.
+    # Finally, we will remove the intermediate pixels in the path.
+    # Because the problem never uses the color 42, we will draw the path in that color, but finally erase it before returning the grid.
+
+    # Initialize grid
+    n = random.randint(14, 20)
+    grid = np.zeros((n, n), dtype=int)
+
+    # Generate start sprite, making it vertical (1x2 dimensions). We will rotate the final grid randomly to get a variety of orientations.
+    start_sprite = random_sprite(1, 2, density=1, color_palette=[Color.GREEN])
+
+    # Draw start sprite
+    start_x, start_y = random_free_location_for_sprite(grid, start_sprite, border_size=4)
+    blit_sprite(grid, start_sprite, start_x, start_y)
+
+    # Make a random path from the start to the end, leaving color 42 along the path, and leaving teal pixels at each turn
+    x,y = start_x, start_y-1
+    orientation = (0, -1)
+    target_length = random.randint(10, 20)
+    for _ in range(target_length):
+        # Draw the path
+        grid[x, y] = 42        
+
+        if random.random() < 0.2:
+            # right angle turn
+            dx, dy = orientation
+            new_orientation = random.choice([(dy, dx), (-dy, -dx)])
+            grid[x+dx, y+dy] = Color.TEAL
+            orientation = new_orientation
+        
+        dx, dy = orientation
+        x += dx
+        y += dy
+
+        if x < 0 or x >= n or y < 0 or y >= n: return generate_input()
+    
+    # Color the ending red
+    grid[x, y] = Color.RED
+    grid[x-dx, y-dy] = Color.RED
+
+    # randomly sprinkle teal in unoccupied locations
+    for x, y in np.argwhere(grid == Color.BLACK):
+        if random.random() < 0.3:
+            grid[x, y] = Color.TEAL
+
+    # Replace the path with black
+    grid[grid == 42] = Color.BLACK
+
+    # Randomly rotate
+    grid = np.rot90(grid, k=random.randint(0, 3))
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

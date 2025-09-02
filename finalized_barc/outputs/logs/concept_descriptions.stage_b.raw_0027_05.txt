@@ -1,0 +1,124 @@
+Here's an implementation of the puzzle described, using the concepts of translation, alignment, merging, and connected components.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# Given a grid with a reference object and a target object, translate the target so it touches the reference on a specified side (up/down/left/right).
+# Align the nearest edge of the target to the contact edge of the reference without overlap. 
+# Merge the target into the reference by painting target pixels into the grid, preserving existing reference pixels.
+# The output grid shows the target object aligned and merged with the reference object on the specified side.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the reference and target objects
+    # 2. Determine the direction to align the target to the reference
+    # 3. Translate the target to the edge of the reference on the specified side
+    # 4. Merge the target into the reference
+
+    # Detect all objects in the grid
+    objects = detect_objects(grid=input_grid, colors=Color.NOT_BLACK, connectivity=4, monochromatic=False)
+    
+    # Assume the first object is the reference and the second is the target
+    reference_object = objects[0]
+    target_object = objects[1]
+    
+    # Direction to align the target to the reference (can be 'up', 'down', 'left', 'right')
+    direction = 'right'  # For example, this should be specified as part of the input
+
+    # Translate the target object to be adjacent to the reference object based on the direction
+    if direction == 'right':
+        # Align target to the right of the reference
+        ref_bounding_box = np.argwhere(reference_object)
+        target_bounding_box = np.argwhere(target_object)
+        
+        ref_max_x = ref_bounding_box[:, 1].max()
+        target_min_x = target_bounding_box[:, 1].min()
+        
+        # Calculate translation needed
+        translation_x = ref_max_x - target_min_x + 1  # +1 to ensure touching
+
+        # Move target to the new position
+        translated_target = translate(target_object, x=translation_x, y=0)
+    
+    elif direction == 'left':
+        # Align target to the left of the reference
+        ref_bounding_box = np.argwhere(reference_object)
+        target_bounding_box = np.argwhere(target_object)
+        
+        ref_min_x = ref_bounding_box[:, 1].min()
+        target_max_x = target_bounding_box[:, 1].max()
+        
+        # Calculate translation needed
+        translation_x = ref_min_x - target_max_x - 1  # -1 to ensure touching
+
+        # Move target to the new position
+        translated_target = translate(target_object, x=translation_x, y=0)
+    
+    elif direction == 'down':
+        # Align target below the reference
+        ref_bounding_box = np.argwhere(reference_object)
+        target_bounding_box = np.argwhere(target_object)
+        
+        ref_max_y = ref_bounding_box[:, 0].max()
+        target_min_y = target_bounding_box[:, 0].min()
+        
+        # Calculate translation needed
+        translation_y = ref_max_y - target_min_y + 1  # +1 to ensure touching
+
+        # Move target to the new position
+        translated_target = translate(target_object, x=0, y=translation_y)
+    
+    elif direction == 'up':
+        # Align target above the reference
+        ref_bounding_box = np.argwhere(reference_object)
+        target_bounding_box = np.argwhere(target_object)
+        
+        ref_min_y = ref_bounding_box[:, 0].min()
+        target_max_y = target_bounding_box[:, 0].max()
+        
+        # Calculate translation needed
+        translation_y = ref_min_y - target_max_y - 1  # -1 to ensure touching
+
+        # Move target to the new position
+        translated_target = translate(target_object, x=0, y=translation_y)
+    
+    # Create an output grid and merge the translated target with the reference
+    output_grid = np.copy(input_grid)
+    blit_object(output_grid, reference_object, background=Color.BLACK)
+    blit_object(output_grid, translated_target, background=Color.BLACK)
+    
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with a reference object and a target object
+    n = m = 15
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Generate a reference object
+    ref_width, ref_height = np.random.randint(2, 5, size=2)
+    reference_object = random_sprite(n=ref_height, m=ref_width, color_palette=[Color.RED], connectivity=4)
+    
+    # Find a location for the reference object
+    x, y = random_free_location_for_sprite(grid, reference_object, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, reference_object, x, y, background=Color.BLACK)
+    
+    # Generate a target object
+    target_width, target_height = np.random.randint(2, 5, size=2)
+    target_object = random_sprite(n=target_height, m=target_width, color_palette=[Color.BLUE], connectivity=4)
+    
+    # Find a location for the target object
+    x, y = random_free_location_for_sprite(grid, target_object, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, target_object, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+This implementation detects two objects within the grid and aligns the target object to the specified side of the reference object, ensuring they touch without overlapping. The resulting grid merges the two objects on the specified side. The `generate_input` function creates a grid with a random reference and target objects, which are placed at random places in the grid.

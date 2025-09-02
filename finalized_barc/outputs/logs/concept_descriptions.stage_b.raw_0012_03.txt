@@ -1,0 +1,86 @@
+Certainly! Let's design the new puzzle based on the description provided.
+
+**Concepts:**
+- Hole filling
+- Guide object
+- Target object
+- Enclosed regions
+- Non-overlapping placement
+
+**Description:**
+The input consists of a guide object with enclosed holes and a separate target object. Identify interior holes within the guide object (regions not connected to the border). Fill these holes using the target object by fitting its pixels or blocks into the hole geometry without overlapping existing non-background pixels. Continue filling until all holes are filled or no more legal placements are possible. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+Here is the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole filling, guide object, target object, enclosed regions, non-overlapping placement
+
+# description:
+# The input consists of a guide object with enclosed holes and a separate target object. The goal is to fill the interior holes within the guide object using the target object by fitting its pixels or blocks into the hole geometry without overlapping existing non-background pixels. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+def main(input_grid):
+    # Detect the guide object and the target object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8)
+    
+    # Assuming the larger object is the guide and the smaller one is the target
+    guide_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    target_object = min(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    
+    output_grid = input_grid.copy()
+    
+    # Identify the interior holes within the guide object
+    guide_interior_mask = object_interior(guide_object, background=Color.BLACK)
+    holes_mask = guide_interior_mask & (guide_object == Color.BLACK)
+
+    # Try to fill each hole with the target object
+    for x, y in np.argwhere(holes_mask):
+        try:
+            # Attempt to place the target object at this hole position
+            blit_sprite(output_grid, target_object, x, y, background=Color.BLACK)
+            # Update the hole mask to prevent overlap
+            holes_mask[x:x+target_object.shape[0], y:y+target_object.shape[1]] = False
+        except ValueError:
+            # If placement is not possible, continue with the next position
+            continue
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with a guide object and a target object
+    width, height = np.random.randint(12, 16), np.random.randint(12, 16)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Generate a guide object with enclosed holes
+    guide_object = random_sprite(width-4, height-4, color_palette=[Color.BLUE], background=Color.BLACK)
+    guide_x, guide_y = random_free_location_for_sprite(grid, guide_object, padding=2)
+    blit_sprite(grid, guide_object, guide_x, guide_y)
+
+    # Create holes in the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 4)
+        hole_x, hole_y = np.random.randint(1, guide_object.shape[0]-hole_size), np.random.randint(1, guide_object.shape[1]-hole_size)
+        guide_object[hole_x:hole_x+hole_size, hole_y:hole_y+hole_size] = Color.BLACK
+
+    # Blit the guide object back with holes
+    blit_sprite(grid, guide_object, guide_x, guide_y)
+
+    # Generate a target object
+    target_size = np.random.randint(2, 4)
+    target_object = random_sprite(target_size, target_size, color_palette=[Color.RED], background=Color.BLACK)
+
+    # Place the target object separately on the grid
+    target_x, target_y = random_free_location_for_sprite(grid, target_object, padding=2, border_size=1)
+    blit_sprite(grid, target_object, target_x, target_y)
+
+    return grid
+```
+
+In this puzzle, the `main` function identifies the guide and target objects, detects holes in the guide, and attempts to fill them using the target object. The `generate_input` function creates randomized grids with a guide object containing holes and a separate target object placed on the grid.

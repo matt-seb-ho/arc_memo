@@ -1,0 +1,53 @@
+Let's design the puzzle based on the given description:
+
+### Concepts:
+- Sliding window
+- Color presence
+- Pattern matching
+- Window selection
+
+### Description:
+The input is a grid filled with various colors. The task is to slide a 3x3 window over the grid and identify the first window that contains at least one cell of every color specified in a given set of required colors. The output should be the coordinates of the top-left corner of this window. The required colors are a subset of the total available colors.
+
+Here's a possible implementation for this puzzle:
+
+```python
+from common import *
+import numpy as np
+import random
+from typing import *
+
+def main(input_grid: np.ndarray, required_colors: Set[int]) -> Tuple[int, int]:
+    # Slide the 3x3 window over the input grid
+    rows, cols = input_grid.shape
+    for i in range(rows - 2):
+        for j in range(cols - 2):
+            window = input_grid[i:i+3, j:j+3]
+            colors_in_window = set(window.flatten())
+            if required_colors.issubset(colors_in_window):
+                return (i, j)
+    raise ValueError("No window contains all required colors")
+
+
+def generate_input() -> Tuple[np.ndarray, Set[int]]:
+    # Grid size should be at least 3x3
+    grid_size = random.randint(5, 10)
+    grid = np.random.choice(list(Color.NOT_BLACK), (grid_size, grid_size))
+    
+    # Randomly select a subset of colors as required
+    required_colors = set(random.sample(list(Color.NOT_BLACK), random.randint(2, 5)))
+
+    # Ensure at least one 3x3 window contains all required colors
+    x, y = random.randint(0, grid_size - 3), random.randint(0, grid_size - 3)
+    unique_required_colors = random.sample(list(required_colors), len(required_colors))
+    
+    for idx, color in enumerate(unique_required_colors):
+        grid[x + (idx // 3), y + (idx % 3)] = color
+
+    return grid, required_colors
+```
+
+### Explanation:
+- The `main` function slides a 3x3 window over the grid and checks if the set of colors in the window contains all the required colors. If it does, it returns the top-left corner of this window.
+- The `generate_input` function creates a random grid with dimensions between 5x5 and 10x10 and selects a subset of colors as required. It ensures at least one 3x3 window contains all required colors by placing them in a random window.
+- The transformation is deterministic in that, given the same input, the same output will be produced. The input generation is stochastic, ensuring diverse test cases.

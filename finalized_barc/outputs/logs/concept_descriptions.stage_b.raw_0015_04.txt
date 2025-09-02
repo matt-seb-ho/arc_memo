@@ -1,0 +1,106 @@
+Here's a new puzzle design based on the description you provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, filling, guide object, target object, optimization, Tetris-style filling
+
+# description:
+# Given a grid with a guide object and a target object, identify holes within the guide object (enclosed black areas). 
+# Fill these holes using the target object, aiming for an optimal fit. 
+# The target object may be fully or partially used to fill the holes, similar to a "Tetris" style filling. 
+# The goal is to maximize the filled area within the guide object without altering the guide's boundaries. 
+# Non-hole areas and the guide object's boundaries remain unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Parse the input to identify the guide object and target object.
+    # 2. Find holes (enclosed black regions) within the guide object.
+    # 3. Determine how to optimally fit the target object into these holes.
+    # 4. Fill the holes with the target object, maximizing the filled area.
+    
+    output_grid = input_grid.copy()
+    
+    # Separate guide and target objects
+    guide_input = input_grid.copy()
+    guide_input[input_grid != Color.GREY] = Color.BLACK
+    guide_object = find_connected_components(guide_input, background=Color.BLACK, connectivity=8, monochromatic=True)[0]
+
+    target_input = input_grid.copy()
+    target_input[input_grid == Color.GREY] = Color.BLACK
+    target_objects = find_connected_components(target_input, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Assume the target object is the first non-black object
+    target_object = [obj for obj in target_objects if np.any(obj != Color.BLACK)][0]
+    target_sprite = crop(target_object, background=Color.BLACK)
+    
+    # Find holes within the guide object
+    guide_interior = object_interior(guide_object)
+    hole_mask = guide_interior & (guide_object == Color.BLACK)
+    
+    # Attempt to fill the holes with the target object, aiming for the best fit
+    hole_bounding_boxes = find_connected_components(hole_mask, background=False, connectivity=8, monochromatic=True)
+    for hole in hole_bounding_boxes:
+        hole_sprite = crop(hole, background=False)
+        
+        # Check if the target can fit in the hole
+        target_mask = target_sprite != Color.BLACK
+        hole_capacity = np.sum(hole_sprite)
+        
+        if np.sum(target_mask) <= hole_capacity:
+            # Use the target to fill the hole, maximizing the filled area
+            hole_x, hole_y = object_position(hole)
+            blit_sprite(output_grid, target_sprite, hole_x, hole_y, background=False)
+            break
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with a guide object and target object
+    n, m = np.random.randint(15, 25, size=2)
+    input_grid = np.full((n, m), Color.BLACK)
+    
+    # Create a guide object with holes
+    guide_width, guide_height = np.random.randint(10, 15, size=2)
+    guide_sprite = np.full((guide_width, guide_height), Color.GREY)
+    
+    # Create holes in the guide object
+    num_holes = np.random.randint(1, 3)
+    for _ in range(num_holes):
+        hole_width, hole_height = np.random.randint(2, 5, size=2)
+        hole_sprite = random_sprite(hole_width, hole_height, color_palette=[Color.BLACK], background=Color.GREY)
+        hole_x, hole_y = random_free_location_for_sprite(guide_sprite, hole_sprite, border_size=1, background=Color.GREY)
+        blit_sprite(guide_sprite, hole_sprite, hole_x, hole_y, background=Color.GREY)
+    
+    # Place the guide object in the grid
+    x, y = random_free_location_for_sprite(input_grid, guide_sprite, padding=1, border_size=1)
+    blit_sprite(input_grid, guide_sprite, x, y, background=Color.BLACK)
+    
+    # Create a target object
+    target_width, target_height = np.random.randint(2, 7, size=2)
+    target_color = np.random.choice(Color.NOT_BLACK - {Color.GREY})
+    target_sprite = random_sprite(target_width, target_height, color_palette=[target_color], background=Color.BLACK)
+    
+    # Place the target object in the grid
+    x, y = random_free_location_for_sprite(input_grid, target_sprite, padding=1, border_size=1)
+    blit_sprite(input_grid, target_sprite, x, y, background=Color.BLACK)
+    
+    return input_grid
+```
+
+### Explanation:
+- **`main` Function:**
+  - Identifies the guide object and target object from the input grid.
+  - Finds holes within the guide object.
+  - Attempts to fill the holes with the target object, maximizing the filled area while respecting the guide's boundaries.
+
+- **`generate_input` Function:**
+  - Creates a grid with a guide object containing holes and a separate target object.
+  - The guide object is a larger structure with enclosed black spaces (holes).
+  - The target object is designed to fit into one or more of these holes, much like a Tetris piece filling a gap.
+
+This puzzle challenges students to understand spatial relationships and fitting smaller objects into larger ones, optimizing for space usage.

@@ -1,0 +1,67 @@
+Here's the implementation of the described puzzle that involves stripe detection, 2x2 block search, and color matching. The task is to identify the stripe containing a 2x2 block of a specific target color (magenta) and return its index.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# stripe detection, 2x2 block search, color matching, index retrieval
+
+# description:
+# Input consists of multiple horizontal stripes separated by black rows. Each stripe may contain various colored blocks.
+# Identify the stripe containing a 2x2 block of a specific target color (magenta). Return the index of this stripe (0-based) that contains the target 2x2 block.
+# Only one stripe will contain the target block, ensuring a unique index is returned.
+
+def main(input_grid):
+    # Define the target color
+    target_color = Color.PINK
+
+    # Find the connected components (stripes) in the input grid
+    stripes = find_connected_components(input_grid, connectivity=8, monochromatic=False, background=Color.BLACK)
+
+    # Iterate over each stripe to find the one containing the 2x2 block of the target color
+    for index, stripe in enumerate(stripes):
+        # Get the bounding box of the stripe
+        x, y, width, height = bounding_box(stripe, background=Color.BLACK)
+
+        # Scan the stripe for 2x2 blocks of the target color
+        for i in range(x, x + width - 1):
+            for j in range(y, y + height - 1):
+                if (stripe[i, j] == stripe[i + 1, j] == stripe[i, j + 1] == stripe[i + 1, j + 1] == target_color):
+                    return index
+
+    raise ValueError("No stripe contains a 2x2 block of the target color")
+
+def generate_input():
+    # Create the input grid with multiple horizontal stripes
+    stripe_height = np.random.randint(3, 6)
+    num_stripes = np.random.randint(3, 6)
+    grid_width = np.random.randint(10, 15)
+    grid_height = num_stripes * (stripe_height + 1) - 1  # Account for black rows between stripes
+    grid = np.zeros((grid_height, grid_width), dtype=int)
+
+    # Randomly fill each stripe with blocks of random colors
+    for stripe_index in range(num_stripes):
+        stripe_y = stripe_index * (stripe_height + 1)
+        stripe_colors = np.random.choice(list(Color.NOT_BLACK), size=(stripe_height, grid_width))
+        grid[stripe_y:stripe_y + stripe_height, :] = stripe_colors
+
+    # Choose a random stripe and position to place a 2x2 block of the target color
+    target_stripe_index = np.random.randint(num_stripes)
+    target_stripe_y = target_stripe_index * (stripe_height + 1)
+    block_x = np.random.randint(0, grid_width - 1)
+    block_y = np.random.randint(0, stripe_height - 1)
+
+    # Place the 2x2 block of the target color (magenta)
+    grid[target_stripe_y + block_y:target_stripe_y + block_y + 2, block_x:block_x + 2] = Color.PINK
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function**: The function identifies connected components (stripes) and checks each stripe for a 2x2 block of the target color (magenta). It returns the index of the stripe containing the block.
+- **`generate_input` Function**: The function generates a grid with multiple horizontal stripes, each filled with random colors. It ensures that exactly one stripe contains a 2x2 magenta block.
+
+This setup provides a deterministic puzzle for students to solve, with a clear transformation from input to output.

@@ -1,0 +1,89 @@
+Let's design a new puzzle based on the provided description involving a guide object, starting point, and position-based transformation.
+
+### Puzzle Design
+
+**Concepts:**
+- Guide object detection
+- Positional transformation from a reference point
+
+**Description:**
+In the input, you have a grid containing a unique guide object (a specific colored object among others). The task is to identify this guide object's position and use it as a starting point to apply a transformation: mirroring the entire grid horizontally or vertically based on the position of the guide. If the guide object is located in the left half of the grid, mirror the grid horizontally; if it's in the top half, mirror vertically.
+
+### Implementation
+
+Let's implement the `main` and `generate_input` functions as per this puzzle design.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object detection, mirroring, positional transformation
+
+# description:
+# In the input grid, there is a unique guide object of a specific color. 
+# If the guide object's position is in the left half of the grid, mirror the grid horizontally.
+# If the guide object's position is in the top half of the grid, mirror the grid vertically.
+
+def main(input_grid):
+    # Detect all objects in the grid and identify the guide object
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+    
+    # Assume that the guide object is the only one in a unique color
+    guide_color = next(color for color in Color.NOT_BLACK if np.any(input_grid == color))
+    guide_object = [obj for obj in objects if np.any(obj == guide_color)][0]
+    
+    # Find the position of the guide object
+    x_guide, y_guide, _, _ = bounding_box(guide_object)
+    
+    # Determine grid dimensions
+    n, m = input_grid.shape
+    
+    # Create output grid based on guide object's position
+    if x_guide < n // 2:
+        # Mirror horizontally
+        output_grid = np.fliplr(input_grid)
+    elif y_guide < m // 2:
+        # Mirror vertically
+        output_grid = np.flipud(input_grid)
+    else:
+        # If the guide object is in the bottom-right quarter, no transformation
+        output_grid = input_grid.copy()
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with random size and place a unique guide object
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Define a unique color for the guide object
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Generate a random object as the guide object
+    guide_object = random_sprite(1, 1, color_palette=[guide_color])
+    
+    # Place the guide object randomly in the grid
+    x, y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[x, y] = guide_color
+    
+    # Add some other random objects in different colors
+    for _ in range(np.random.randint(1, 5)):
+        obj_color = np.random.choice([c for c in Color.NOT_BLACK if c != guide_color])
+        obj = random_sprite(np.random.randint(1, 3), np.random.randint(1, 3), color_palette=[obj_color])
+        try:
+            x, y = random_free_location_for_sprite(grid=grid, sprite=obj, padding=1, padding_connectivity=8)
+            blit_sprite(grid, obj, x, y)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+### Explanation
+
+- **`main` Function:** This function identifies the guide object based on its unique color and position. The transformation is decided by whether it's in the left or top half of the grid, implementing a mirroring effect accordingly.
+  
+- **`generate_input` Function:** This creates a grid with random dimensions, places a unique guide object, and scatters additional random objects. The guide object is placed randomly, which influences the outcome of the transformation when `main` is applied.

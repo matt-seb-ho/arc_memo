@@ -1,0 +1,88 @@
+Below is the implementation of the puzzle described:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# The input grid consists of various colors, including some pixels of a target color (cyan).
+# For each row and column, detect and extract maximal contiguous runs of the target color.
+# Output these runs as lists of coordinates, representing the start and end of each contiguous sequence of the target color.
+# Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid):
+    # Define the target color
+    target_color = Color.CYAN
+
+    # Initialize list to store maximal contiguous runs
+    contiguous_runs = []
+
+    # Scan each row for contiguous runs
+    for r in range(input_grid.shape[0]):
+        start = None
+        for c in range(input_grid.shape[1]):
+            if input_grid[r, c] == target_color:
+                if start is None:
+                    start = c
+            else:
+                if start is not None:
+                    if c - start > 1:  # Ensure it's more than an isolated pixel
+                        contiguous_runs.append(((r, start), (r, c - 1)))
+                    start = None
+
+        # Check at the end of the row
+        if start is not None and input_grid.shape[1] - start > 1:
+            contiguous_runs.append(((r, start), (r, input_grid.shape[1] - 1)))
+
+    # Scan each column for contiguous runs
+    for c in range(input_grid.shape[1]):
+        start = None
+        for r in range(input_grid.shape[0]):
+            if input_grid[r, c] == target_color:
+                if start is None:
+                    start = r
+            else:
+                if start is not None:
+                    if r - start > 1:
+                        contiguous_runs.append(((start, c), (r - 1, c)))
+                    start = None
+
+        # Check at the end of the column
+        if start is not None and input_grid.shape[0] - start > 1:
+            contiguous_runs.append(((start, c), (input_grid.shape[0] - 1, c)))
+
+    return contiguous_runs
+
+
+def generate_input():
+    # Create a grid of random size
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly scatter various colors
+    for color in Color.NOT_BLACK:
+        randomly_scatter_points(grid, color=color, density=0.1, background=Color.BLACK)
+
+    # Ensure some contiguous runs of cyan
+    num_cyan_runs = np.random.randint(2, 5)
+    for _ in range(num_cyan_runs):
+        if np.random.rand() < 0.5:  # horizontal run
+            r = np.random.randint(0, n)
+            c_start = np.random.randint(0, m - 3)
+            length = np.random.randint(2, min(5, m - c_start))
+            draw_line(grid, x=r, y=c_start, length=length, direction=(0, 1), color=Color.CYAN)
+        else:  # vertical run
+            c = np.random.randint(0, m)
+            r_start = np.random.randint(0, n - 3)
+            length = np.random.randint(2, min(5, n - r_start))
+            draw_line(grid, x=r_start, y=c, length=length, direction=(1, 0), color=Color.CYAN)
+
+    return grid
+```
+
+This implementation follows the puzzle description by detecting and extracting maximal contiguous runs of a target color (cyan) in both rows and columns of an input grid. It uses functions from the `common.py` library to generate input grids with scattered colors and specifically ensures the presence of contiguous runs of the target color.

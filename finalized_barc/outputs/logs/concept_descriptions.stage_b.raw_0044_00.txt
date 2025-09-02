@@ -1,0 +1,62 @@
+Let's create a puzzle based on the provided description. The puzzle will involve a 2D grid and a transformation that processes a specified 3x3 window using a predicate function. The goal is to fill in cells that do not satisfy the predicate with a specified fill value. Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# window processing, predicate check, conditional fill, grid manipulation
+
+# description:
+# Given an input grid with specified 3x3 window coordinates and a predicate function, for each cell within the window,
+# check if it satisfies the predicate. If not, replace its value with a specified fill_value. 
+# Cells that satisfy the predicate remain unchanged. This operation completes the pattern within the window by filling only the non-matching cells.
+
+def main(input_grid: Tuple[np.ndarray, Tuple[int, int], Callable[[str], bool], str]) -> np.ndarray:
+    grid, (window_x, window_y), predicate, fill_value = input_grid
+    
+    # Extract the 3x3 window from the grid
+    window = grid[window_x:window_x+3, window_y:window_y+3]
+
+    # Create a new 3x3 window for the output
+    output_window = np.copy(window)
+
+    # Check each cell in the window
+    for i in range(3):
+        for j in range(3):
+            if not predicate(window[i, j]):
+                output_window[i, j] = fill_value
+
+    # Copy the modified window back to the grid
+    output_grid = np.copy(grid)
+    output_grid[window_x:window_x+3, window_y:window_y+3] = output_window
+
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, Tuple[int, int], Callable[[str], bool], str]:
+    # Create a random grid of size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+
+    # Randomly choose a starting point for the 3x3 window such that it fits within the grid
+    window_x = np.random.randint(0, n - 2)
+    window_y = np.random.randint(0, m - 2)
+
+    # Define a predicate function that checks if a color is one of a specified set
+    valid_colors = {random.choice(list(Color.NOT_BLACK)) for _ in range(3)}
+    predicate = lambda color: color in valid_colors
+
+    # Choose a fill value that is not in the valid_colors set
+    fill_value = random.choice(list(Color.NOT_BLACK.difference(valid_colors)))
+
+    return grid, (window_x, window_y), predicate, fill_value
+```
+
+### Explanation:
+
+- **Concepts:** The puzzle involves processing a specified 3x3 window within a grid, checking each cell against a predicate, and conditionally replacing values.
+- **Description:** The input consists of a grid, a starting coordinate for a 3x3 window, a predicate function, and a fill value. The transformation involves checking each cell in the window; if it does not satisfy the predicate, its value is replaced with the fill value.
+- **`main` Function:** It extracts the 3x3 window, applies the transformation based on the predicate, and updates the grid.
+- **`generate_input` Function:** It creates a random grid, selects a random 3x3 window, defines a predicate based on a set of valid colors, and selects a fill value. The input is stochastic and provides varied examples for testing the transformation.

@@ -1,0 +1,86 @@
+Sure! Let's implement the puzzle based on the provided description. The puzzle involves detecting maximal contiguous runs of a target color (cyan) in a grid and outputting them as lists of coordinates. Here’s the puzzle implementation:
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# Input is a grid containing various colors, including a target color (cyan). For each row and column, detect and extract maximal contiguous runs of the target color.
+# Output these runs as lists of coordinates or slices, representing the start and end of each contiguous sequence of the target color. Non-target colors and isolated target pixels are ignored. 
+# The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[Tuple[int, int, int, int]]:
+    target_color = Color.TEAL
+    contiguous_runs = []
+
+    # Check each row for contiguous runs of the target color
+    for i in range(input_grid.shape[0]):
+        start = None
+        for j in range(input_grid.shape[1]):
+            if input_grid[i, j] == target_color:
+                if start is None:
+                    start = j
+            else:
+                if start is not None:
+                    if j - start > 1:  # Ensure the run is maximal
+                        contiguous_runs.append((i, start, i, j - 1))
+                    start = None
+        # Handle case where run goes till end of row
+        if start is not None and input_grid.shape[1] - start > 1:
+            contiguous_runs.append((i, start, i, input_grid.shape[1] - 1))
+
+    # Check each column for contiguous runs of the target color
+    for j in range(input_grid.shape[1]):
+        start = None
+        for i in range(input_grid.shape[0]):
+            if input_grid[i, j] == target_color:
+                if start is None:
+                    start = i
+            else:
+                if start is not None:
+                    if i - start > 1:  # Ensure the run is maximal
+                        contiguous_runs.append((start, j, i - 1, j))
+                    start = None
+        # Handle case where run goes till end of column
+        if start is not None and input_grid.shape[0] - start > 1:
+            contiguous_runs.append((start, j, input_grid.shape[0] - 1, j))
+
+    return contiguous_runs
+
+def generate_input() -> np.ndarray:
+    # Generate a grid with random size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly scatter points of various colors, including the target color (cyan)
+    for color in np.random.choice(list(Color.NOT_BLACK), size=5, replace=False):
+        randomly_scatter_points(grid, color=color, density=0.2)
+
+    # Add some maximal cyan runs to the grid
+    num_runs = np.random.randint(1, 4)
+    for _ in range(num_runs):
+        if np.random.rand() > 0.5:  # Horizontal run
+            row = np.random.randint(n)
+            start_col = np.random.randint(m - 3)  # Ensure room for a run
+            length = np.random.randint(2, m - start_col)
+            draw_line(grid, row, start_col, length=length, direction=(0, 1), color=Color.TEAL)
+        else:  # Vertical run
+            col = np.random.randint(m)
+            start_row = np.random.randint(n - 3)  # Ensure room for a run
+            length = np.random.randint(2, n - start_row)
+            draw_line(grid, start_row, col, length=length, direction=(1, 0), color=Color.TEAL)
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The main concepts here are contiguous run detection and row/column scanning to identify maximal sequences of a specific color.
+- **Description**: The implementation involves scanning each row and column to find maximal contiguous sequences of the target color (cyan). These sequences are represented by their start and end coordinates and are stored in a list. Non-target colors and isolated target pixels are ignored.
+- **Deterministic Transformation**: The `main` function is deterministic. Given the same input grid, it will always produce the same output.
+- **Stochastic Input Generation**: The `generate_input` function creates a grid with random dimensions and scattered colors, including the target color, to ensure diverse test cases.
+
+This setup provides a puzzle that encourages students to think about sequence detection and pattern recognition in a grid setting.

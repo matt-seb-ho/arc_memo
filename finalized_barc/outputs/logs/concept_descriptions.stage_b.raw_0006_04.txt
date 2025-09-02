@@ -1,0 +1,67 @@
+Let's implement the puzzle as described. We'll create a grid where two distinct pixels are marked as start and end, and we need to draw a straight line between these two points using a specified color. The rest of the grid remains unchanged.
+
+Here's how we can implement it:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line drawing, pixel connectivity, grid update
+
+# description:
+# In the input you will see a grid with two distinct colored pixels: one for the start and another for the end.
+# The task is to draw a straight line connecting these two pixels using a specified color.
+# The line should be drawn using pixel connectivity, updating the grid by coloring each pixel along the path with the given color.
+# The rest of the grid remains unchanged.
+
+def main(input_grid):
+    # Copy the input grid to create the output grid
+    output_grid = np.copy(input_grid)
+
+    # Identify start and end positions
+    start_position = np.argwhere(input_grid == Color.GREEN)[0]
+    end_position = np.argwhere(input_grid == Color.RED)[0]
+
+    # Draw a line between the start and end positions using a specified color
+    draw_line(output_grid, x=start_position[0], y=start_position[1],
+              end_x=end_position[0], end_y=end_position[1], color=Color.BLUE)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of random size between 10x10 and 20x20
+    n, m = np.random.randint(10, 21, size=2)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly place a start pixel (GREEN) and an end pixel (RED) on the grid
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    # Ensure start and end positions are not the same
+    while start_x == end_x and start_y == end_y:
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    # Assign colors to start and end positions
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts:** This puzzle involves concepts of line drawing, pixel connectivity, and grid updates.
+  
+- **Description:** The input grid contains two distinct colored pixels marked as the start (GREEN) and end (RED). The task is to draw a straight line connecting these two points using a specified color (BLUE). The rest of the grid remains unchanged.
+
+- **Functions Used:**
+  - `np.copy`: To create a copy of the input grid for manipulation.
+  - `np.argwhere`: To find the positions of the start and end pixels on the grid.
+  - `draw_line`: To draw a line between the start and end positions.
+
+- **`generate_input`:** This function generates a randomized grid with a start and an end pixel placed randomly, ensuring they are not at the same position. This provides a variety of scenarios for the `main` function to handle.
+
+This implementation allows middle-schoolers to explore the concept of drawing lines on a grid, focusing on the connectivity between pixels.

@@ -1,0 +1,88 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider detection, grid slicing, connected components, sub-grid extraction
+
+# description:
+# The input is a grid potentially divided by uninterrupted full rows or columns of a single color (e.g., grey).
+# Identify these divider lines and use them to split the grid into contiguous sub-grids.
+# Each sub-grid is extracted as a separate region between dividers. Discard any empty sub-grids.
+# The output is a list of these non-empty sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Plan:
+    # 1. Identify potential divider lines that are uninterrupted rows or columns of a single color.
+    # 2. Use these dividers to split the grid into sub-grids.
+    # 3. Extract each sub-grid and discard any that are empty.
+    # 4. Return the list of non-empty sub-grids.
+
+    divider_color = Color.GREY
+    height, width = input_grid.shape
+
+    # Identify the horizontal and vertical dividers
+    horizontal_dividers = [y for y in range(height) if np.all(input_grid[y, :] == divider_color)]
+    vertical_dividers = [x for x in range(width) if np.all(input_grid[:, x] == divider_color)]
+
+    # Add boundaries to the divider lists to handle edges
+    horizontal_dividers = [-1] + horizontal_dividers + [height]
+    vertical_dividers = [-1] + vertical_dividers + [width]
+
+    sub_grids = []
+
+    # Split the grid into sub-grids based on divider positions
+    for i in range(len(horizontal_dividers) - 1):
+        for j in range(len(vertical_dividers) - 1):
+            y_start = horizontal_dividers[i] + 1
+            y_end = horizontal_dividers[i + 1]
+            x_start = vertical_dividers[j] + 1
+            x_end = vertical_dividers[j + 1]
+
+            sub_grid = input_grid[y_start:y_end, x_start:x_end]
+
+            # Check if the sub-grid is non-empty (contains at least one non-divider, non-black pixel)
+            if np.any(sub_grid != divider_color) and np.any(sub_grid != Color.BLACK):
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+
+def generate_input() -> np.ndarray:
+    # Generate a grid with random size
+    height, width = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((height, width), Color.BLACK)
+
+    # Randomly determine the number of dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    # Randomly place horizontal dividers
+    horizontal_positions = randomly_spaced_indices(height, num_horizontal_dividers, border_size=1, padding=1)
+    for y in horizontal_positions:
+        grid[y, :] = Color.GREY
+
+    # Randomly place vertical dividers
+    vertical_positions = randomly_spaced_indices(width, num_vertical_dividers, border_size=1, padding=1)
+    for x in vertical_positions:
+        grid[:, x] = Color.GREY
+
+    # Fill sub-grids with random colors
+    color_palette = list(Color.NOT_BLACK)
+    for i in range(len(horizontal_positions) + 1):
+        for j in range(len(vertical_positions) + 1):
+            y_start = 0 if i == 0 else horizontal_positions[i - 1] + 1
+            y_end = height if i == len(horizontal_positions) else horizontal_positions[i]
+            x_start = 0 if j == 0 else vertical_positions[j - 1] + 1
+            x_end = width if j == len(vertical_positions) else vertical_positions[j]
+
+            if y_end > y_start and x_end > x_start:
+                color = np.random.choice(color_palette)
+                grid[y_start:y_end, x_start:x_end] = color
+
+    return grid
+```
+
+This puzzle involves detecting dividers in a grid and using them to extract and return non-empty sub-grids. The `main` function identifies dividers and extracts sub-grids between these dividers, discarding any empty sub-grids. The `generate_input` function creates a grid with random dividers and fills sub-grids with random colors.

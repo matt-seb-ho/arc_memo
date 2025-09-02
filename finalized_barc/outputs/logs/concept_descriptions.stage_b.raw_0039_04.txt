@@ -1,0 +1,89 @@
+Let's implement a puzzle based on the provided description: **obstacles, path blocking, line drawing**. The task is to identify obstacles in the grid and draw a line between two points without intersecting the obstacles.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path finding, line drawing
+
+# description:
+# In the input, you will see a grid with obstacles represented by gray pixels. 
+# There will be a blue pixel indicating the start point and a red pixel indicating the end point.
+# The task is to draw a path from the blue pixel to the red pixel, avoiding the gray obstacles.
+# The path should be drawn as a continuous green line.
+
+def main(input_grid):
+    # Copy the input grid to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Find the start and end points
+    start_point = np.argwhere(output_grid == Color.BLUE)[0]
+    end_point = np.argwhere(output_grid == Color.RED)[0]
+
+    # Find the obstacles
+    obstacles = np.argwhere(output_grid == Color.GREY)
+
+    def is_valid(x, y):
+        # Check if the point is inside the grid and not an obstacle
+        if 0 <= x < output_grid.shape[0] and 0 <= y < output_grid.shape[1]:
+            if output_grid[x, y] != Color.GREY:
+                return True
+        return False
+
+    # Implement a simple pathfinding algorithm (e.g., BFS) to find the path
+    from collections import deque
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # 4-way connectivity
+    queue = deque([(*start_point, [])])
+    visited = set()
+    visited.add(tuple(start_point))
+
+    while queue:
+        x, y, path = queue.popleft()
+
+        if (x, y) == tuple(end_point):
+            # Draw the path in green
+            for px, py in path:
+                output_grid[px, py] = Color.GREEN
+            break
+
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if is_valid(nx, ny) and (nx, ny) not in visited:
+                visited.add((nx, ny))
+                queue.append((nx, ny, path + [(nx, ny)]))
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size n x n
+    n = np.random.randint(10, 15)
+    grid = np.zeros((n, n), dtype=int)
+
+    # Randomly place the start point (blue) and the end point (red)
+    start_x, start_y = np.random.randint(0, n, size=2)
+    end_x, end_y = np.random.randint(0, n, size=2)
+    while (start_x, start_y) == (end_x, end_y):
+        end_x, end_y = np.random.randint(0, n, size=2)
+
+    grid[start_x, start_y] = Color.BLUE
+    grid[end_x, end_y] = Color.RED
+
+    # Randomly scatter obstacles (gray) on the grid
+    num_obstacles = np.random.randint(5, 15)
+    for _ in range(num_obstacles):
+        obs_x, obs_y = np.random.randint(0, n, size=2)
+        if grid[obs_x, obs_y] == 0:
+            grid[obs_x, obs_y] = Color.GREY
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: The puzzle involves understanding obstacles, pathfinding, and line drawing on a grid.
+2. **Description**: The input grid contains gray obstacles, a blue start point, and a red endpoint. The task is to draw a continuous green line from the start to the end, avoiding obstacles.
+3. **`main` function**: The function finds a path from the start to the end using a simple pathfinding algorithm (BFS) and draws the path in green.
+4. **`generate_input` function**: This function generates a random grid of size 10x10 to 15x15 with scattered obstacles and designated start and end points.

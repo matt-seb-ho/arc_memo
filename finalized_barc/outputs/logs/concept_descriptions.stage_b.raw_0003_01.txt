@@ -1,0 +1,69 @@
+Certainly! Let's design a new puzzle based on the concepts of output grid shape, guide object, bounding box, and zero-initialized grid. The goal will be to determine the output grid's shape based on a specific rule, which involves either a fixed size or deriving it from a guide object's bounding box. The puzzle will focus on creating an output grid with the calculated dimensions, initialized to zero (background color).
+
+Here's how the puzzle can be implemented:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# output grid shape, guide object, bounding box, zero-initialized grid
+
+# description:
+# In the input grid, you will see a single guide object of a random color, floating on a black grid. 
+# The guide object can be any random shape, but its bounding box will be used to determine the output grid's dimensions.
+# To make the output, create a grid with dimensions matching the bounding box of the guide object and initialize it with zero (Color.BLACK).
+
+def main(input_grid):
+    # Extract the guide object from the grid
+    guide_object = detect_objects(input_grid, background=Color.BLACK, monochromatic=True, connectivity=8)
+    
+    # Ensure there's only one guide object
+    assert len(guide_object) == 1, "There should be exactly one guide object in the input grid."
+    
+    # Crop the guide object to get its bounding box
+    cropped_object = crop(guide_object[0], background=Color.BLACK)
+    
+    # Get the dimensions of the bounding box
+    bbox_height, bbox_width = cropped_object.shape
+    
+    # Create a new grid with the dimensions of the bounding box, initialized to zero
+    output_grid = np.full((bbox_height, bbox_width), Color.BLACK, dtype=int)
+    
+    return output_grid
+
+def generate_input():
+    # Create a black grid of random size between 15x15 and 25x25
+    n = np.random.randint(15, 26)
+    m = np.random.randint(15, 26)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Generate a random guide object with dimensions between 3x3 and 8x8, and a random color
+    guide_height = np.random.randint(3, 9)
+    guide_width = np.random.randint(3, 9)
+    color = np.random.choice(Color.NOT_BLACK)
+    guide_object = random_sprite(guide_height, guide_width, color_palette=[color], connectivity=8)
+    
+    # Place the guide object at a random location on the grid
+    x, y = random_free_location_for_sprite(grid, guide_object)
+    blit_sprite(grid, guide_object, x, y)
+    
+    return grid
+```
+
+### Explanation:
+1. **Concepts and Description**: The puzzle is centered around determining the shape of the output grid based on the bounding box of a guide object. The guide object is a randomly shaped, monochromatic entity placed on a black grid. The solution involves creating an output grid that matches the dimensions of this bounding box and initializing it with Color.BLACK.
+
+2. **`main` Function**:
+   - Extracts the guide object from the input grid using `detect_objects`.
+   - Crops the guide object to get its bounding box using `crop`.
+   - Creates a new grid with the dimensions of the bounding box, initialized to zero (Color.BLACK).
+
+3. **`generate_input` Function**:
+   - Generates a random-sized black grid.
+   - Creates a random guide object with a random color, ensuring it has a connectivity of 8.
+   - Places the guide object at a random position on the grid using `random_free_location_for_sprite` and `blit_sprite`.
+
+This puzzle encourages students to understand how to manipulate grid dimensions based on bounding boxes and object extraction, which can be a valuable skill in computational geometry and image processing.

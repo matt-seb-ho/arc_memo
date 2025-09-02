@@ -1,0 +1,70 @@
+Here's a new puzzle implementation based on the provided description. The puzzle involves identifying a single connected component within a grid and applying a color scheme to recolor it.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recoloring, connected components, color scheme
+
+# description:
+# The input grid contains several colored objects. Identify a single connected component (object) that isn't the background color.
+# Recolor the entire object with a specified color scheme (e.g., a gradient from one color to another).
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+
+    # Choose a random object that is not just the background
+    chosen_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Define a color scheme, for example, a gradient from RED to BLUE
+    color_scheme = [Color.RED, Color.PINK, Color.BLUE]
+
+    # Apply the color scheme to the chosen object
+    object_pixels = np.argwhere(chosen_object != Color.BLACK)
+    num_pixels = len(object_pixels)
+    for idx, (x, y) in enumerate(object_pixels):
+        # Determine the color based on position in the object
+        chosen_object[x, y] = color_scheme[idx % len(color_scheme)]
+
+    # Create the output grid by overlaying the recolored object onto the original grid
+    output_grid = input_grid.copy()
+    blit_object(output_grid, chosen_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    n = np.random.randint(12, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    # Generate a few random objects of various colors
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj = random_sprite(n=np.random.randint(3, 6), m=np.random.randint(3, 6), color_palette=Color.NOT_BLACK)
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x, y)
+        except ValueError:
+            continue  # If we can't place the object, skip it
+
+    return input_grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle focuses on recoloring using connected components and applying a color scheme.
+   
+2. **Description**: 
+   - The function `main` identifies a single connected component from the grid that isn't just the background.
+   - It applies a color scheme to this object, spreading colors in a cyclical manner across the object.
+   - The function `generate_input` creates a grid with several random colored objects, ensuring variability in the input.
+
+3. **Key Functions**:
+   - `find_connected_components` is used to identify objects within the grid.
+   - `blit_object` is used to overlay the recolored object back onto the grid.
+
+This example illustrates a transformation where a specific object in the grid is recolored according to a defined color scheme, providing a fun and visual puzzle for middle-schoolers to decode.

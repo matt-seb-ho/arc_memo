@@ -1,0 +1,110 @@
+To create a puzzle based on obstacle navigation with fixed direction turns, we'll design a transformation that involves pathfinding with obstacles. The input is a grid with a path and obstacles, and the task is to navigate around the obstacles by turning consistently in one direction (either 'left' or 'right').
+
+Here is the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# obstacle navigation, fixed direction turn, pathfinding
+
+# description:
+# The input grid contains a path and obstacles. Starting from a given point, follow the path until an obstacle is encountered.
+# When an obstacle is hit, turn in the specified direction ('left' or 'right') and continue moving until the path is clear.
+# Resume the original direction once past the obstacle. The output grid shows the path with consistent detours around obstacles,
+# always turning the same way as specified.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the start point, end point, direction, and obstacles.
+    # 2. Navigate the path from start to end, implementing turns when encountering obstacles.
+    # 3. Generate the output grid with the path marked.
+
+    output_grid = input_grid.copy()
+
+    # Define colors
+    path_color = Color.GREEN
+    obstacle_color = Color.RED
+    start_color = Color.BLUE
+    end_color = Color.YELLOW
+
+    # Find start, end, and obstacles
+    start_x, start_y = np.argwhere(input_grid == start_color)[0]
+    end_x, end_y = np.argwhere(input_grid == end_color)[0]
+    obstacles = np.argwhere(input_grid == obstacle_color)
+
+    # Define initial direction (moving right)
+    direction = (0, 1)
+    turn_direction = 'right'  # Could be set to 'left' as well
+
+    # Function to turn direction
+    def turn(current_direction, direction='right'):
+        if direction == 'right':
+            return (-current_direction[1], current_direction[0])
+        elif direction == 'left':
+            return (current_direction[1], -current_direction[0])
+
+    # Navigate the path
+    x, y = start_x, start_y
+    while (x, y) != (end_x, end_y):
+        # Move in the current direction
+        new_x, new_y = x + direction[0], y + direction[1]
+
+        # Check for obstacles
+        if (new_x, new_y) in map(tuple, obstacles):
+            # Turn in the specified direction
+            direction = turn(direction, turn_direction)
+            continue
+
+        # Mark the path
+        output_grid[x, y] = path_color
+
+        # Update position
+        x, y = new_x, new_y
+
+    # Mark the endpoint
+    output_grid[end_x, end_y] = path_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid with a path, obstacles, and start/end points
+    grid_size = random.randint(10, 15)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Define colors
+    path_color = Color.GREEN
+    obstacle_color = Color.RED
+    start_color = Color.BLUE
+    end_color = Color.YELLOW
+
+    # Create start and end points
+    start_x, start_y = random.randint(0, grid_size - 1), random.randint(0, grid_size - 1)
+    end_x, end_y = random.randint(0, grid_size - 1), random.randint(0, grid_size - 1)
+
+    grid[start_x, start_y] = start_color
+    grid[end_x, end_y] = end_color
+
+    # Create a random path
+    x, y = start_x, start_y
+    while (x, y) != (end_x, end_y):
+        grid[x, y] = path_color
+        direction = random.choice([(0, 1), (1, 0), (0, -1), (-1, 0)])
+        x, y = x + direction[0], y + direction[1]
+        x, y = max(0, min(grid_size - 1, x)), max(0, min(grid_size - 1, y))
+
+    # Add obstacles
+    num_obstacles = random.randint(5, 10)
+    for _ in range(num_obstacles):
+        ox, oy = random.randint(0, grid_size - 1), random.randint(0, grid_size - 1)
+        if grid[ox, oy] == Color.BLACK:
+            grid[ox, oy] = obstacle_color
+
+    return grid
+```
+
+This puzzle introduces the concept of pathfinding with obstacles and consistent turning rules. The `main` function is deterministic, ensuring the same input always produces the same output. The `generate_input` function is stochastic, creating varied paths and obstacles for each run.

@@ -1,0 +1,78 @@
+Certainly! Let's implement the puzzle based on the given description and concepts:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# The input is a 3-pixel L-shaped triomino on a 2x2 grid. Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape. 
+# Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner. The grid may contain noise, but the L-shape is dominant.
+
+def main(input_grid):
+    # Since we know the grid is always 2x2, we can directly check the positions
+    # to determine which corner of the grid is missing from the L-shape.
+    
+    # The grid is expected to have a dominant L-shape, which means three out of the four positions should be colored.
+    positions = {
+        (0, 0): "tl",  # Top-left
+        (0, 1): "tr",  # Top-right
+        (1, 0): "bl",  # Bottom-left
+        (1, 1): "br"   # Bottom-right
+    }
+    
+    # Calculate the number of colored pixels at each position
+    colored_positions = [(i, j) for i in range(2) for j in range(2) if input_grid[i, j] != Color.BLACK]
+    
+    # Determine the missing corner
+    missing_corner = set(positions.keys()) - set(colored_positions)
+    
+    # The missing corner should be exactly one element
+    assert len(missing_corner) == 1
+    
+    # Return the orientation of the missing corner
+    missing_corner = missing_corner.pop()
+    return positions[missing_corner]
+
+def generate_input():
+    # Create a 2x2 grid and randomly select one corner position to be the missing one
+    grid = np.full((2, 2), Color.BLACK, dtype=int)
+    
+    # Randomly choose the color for the L-shape
+    l_shape_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Define all possible L-shape configurations
+    l_shape_positions = [
+        [(0, 0), (0, 1), (1, 0)],  # Missing bottom-right
+        [(0, 0), (0, 1), (1, 1)],  # Missing bottom-left
+        [(0, 0), (1, 0), (1, 1)],  # Missing top-right
+        [(0, 1), (1, 0), (1, 1)],  # Missing top-left
+    ]
+    
+    # Randomly select an L-shape configuration
+    chosen_l_shape = np.random.choice(l_shape_positions)
+    
+    # Fill the chosen positions with the selected color
+    for (i, j) in chosen_l_shape:
+        grid[i, j] = l_shape_color
+        
+    # Optionally add some noise
+    noise_probability = 0.1  # 10% chance to add a noise pixel
+    for i in range(2):
+        for j in range(2):
+            if grid[i, j] == Color.BLACK and np.random.rand() < noise_probability:
+                grid[i, j] = np.random.choice(list(Color.NOT_BLACK))
+    
+    return grid
+```
+
+### Explanation:
+1. **`main` Function**: This function directly checks the 2x2 grid for the missing corner by comparing the colored positions against a set of all possible positions. It then returns the missing corner's orientation based on predefined labels.
+
+2. **`generate_input` Function**: This function creates a 2x2 grid where three positions are occupied by the L-shape. A random L-shape configuration is chosen, and the remaining position is potentially filled with noise to add variability. The noise is colored with a very low probability to ensure the L-shape remains dominant.
+
+This setup ensures a deterministic transformation while providing stochastic input generation, aligning with the puzzle's description and requirements.

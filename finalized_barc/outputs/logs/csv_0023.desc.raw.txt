@@ -1,0 +1,4 @@
+```python
+# concepts: object movement, grid update, erase and redraw
+# description: Identify a single object within the grid and a target position. Remove the object from its original location by erasing its pixels. Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels. The grid is updated to reflect the object's new position, with all other elements unchanged.
+```

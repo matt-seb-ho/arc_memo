@@ -1,0 +1,77 @@
+Certainly! Here is the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color propagation, hole filling
+
+# description:
+# Identify a guide object by its unique color in the grid. Use this color to fill all enclosed regions (holes) within the grid.
+# A hole is defined as a region of background (0) pixels completely surrounded by non-background pixels. The guide object's color is propagated to fill these holes, ensuring that all other non-hole areas remain unchanged.
+
+def main(input_grid):
+    # Identify the guide object by its unique color
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    guide_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    guide_color = object_colors(guide_object, background=Color.BLACK)[0]
+
+    # Create an output grid to store the result
+    output_grid = input_grid.copy()
+
+    # Find all holes in the grid
+    interior_mask = object_interior(input_grid, background=Color.BLACK)
+    boundary_mask = object_boundary(input_grid, background=Color.BLACK)
+    holes_mask = interior_mask & ~boundary_mask
+
+    # Fill the holes with the guide object's color
+    for x, y in np.argwhere(holes_mask):
+        if input_grid[x, y] == Color.BLACK:
+            output_grid[x, y] = guide_color
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a random grid size
+    size = np.random.randint(10, 20)
+    grid = np.full((size, size), Color.BLACK)
+
+    # Add random objects of different colors
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        width, height = np.random.randint(3, 6), np.random.randint(3, 6)
+        color = np.random.choice([color for color in Color.NOT_BLACK])
+
+        sprite = random_sprite(width, height, color_palette=[color], connectivity=8, background=Color.BLACK)
+        x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1, background=Color.BLACK)
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    # Select one object to be the guide object and ensure it fully encloses a hole
+    guide_object = random_sprite(4, 4, color_palette=[Color.TEAL], connectivity=8, background=Color.BLACK)
+    x, y = random_free_location_for_sprite(grid, guide_object, padding=1, border_size=1, background=Color.BLACK)
+    blit_sprite(grid, guide_object, x, y, background=Color.BLACK)
+
+    # Create a hole inside the guide object
+    hole_x, hole_y = x + 1, y + 1
+    grid[hole_x:hole_x+2, hole_y:hole_y+2] = Color.BLACK
+
+    return grid
+```
+
+### Explanation:
+
+1. **`main` Function:**
+    - The function begins by identifying a guide object from the connected components in the grid. The guide object is the largest object by pixel count and is assumed to have a unique color.
+    - The guide object's color is then used to fill all enclosed holes (regions of black pixels fully surrounded by non-black pixels) within the grid.
+    - This is achieved by identifying the interior (enclosed) regions and excluding the boundaries of all objects.
+
+2. **`generate_input` Function:**
+    - This function generates a random grid with randomly placed objects of different colors.
+    - One object is designated as the guide object with a specific color (e.g., TEAL).
+    - A hole is intentionally left inside this guide object to ensure that there is at least one enclosed region for the transformation to act upon.
+
+This puzzle encourages logical reasoning to understand how the deterministic transformation fills enclosed spaces based on the guide object's color.

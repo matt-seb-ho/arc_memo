@@ -1,0 +1,95 @@
+Sure, let's create a puzzle based on the description you provided:
+
+**Concepts**: Unique color identification, guide object selection, connected components
+
+**Description**: 
+The input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the one whose color is not shared by any other object in the grid. The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color identification, guide object selection, connected components
+
+# description:
+# The input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the
+# one whose color is not shared by any other object in the grid. The output is a transformation where the guide object
+# is selected based on its unique color, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Step 1: Extract all objects from the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Step 2: Determine the color of each object
+    color_to_object = {}
+    for obj in objects:
+        obj_colors = object_colors(obj, background=Color.BLACK)
+        # Since the objects are monochromatic, we take the first color
+        color = obj_colors[0]
+        if color in color_to_object:
+            color_to_object[color].append(obj)
+        else:
+            color_to_object[color] = [obj]
+
+    # Step 3: Identify the guide object with a unique color
+    guide_object = None
+    for color, objs in color_to_object.items():
+        if len(objs) == 1:  # Unique color
+            guide_object = objs[0]
+            break
+
+    # Step 4: Create the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Step 5: Place the guide object on the output grid
+    if guide_object is not None:
+        blit_object(output_grid, guide_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size
+    width, height = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Define possible colors excluding black
+    colors = list(Color.NOT_BLACK)
+
+    # Generate random objects with unique colors
+    num_objects = np.random.randint(3, 7)
+    for _ in range(num_objects):
+        # Randomly select a color for the object
+        object_color = colors.pop(np.random.randint(0, len(colors)))
+
+        # Generate a random sprite for the object
+        sprite = random_sprite(n=[2, 3, 4], m=[2, 3, 4], color_palette=[object_color])
+
+        # Place the sprite on the grid at a random free location
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1, padding=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no free location is found, skip this object
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+1. **Main Function**:
+   - **Extract Objects**: We use `find_connected_components` to identify each distinct object in the grid.
+   - **Identify Unique-colored Object**: By creating a dictionary `color_to_object`, we can determine which color is associated with only one object, identifying our guide object.
+   - **Output Grid**: We create an output grid and place only the guide object using `blit_object`.
+
+2. **Generate Input**:
+   - **Grid Size**: Randomly choose a grid size between 10x10 and 15x15.
+   - **Object Generation**: Using `random_sprite`, create objects with unique colors and place them on the grid without overlap.
+   - **Unique Colors**: Ensure each object has a unique color by maintaining a list of available colors.
+
+This puzzle challenges students to understand how to identify unique elements based on properties within a dataset, a key concept in both programming and problem-solving.

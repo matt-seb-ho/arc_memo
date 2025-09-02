@@ -1,0 +1,4 @@
+```python
+# concepts: recolor, guide object, connected components
+# description: Input consists of a grid with at least two distinct objects: a target object and a guide object. Identify the target object and change its color to match the color of the guide object. The guide object is distinct and serves as the reference for the new color. All other grid elements remain unchanged.
+```

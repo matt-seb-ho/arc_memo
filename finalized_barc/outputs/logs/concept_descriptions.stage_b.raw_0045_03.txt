@@ -1,0 +1,73 @@
+Here's an implementation of the described puzzle, where the goal is to find the first 3x3 window that contains at least one cell of every color specified in a given set of required colors.
+
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# sliding window, color presence, pattern matching, window selection
+
+# description:
+# Input is a grid with various colors. Slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors. Output the coordinates of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+
+def main(input_grid: np.ndarray, required_colors: Set[str]) -> Tuple[int, int]:
+    rows, cols = input_grid.shape
+    
+    # Slide a 3x3 window over the grid
+    for i in range(rows - 2):
+        for j in range(cols - 2):
+            # Extract the current 3x3 window
+            window = input_grid[i:i+3, j:j+3]
+            # Find unique colors in the current window
+            unique_colors_in_window = set(np.unique(window))
+            
+            # Check if all required colors are present in the window
+            if required_colors.issubset(unique_colors_in_window):
+                return (i, j)
+    
+    # Return None if no valid window is found (although it's assumed one will be present in the puzzle)
+    return None
+
+def generate_input() -> Tuple[np.ndarray, Set[str]]:
+    # Define grid size
+    grid_size = random.randint(5, 10)
+    grid = np.empty((grid_size, grid_size), dtype=object)
+    
+    # Fill the grid with random colors
+    for i in range(grid_size):
+        for j in range(grid_size):
+            grid[i, j] = random.choice(list(Color.NOT_BLACK))
+    
+    # Select a random set of required colors
+    required_colors = set(random.sample(list(Color.NOT_BLACK), random.randint(3, 5)))
+    
+    # Ensure at least one 3x3 window meets the required colors condition
+    # Randomly choose a starting position for this window
+    start_x = random.randint(0, grid_size - 3)
+    start_y = random.randint(0, grid_size - 3)
+    
+    # Fill this window with at least the required colors
+    for color in required_colors:
+        rand_x = start_x + random.randint(0, 2)
+        rand_y = start_y + random.randint(0, 2)
+        grid[rand_x, rand_y] = color
+    
+    return grid, required_colors
+```
+
+### Explanation
+
+- **`main` function**:
+  - We iterate over all possible positions for a 3x3 window in the grid.
+  - For each window, we extract the colors present and check if all required colors are present.
+  - If a window satisfies the condition, we return its top-left coordinates.
+
+- **`generate_input` function**:
+  - We create a grid of random colors, ensuring it's large enough to have at least one valid 3x3 window.
+  - We randomly select a set of required colors.
+  - We ensure at least one 3x3 window in the grid contains all required colors by manually placing them.
+
+This setup ensures a puzzle where the player must identify a particular pattern (presence of required colors) within a grid using a sliding window technique.

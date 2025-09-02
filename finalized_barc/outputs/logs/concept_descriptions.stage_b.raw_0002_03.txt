@@ -1,0 +1,71 @@
+Here's the implementation for the puzzle you've described, following the format of the previous examples:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# parity counting, guide object, color restriction
+
+# description:
+# The input consists of a grid with various colored pixels and a designated guide object.
+# Count the number of pixels within the guide object that have either odd or even color values.
+# If a specific color or set of colors is provided, restrict the count to those colors only;
+# otherwise, consider all colors present in the guide object.
+# The output is the total count of pixels satisfying the chosen parity condition.
+
+def main(input_grid: np.ndarray, guide_object: np.ndarray, parity: str, color_restriction: Set[str] = None) -> np.ndarray:
+    # Initialize the count of pixels matching the parity condition
+    count = 0
+    
+    # Determine which colors to consider based on the color restriction
+    if color_restriction is None:
+        relevant_colors = np.unique(input_grid[guide_object])
+    else:
+        relevant_colors = color_restriction
+
+    # Iterate over each pixel in the guide object
+    for x in range(guide_object.shape[0]):
+        for y in range(guide_object.shape[1]):
+            if guide_object[x, y]:
+                color = input_grid[x, y]
+                if color in relevant_colors:
+                    # Check the parity condition
+                    color_value = ord(color[-1])  # Assume color is a string like "Color.RED"
+                    if (parity == 'odd' and color_value % 2 == 1) or (parity == 'even' and color_value % 2 == 0):
+                        count += 1
+    
+    # Output the result as a 1x1 grid with the count
+    output_grid = np.array([[count]])
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, np.ndarray, str, Set[str]]:
+    # Create a random grid with colored pixels
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Randomly scatter some points with colors
+    for color in Color.NOT_BLACK:
+        randomly_scatter_points(grid, color=color, density=np.random.uniform(0.1, 0.3))
+
+    # Create a guide object as a random connected component
+    guide_object = random_sprite(n=np.random.randint(3, 6), m=np.random.randint(3, 6), color_palette=[Color.GREY], connectivity=4)
+    x, y = random_free_location_for_sprite(grid, guide_object)
+    blit_sprite(grid, guide_object, x, y)
+    
+    # Define parity condition and color restriction
+    parity = np.random.choice(['odd', 'even'])
+    color_restriction = set(np.random.choice(list(Color.NOT_BLACK), size=np.random.randint(1, 3), replace=False))
+
+    return grid, guide_object, parity, color_restriction
+```
+
+### Explanation:
+- **Main Function**: The `main` function takes an input grid, a guide object, a parity condition (`odd` or `even`), and an optional color restriction set. It counts the number of pixels in the guide object that satisfy the given parity and color restriction.
+- **Generate Input Function**: The `generate_input` function creates a random grid and a guide object, then randomly selects a parity condition and a subset of colors for restriction.
+- **Parity Logic**: The parity check is performed using the ASCII value of the last character of the color name string (assuming the color is represented like `Color.RED`).
+- **Output**: The output is a 1x1 grid containing the count of pixels that match the criteria.
+
+This puzzle engages students in understanding color patterns and numerical parity within given constraints.

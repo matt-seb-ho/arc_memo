@@ -1,0 +1,76 @@
+Certainly! Let's design a puzzle where the goal is to identify a single connected object in the input grid and apply a color scheme to recolor the entire object. The color scheme will be based on the size of the object: smaller objects will be recolored with a lighter shade, while larger objects will be recolored with a darker shade. All other grid elements remain unchanged.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# In the input grid, you will see several objects of various colors.
+# Identify the single largest connected object and recolor it based on its size.
+# Use a gradient of colors (light to dark) based on predefined size ranges.
+# All other elements in the grid remain unchanged.
+
+def main(input_grid):
+    # Find all connected components
+    objects = find_connected_components(input_grid, monochromatic=False, connectivity=8)
+
+    # Determine the largest object by area
+    largest_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Define size ranges and corresponding colors
+    size_colors = [
+        (0, 10, Color.GREY),   # small objects
+        (11, 20, Color.BLUE),  # medium objects
+        (21, np.inf, Color.MAROON)  # large objects
+    ]
+
+    # Determine the size of the largest object
+    largest_object_size = np.sum(largest_object != Color.BLACK)
+
+    # Find the appropriate color based on the object's size
+    for (min_size, max_size, color) in size_colors:
+        if min_size <= largest_object_size <= max_size:
+            largest_object[largest_object != Color.BLACK] = color
+            break
+
+    # Create the output grid and place the recolored object back
+    output_grid = input_grid.copy()
+    blit_object(output_grid, largest_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Randomly determine grid size
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Populate the grid with randomly sized and colored objects
+    for _ in range(np.random.randint(3, 6)):  # random number of objects
+        obj = random_sprite(np.random.randint(3, 6), np.random.randint(3, 6), color_palette=Color.NOT_BLACK)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1, border_size=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no place can be found, break the loop
+            break
+
+    return grid
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle involves identifying connected components, assessing their size, and applying a recoloring scheme based on size ranges.
+
+2. **Description**: The puzzle requires identifying the largest connected object in a grid and recoloring it based on predefined size categories. This involves using the `find_connected_components` function to detect objects and the `blit_object` function to apply changes to the grid.
+
+3. **Puzzle Logic**: 
+   - The `main` function identifies the largest object by comparing the size of each detected component.
+   - A color from a gradient is chosen based on the object's size, which is then used to recolor the object.
+   - The `generate_input` function creates a grid with randomly placed objects, ensuring variability in size and color.
+
+This puzzle encourages middle-schoolers to think about object detection, size comparison, and conditional transformations based on object properties.

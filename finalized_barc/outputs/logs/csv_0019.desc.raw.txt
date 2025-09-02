@@ -1,0 +1,4 @@
+```python
+# concepts: unique color identification, guide object selection, connected components
+# description: Input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the one whose color is not shared by any other object in the grid. The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+```

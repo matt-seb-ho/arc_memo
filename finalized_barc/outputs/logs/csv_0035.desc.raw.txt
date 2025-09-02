@@ -1,0 +1,4 @@
+```python
+# concepts: diagonal movement, zigzag pattern, axis-aligned runs, boundary detection
+# description: Starting from a seed pixel, create a diagonal zigzag pattern by alternating between horizontal and vertical movements. Move horizontally by a fixed number of pixels (horizontal_step), then vertically by another fixed number (vertical_step), painting each traversed pixel. Continue this alternating pattern until reaching the grid boundary. The result is a staircase-like diagonal composed of axis-aligned segments.
+```

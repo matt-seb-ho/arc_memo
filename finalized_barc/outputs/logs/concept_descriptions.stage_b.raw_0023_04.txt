@@ -1,0 +1,79 @@
+Here's the implementation of the puzzle based on the given description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# Identify a single object within the grid and a target position. Remove the object from its original location by erasing its pixels. 
+# Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels.
+# The grid is updated to reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the object in the grid
+    # 2. Determine the target position for the object
+    # 3. Remove the object from its original position
+    # 4. Place the object at the target position if there is no collision
+
+    # Step 1: Detect the object
+    objects = find_connected_components(input_grid, background=Color.BLACK, monochromatic=False, connectivity=8)
+    assert len(objects) == 1, "There should be exactly one object in the input grid."
+    obj = objects[0]
+
+    # Step 2: Determine the target position for the object
+    # For demonstration, let's assume the target position is given by the target_coordinates variable.
+    target_coordinates = (3, 3)  # This could be dynamically determined or passed as an argument
+
+    # Step 3: Remove the object from its original position
+    # Create a copy of the input grid to modify
+    output_grid = np.copy(input_grid)
+    obj_x, obj_y = object_position(obj, background=Color.BLACK)
+    sprite = crop(obj, background=Color.BLACK)
+    
+    # Erase the object from its original position
+    output_grid[obj_x:obj_x+sprite.shape[0], obj_y:obj_y+sprite.shape[1]] = Color.BLACK
+
+    # Step 4: Place the object at the target position if there is no collision
+    target_x, target_y = target_coordinates
+    if not collision(object1=output_grid, object2=sprite, x2=target_x, y2=target_y):
+        blit_sprite(output_grid, sprite, target_x, target_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with random non-background elements and a single object
+    n, m = np.random.randint(8, 12), np.random.randint(8, 12)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Add a single object
+    object_size = np.random.randint(2, 4)
+    object_sprite = random_sprite(object_size, object_size, color_palette=Color.NOT_BLACK, background=Color.BLACK)
+
+    # Find a random free location for the object sprite
+    x, y = random_free_location_for_sprite(grid, object_sprite, padding=1, border_size=1)
+    blit_sprite(grid, object_sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**: This puzzle involves identifying and moving an object within a grid. This includes identifying the object, erasing its original position, and redrawing it at a new target position without overlapping with existing elements.
+
+- **Main Function**: 
+  - Detects the single object in the grid.
+  - Determines a target position (which could be dynamically determined or provided).
+  - Erases the object from its original position and redraws it at the target position, ensuring no overlap.
+
+- **Generate Input Function**: 
+  - Creates a grid with random dimensions and a single object placed at a random free location.
+  - The object's size and position are randomly determined, ensuring it fits within the grid without overlap.
+
+This implementation focuses on the movement of a single object from one position to another while maintaining grid integrity by preventing overlaps with other elements.

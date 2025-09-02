@@ -1,0 +1,79 @@
+Below is an implementation of the puzzle described, focusing on identifying and filling holes in enclosed regions using flood-fill and background detection.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# In the input grid, there are objects drawn with a guide color, enclosing some regions that might be holes. 
+# The task is to identify holes as regions of the background color that are completely enclosed by the guide color and not connected to the grid border.
+# Fill these holes with the color of the enclosing guide object.
+
+def main(input_grid):
+    # Create a copy of the input grid to work on
+    output_grid = input_grid.copy()
+    
+    # Find all the connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=False)
+    
+    # Go through each object and check for holes
+    for obj in objects:
+        interior_mask = object_interior(obj)
+        guide_mask = obj != Color.BLACK
+        
+        # Find the color of the guide object
+        guide_color = np.unique(obj[guide_mask])[0]
+        
+        # Determine the holes by finding regions inside the object that are background and enclosed
+        hole_mask = interior_mask & ~guide_mask
+        if np.any(hole_mask):
+            # Fill these holes with the guide color
+            obj[hole_mask] = guide_color
+        
+        # Blit the processed object back to the output grid
+        blit_object(output_grid, obj, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Create a grid with random size between 10x10 and 20x20
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+    
+    # Define a guide color different from the background
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Create random enclosed regions with potential holes
+    num_objects = np.random.randint(1, 4)
+    for _ in range(num_objects):
+        # Define size and shape of the object
+        rows, cols = np.random.randint(3, 7), np.random.randint(3, 7)
+        obj = np.full((rows, cols), guide_color)
+        
+        # Carve out a hole by setting some interior pixels to background
+        if np.random.rand() > 0.5:
+            hole_size = np.random.randint(1, min(rows, cols) - 1)
+            hole_x, hole_y = np.random.randint(1, rows - hole_size), np.random.randint(1, cols - hole_size)
+            obj[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+        
+        # Find a random location to place the object in the grid
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x, y)
+        except ValueError:
+            continue
+    
+    return input_grid
+```
+
+### Explanation:
+- **`main` Function**: This function processes the grid to identify and fill holes. It uses connected component analysis to find objects and checks if there are any holes (background-colored regions) inside them. If such a hole is found, it fills it with the guide color of the enclosing object.
+  
+- **`generate_input` Function**: This function creates input grids with random objects that may have enclosed holes. Objects are placed randomly within a grid, and holes are carved out with a certain probability.
+
+This puzzle challenges students to understand how to detect enclosed regions using topological concepts and apply flood-fill algorithms to fill these regions appropriately.

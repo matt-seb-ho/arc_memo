@@ -1,0 +1,104 @@
+To implement the new puzzle, we need to design a function that partitions a grid based on divider lines and extracts sub-grids. Let's break down the steps and create the `main` and `generate_input` functions.
+
+### Puzzle Implementation
+
+**Concepts**: Grid partitioning, divider lines, horizontal/vertical slicing
+
+**Description**: 
+The input is a grid with horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions. These divider lines are uninterrupted and used to partition the grid into separate sub-grids. Each sub-grid is bounded by the divider lines and contains no dividers within it. The output is a list of these non-empty sub-grids, preserving their original content.
+
+### Plan
+
+1. **Input Parsing**: Identify all uninterrupted horizontal and vertical divider lines that partition the grid.
+2. **Partitioning**: Use these divider lines to segment the grid into distinct sub-grids.
+3. **Extract Sub-Grids**: For each segment defined by the divider lines, extract the sub-grid content.
+4. **Output**: Return a list of sub-grids.
+
+### Code Implementation
+
+Here is the implementation of the puzzle using the given framework:
+
+```python
+from common import *
+
+import numpy as np
+from typing import List
+
+# concepts:
+# grid partitioning, divider lines, horizontal/vertical slicing
+
+# description:
+# Input is a grid containing horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions.
+# Identify these uninterrupted divider lines and use them to partition the grid into separate sub-grids.
+# Each sub-grid is bounded by the divider lines and contains no dividers within it. Output is a list of these non-empty sub-grids, preserving their original content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Find the color of the divider lines
+    divider_color = None
+    for x in range(input_grid.shape[0]):
+        for y in range(input_grid.shape[1]):
+            color = input_grid[x, y]
+            # Check for uninterrupted horizontal or vertical lines
+            if np.all(input_grid[x, :] == color) or np.all(input_grid[:, y] == color):
+                divider_color = color
+                break
+
+    assert divider_color is not None, "No divider color found"
+
+    # Identify the horizontal and vertical lines
+    horizontal_dividers = [y for y in range(input_grid.shape[1]) if np.all(input_grid[:, y] == divider_color)]
+    vertical_dividers = [x for x in range(input_grid.shape[0]) if np.all(input_grid[x, :] == divider_color)]
+
+    # Add borders as dividers to handle edge cases
+    horizontal_dividers = [0] + horizontal_dividers + [input_grid.shape[1]]
+    vertical_dividers = [0] + vertical_dividers + [input_grid.shape[0]]
+
+    sub_grids = []
+
+    # Extract sub-grids based on the divider positions
+    for i in range(len(vertical_dividers) - 1):
+        for j in range(len(horizontal_dividers) - 1):
+            x1, x2 = vertical_dividers[i], vertical_dividers[i + 1]
+            y1, y2 = horizontal_dividers[j], horizontal_dividers[j + 1]
+            sub_grid = input_grid[x1+1:x2, y1+1:y2]
+            if sub_grid.size > 0:
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Randomly choose a divider color
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly determine the number and position of dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    horizontal_divider_positions = randomly_spaced_indices(height, num_horizontal_dividers, border_size=1, padding=1)
+    vertical_divider_positions = randomly_spaced_indices(width, num_vertical_dividers, border_size=1, padding=1)
+
+    # Draw horizontal dividers
+    for y in horizontal_divider_positions:
+        grid[:, y] = divider_color
+
+    # Draw vertical dividers
+    for x in vertical_divider_positions:
+        grid[x, :] = divider_color
+
+    return grid
+```
+
+### Explanation
+
+- **Main Function**: 
+  - Determines the divider color from the input by finding any uninterrupted horizontal or vertical line.
+  - Identifies positions of divider lines and uses them to partition the grid into sub-grids.
+  - Extracts and returns a list of sub-grids, excluding empty regions.
+
+- **Generate Input Function**: 
+  - Generates a random grid with randomly placed horizontal and vertical divider lines.
+  - Ensures that the dividers do not overlap and that each sub-grid is at least one cell in size.

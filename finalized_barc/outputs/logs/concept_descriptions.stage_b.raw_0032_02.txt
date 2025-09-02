@@ -1,0 +1,48 @@
+To implement the L-shape detection puzzle, we need to focus on recognizing the shape and identifying the missing corner in a 2x2 grid. The key is to ensure that the `main` function deterministically identifies the missing corner and the `generate_input` function creates stochastic examples of such grids. Here is how we can implement this:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# Input is a 3-pixel L-shaped triomino on a 2x2 grid. Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape. Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner. The grid may contain noise, but the L-shape is dominant.
+
+def main(input_grid):
+    # Define the coordinates for the four corners
+    corners = {'tl': (0, 0), 'tr': (0, 1), 'bl': (1, 0), 'br': (1, 1)}
+    
+    # Determine which corner is missing from the L-shape
+    for corner, (x, y) in corners.items():
+        if input_grid[x, y] == Color.BLACK:
+            return np.array([[corner]])
+    
+    raise ValueError("No missing corner detected, input is invalid.")
+
+def generate_input():
+    # Create a 2x2 grid full of black color (indicating empty)
+    grid = np.full((2, 2), Color.BLACK, dtype=int)
+    
+    # Randomly choose one corner to leave empty
+    corners = [(0, 0), (0, 1), (1, 0), (1, 1)]
+    missing_corner = random.choice(corners)
+    
+    # Fill the other three corners with random colors from the available palette
+    for x, y in corners:
+        if (x, y) != missing_corner:
+            grid[x, y] = np.random.choice(list(Color.NOT_BLACK))
+    
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function**: The `main` function takes an input grid and checks each corner to see which one is unoccupied (indicated by `Color.BLACK`). It returns a 1x1 grid containing the string label of the missing corner.
+
+- **`generate_input` Function**: This function generates a 2x2 grid with one corner missing. We fill the other three corners with random colors chosen from `Color.NOT_BLACK`, ensuring that the grid is predominantly filled with the L-shape, while the missing corner remains black.
+
+This implementation effectively captures the required puzzle logic and provides a deterministic transformation function (`main`) and stochastic input generator (`generate_input`).

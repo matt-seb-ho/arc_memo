@@ -1,0 +1,4 @@
+```python
+# concepts: divider detection, grid slicing, connected components, sub-grid extraction
+# description: Input is a grid potentially divided by uninterrupted full rows or columns of a single color (e.g., grey). Identify these divider lines and use them to split the grid into contiguous sub-grids. Each sub-grid is extracted as a separate region between dividers. Discard any empty sub-grids. The output is a list of these non-empty sub-grids, preserving their original order and content.
+```

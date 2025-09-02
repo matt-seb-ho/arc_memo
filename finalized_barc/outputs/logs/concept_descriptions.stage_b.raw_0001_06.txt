@@ -1,0 +1,89 @@
+Below is the implementation of the described puzzle involving identifying holes fully enclosed by a guide object and filling them with the target object color:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# The input grid contains various colored objects on a black background. Some objects are hollow, containing fully enclosed black regions not connected to the grid border.
+# To produce the output, identify these enclosed black regions and fill them with the color of their enclosing object.
+
+def main(input_grid):
+    # Create initial output grid copy
+    output_grid = input_grid.copy()
+
+    # Identify the exterior region of the grid using flood fill from the border
+    exterior_mask = np.zeros_like(input_grid, dtype=bool)
+    exterior_color = Color.BLACK
+    for i in range(input_grid.shape[0]):
+        if input_grid[i, 0] == exterior_color:
+            flood_fill(exterior_mask, input_grid, i, 0, exterior_color)
+        if input_grid[i, -1] == exterior_color:
+            flood_fill(exterior_mask, input_grid, i, input_grid.shape[1] - 1, exterior_color)
+    for j in range(input_grid.shape[1]):
+        if input_grid[0, j] == exterior_color:
+            flood_fill(exterior_mask, input_grid, 0, j, exterior_color)
+        if input_grid[-1, j] == exterior_color:
+            flood_fill(exterior_mask, input_grid, input_grid.shape[0] - 1, j, exterior_color)
+
+    # Find connected components of objects
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4)
+
+    # Fill holes for each object
+    for obj in objects:
+        # Determine the color of the object
+        object_color = max(set(np.unique(obj)) - {Color.BLACK}, key=lambda x: np.sum(obj == x))
+
+        # Find the interior of the object, excluding the boundary
+        interior_mask = object_interior(obj, background=Color.BLACK)
+        boundary_mask = object_boundary(obj, background=Color.BLACK)
+        interior_excluding_boundary = interior_mask & ~boundary_mask
+
+        # Identify enclosed regions (holes) within the object
+        holes = interior_excluding_boundary & ~exterior_mask
+
+        # Fill the holes with the color of the object
+        output_grid[holes] = object_color
+
+    return output_grid
+
+def flood_fill(mask, grid, x, y, color):
+    """Flood fill algorithm to mark the exterior region."""
+    if x < 0 or x >= grid.shape[0] or y < 0 or y >= grid.shape[1] or mask[x, y] or grid[x, y] != color:
+        return
+    mask[x, y] = True
+    flood_fill(mask, grid, x + 1, y, color)
+    flood_fill(mask, grid, x - 1, y, color)
+    flood_fill(mask, grid, x, y + 1, color)
+    flood_fill(mask, grid, x, y - 1, color)
+
+def generate_input():
+    # Create a grid with random size
+    n = np.random.randint(10, 20)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate random objects with potential enclosed regions
+    num_objects = np.random.randint(2, 5)
+    for _ in range(num_objects):
+        obj_size = np.random.randint(3, 6)
+        obj = np.full((obj_size, obj_size), np.random.choice(list(Color.NOT_BLACK)))
+        # Create a hole in the object
+        hole_size = np.random.randint(1, obj_size - 1)
+        hole_start = np.random.randint(1, obj_size - hole_size)
+        obj[hole_start:hole_start + hole_size, hole_start:hole_start + hole_size] = Color.BLACK
+
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+This puzzle involves identifying fully enclosed black regions within colored objects and filling them with the object's color. The `generate_input` function creates random examples with objects that may contain such enclosed regions. The `main` function implements the described transformation by marking exterior regions and identifying enclosed holes to fill them appropriately.

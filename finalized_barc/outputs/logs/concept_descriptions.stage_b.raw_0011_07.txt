@@ -1,0 +1,89 @@
+Here's an implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, tiling
+
+# description:
+# In the input grid, you will see various objects, each with a unique color. One of these objects acts as a guide object and has a color that is unique in the grid.
+# The task is to identify this guide object and use its color to fill a predefined tiling pattern across the grid.
+# The tiling pattern is a checkerboard pattern that only changes the color of the cells within the pattern, leaving other grid elements unchanged.
+
+def main(input_grid):
+    # Step 1: Identify the guide object with a unique color
+    unique_colors = set(np.unique(input_grid)).intersection(Color.NOT_BLACK)
+    guide_color = None
+
+    for color in unique_colors:
+        objects_of_color = detect_objects(grid=input_grid, colors=[color], monochromatic=True)
+        if len(objects_of_color) == 1:
+            guide_color = color
+            break
+
+    if guide_color is None:
+        raise ValueError("No guide object found with a unique color")
+
+    # Step 2: Apply the checkerboard pattern using the guide object's color
+    output_grid = input_grid.copy()
+    n, m = output_grid.shape
+    checkerboard_pattern = np.zeros((n, m), dtype=int)
+
+    # Create a checkerboard pattern
+    for i in range(n):
+        for j in range(m):
+            if (i + j) % 2 == 0:
+                checkerboard_pattern[i, j] = guide_color
+
+    # Apply the pattern to the output grid
+    output_grid[checkerboard_pattern != 0] = checkerboard_pattern[checkerboard_pattern != 0]
+
+    return output_grid
+
+def generate_input():
+    # Step 1: Generate a grid with random objects of various colors
+    n, m = np.random.randint(5, 10, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Step 2: Create several random objects with random colors
+    available_colors = list(Color.NOT_BLACK)
+    np.random.shuffle(available_colors)
+
+    # Randomly choose a guide color
+    guide_color = available_colors.pop()
+
+    # Add objects of random colors
+    for color in available_colors[:3]:
+        obj_size = np.random.randint(2, 4, size=2)
+        obj = np.full(obj_size, color)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+
+    # Add the guide object with a unique color
+    guide_obj_size = np.random.randint(2, 3, size=2)
+    guide_obj = np.full(guide_obj_size, guide_color)
+    try:
+        x, y = random_free_location_for_sprite(grid, guide_obj, padding=1)
+        blit_sprite(grid, guide_obj, x=x, y=y)
+    except ValueError:
+        return generate_input()
+
+    return grid
+```
+
+### Explanation
+
+1. **Guide Object Selection**: The `main` function identifies a guide object by finding a unique color that appears exactly once in the grid, ensuring it is not one of the background colors (i.e., not black).
+
+2. **Checkerboard Pattern**: Once the guide object is identified, its color is used to fill a checkerboard pattern across the entire grid. The pattern alternates cells, ensuring the tiling effect.
+
+3. **Input Generation**: The `generate_input` function creates a grid with random objects of various colors. One unique color is reserved for the guide object, ensuring it's the only object of its color on the grid.
+
+This implementation ensures that the transformation rule is deterministic and clear, providing a consistent challenge for middle school puzzlers.

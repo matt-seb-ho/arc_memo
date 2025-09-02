@@ -1,0 +1,4 @@
+```python
+# concepts: guide object, color transfer, tiling
+# description: Identify a guide object with a unique color in the grid. Use the color of this guide object to fill a designated tiling area or pattern across the grid. The tiling pattern is predefined and does not alter the structure of the grid, only the color. All other grid elements remain unchanged.
+```

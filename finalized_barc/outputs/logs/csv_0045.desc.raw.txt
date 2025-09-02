@@ -1,0 +1,4 @@
+```python
+# concepts: sliding window, color presence, pattern matching, window selection
+# description: Input is a grid with various colors. Slide a 3x3 window over the grid. Identify the first window that contains at least one cell of every color specified in a given set of required colors. Output the coordinates of this window. The task is to locate a heterogeneous anchor window based on color presence criteria.
+```

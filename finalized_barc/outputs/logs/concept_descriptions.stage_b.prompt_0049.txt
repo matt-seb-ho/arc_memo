@@ -1,0 +1,487 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+stripe detection, 2x2 block search, color matching, index retrieval
+
+Description: 
+Input consists of multiple horizontal stripes separated by black rows. Each stripe may contain various colored blocks. Identify the stripe containing a 2x2 block of a specific target color (magenta). Return the index of this stripe (0-based) that contains the target 2x2 block. Only one stripe will contain the target block, ensuring a unique index is returned.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def object_position(obj, background=Color.BLACK, anchor='upper left'):
+    """
+    (x,y) position of the provided object. By default, the upper left corner.
+
+    anchor: "upper left", "upper right", "lower left", "lower right", "center", "upper center", "lower center", "left center", "right center"
+
+    Example usage:
+    x, y = object_position(obj, background=background_color, anchor="upper left")
+    middle_x, middle_y = object_position(obj, background=background_color, anchor="center")
+    """
+
+def object_colors(obj, background=Color.BLACK):
+    """
+    Returns a list of colors in the object.
+
+    Example usage:
+    colors = object_colors(obj, background=background_color)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def contact(_=None, object1=None, object2=None, x1=0, y1=0, x2=0, y2=0, background=Color.BLACK, connectivity=4):
+    """
+    Check if object1 and object2 touch each other (have contact) when object1 is at (x1, y1) and object2 is at (x2, y2).
+    They are touching each other if they share a border, or if they overlap. Collision implies contact, but contact does not imply collision.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. (8-way counts diagonals as touching, 4-way only counts cardinal directions as touching)
+
+    Example usage:
+
+    # Check if a sprite touches anything if it were to be placed at (X,Y)
+    contact(object1=output_grid, object2=a_sprite, x2=X, y2=Y)
+
+    # Check if two objects touch each other
+    contact(object1=object1, object2=object2)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+def detect_objects(grid, _=None, predicate=None, background=Color.BLACK, monochromatic=False, connectivity=None, allowed_dimensions=None, colors=None, can_overlap=False):
+    """
+    Detects and extracts objects from the grid that satisfy custom specification.
+
+    predicate: a function that takes a candidate object as input and returns True if it counts as an object
+    background: color treated as transparent
+    monochromatic: if True, each object is assumed to have only one color. If False, each object can include multiple colors.
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. If None, the connectivity is determined automatically.
+    allowed_dimensions: a list of tuples (n, m) specifying the allowed dimensions of the objects. If None, objects of any size are allowed.
+    colors: a list of colors that the objects are allowed to have. If None, objects of any color are allowed.
+    can_overlap: if True, objects can overlap. If False, objects cannot overlap.
+
+    Returns a list of objects, where each object is a numpy array.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting
+
+# description:
+# In the input you will see multiple 2x2 blue squares, multiple 2x2 red squares, and some red or blue dots sprinkled about.
+# To make the output, fill a 1x5 grid with blue pixels from left to right for each 2x2 blue square in the input (counting the number of blue 2x2 squares).
+
+def main(input_grid):
+    # make a counter to count the number of blue squares
+    blue_square_count = 0
+
+    # scan the grid for blue squares and count them up
+    for x in range(input_grid.shape[0]-1):
+        for y in range(input_grid.shape[1]-1):
+            if input_grid[x,y] == input_grid[x+1,y] == input_grid[x,y+1] == input_grid[x+1,y+1] == Color.BLUE:
+                blue_square_count += 1
+    
+    # make a 1x5 output grid
+    output_grid = np.zeros((5,1), dtype=int)
+
+    # add the number of blue squares to the array from left to right with each pixel representing one blue block
+    output_grid[:blue_square_count, :] = Color.BLUE
+
+    return output_grid
+
+def generate_input():
+    # make 9x9 black background grid first
+    n = m = 9
+    grid = np.zeros((n,m), dtype=int)
+
+    # make a random number of blue square sprites and place them at random places on the grid but don't have them touch
+    blue_square = np.full((2,2), Color.BLUE, dtype=int)
+    for _ in range(np.random.randint(2,6)):
+        x, y = random_free_location_for_sprite(grid, blue_square)
+        if not contact(object1=grid, object2=blue_square, x2=x, y2=y): # only place new squares that won't touch old ones
+          blit_sprite(grid, blue_square, x, y)
+    
+    # make a random number of red square sprites and place them at random places on the grid but don't have them touch
+    red_square = np.full((2,2), Color.RED, dtype=int)
+    for _ in range(np.random.randint(2,6)):
+        x, y = random_free_location_for_sprite(grid, red_square)
+        if not contact(object1=grid, object2=red_square, x2=x, y2=y): # only place new squares that won't touch old ones
+          blit_sprite(grid, red_square, x, y)
+        
+    # make a random number of blue pixel sprites and place them at random places on the grid
+    blue_pixel = random_sprite(1, 1, density=1, color_palette=[Color.BLUE])
+    for _ in range(np.random.randint(4)):
+        x, y = random_free_location_for_sprite(grid, blue_pixel)
+        blit_sprite(grid, blue_pixel, x, y)
+
+    # make a random number of red pixel sprites and place them at random places on the grid
+    red_pixel = random_sprite(1, 1, density=1, color_palette=[Color.RED])
+    for _ in range(np.random.randint(4)):
+        x, y = random_free_location_for_sprite(grid, red_pixel)
+        blit_sprite(grid, red_pixel, x, y)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line detection, color extraction
+
+# description:
+# In the input you will see a grid consisting of stripes that are either horizontal or vertical.
+# To make the output, make a grid with one pixel for each stripe whose color is the same color as that stripe.
+# If the stripes are vertical, the output should be vertical, and if the stripes are horizontal, the output should be horizontal. The colors should be in the order they appear in the input.
+
+def main(input_grid):
+    # Parse input and then determine the orientation of the stripes
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=True, background=Color.BLACK)
+    x_positions = [ object_position(obj, background=Color.BLACK, anchor="center")[0] for obj in objects]
+    y_positions = [ object_position(obj, background=Color.BLACK, anchor="center")[1] for obj in objects]
+    if all(x == x_positions[0] for x in x_positions):
+        orientation = "vertical"
+    elif all(y == y_positions[0] for y in y_positions):
+        orientation = "horizontal"
+    else:
+        raise ValueError("The stripes are not aligned in a single axis")
+    
+    # Sort the objects depending on the orientation
+    if orientation == "horizontal":
+        objects.sort(key=lambda obj: object_position(obj, background=Color.BLACK, anchor="center")[0])
+    else:
+        objects.sort(key=lambda obj: object_position(obj, background=Color.BLACK, anchor="center")[1])
+    
+    # Extract the colors of the stripes
+    colors = [ object_colors(obj, background=Color.BLACK)[0] for obj in objects ]
+
+    # Generate the output grid
+    if orientation == "horizontal":
+        output_grid = np.full((len(colors), 1), Color.BLACK)
+        output_grid[:, 0] = colors
+    else:
+        output_grid = np.full((1, len(colors)), Color.BLACK)
+        output_grid[0, :] = colors
+    
+    return output_grid
+    
+
+
+def generate_input():
+    # Generate grid of size n x m
+    n, m = np.random.randint(3, 10), np.random.randint(2, 10)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly choose n colors
+    colors = np.random.choice(list(Color.NOT_BLACK), n)
+    
+    # Draw vertical lines of the chosen colors
+    for x, color in enumerate(colors):
+        draw_line(grid, x=x, y=0, length=m, color=color, direction=(0, 1))
+        # same as grid[x,:] = color
+    
+    # Randomly rotate the whole grid to make the lines horizontal or vertical
+    if random.random() < 0.5:
+        grid = np.rot90(grid)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# color stripe, fill the square in order
+
+# description:
+# In the input you will see several vertical or horizontal stripes of different colors and a gray square with length equal the number of the stripes.
+# To make the output, fill the gray square with the colors of the stripes in the order and direction they appear.
+
+def main(input_grid):
+    # Find the gray square in the input grid and get its position and size
+    gray_rectangle = detect_objects(grid=input_grid, colors=[Color.GRAY], monochromatic=True, connectivity=4)[0]
+    output_grid = crop(grid=gray_rectangle)
+
+    # Get the color lines in the input grid
+    objects = detect_objects(grid=input_grid, monochromatic=False, connectivity=8)
+    lines = []
+    for obj in objects:
+        # Get the position and size of the color line
+        x_pos, y_pos, x_len, y_len = bounding_box(grid=obj)
+        color = obj[x_pos, y_pos]
+        if color != Color.GRAY:
+            lines.append({'x': x_pos, 'y': y_pos, 'color': color, 'x_len': x_len, 'y_len': y_len})
+    
+    # Check if the stripes are horizontal or vertical
+    is_horizontal = all(line['y_len'] == 1 for line in lines)
+
+    # Sort the color lines by their position
+    if is_horizontal:
+        lines = sorted(lines, key=lambda x: x['y'])
+    else:
+        lines = sorted(lines, key=lambda x: x['x'])
+    
+    # Get the direction of the stripes
+    direction = (1, 0) if is_horizontal else (0, 1)
+
+    # Find the colors lines in the input grid in order
+    colors_in_square = [c['color'] for i, c in enumerate(lines) if i == 0 or c['color'] != lines[i - 1]['color']]
+
+    # Fill the gray square with the colors of the stripes in the order and direction they appear
+    for i in range(len(output_grid)):
+        # Draw horizontal line
+        if is_horizontal:
+            draw_line(grid=output_grid, x=0, y=i, direction=direction, color=colors_in_square[i])
+        # Draw vertical line
+        else:
+            draw_line(grid=output_grid, x=i, y=0, direction=direction, color=colors_in_square[i])
+            
+    return output_grid
+
+def generate_input():
+    # Initialize the grid, make sure the length and width are not too different
+    n, m = np.random.randint(9, 24), np.random.randint(9, 24)
+    while n > 1.5 * m or m > 1.5 * n:
+        n, m = np.random.randint(9, 24), np.random.randint(9, 24)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Set stripe's interval
+    STRIPE_INTERVAL = 3
+
+    # Randomly choose the starting position of the stripe
+    start_from = np.random.randint(0, STRIPE_INTERVAL)
+
+    # Calculate the number of horizontal stripes given the start position, direction and interval
+    num_lines = (m - start_from + STRIPE_INTERVAL - 1) // STRIPE_INTERVAL
+    
+    # Randomly choose the colors of the stripes, each stripe has a different color
+    avaliable_colors = [c for c in Color.NOT_BLACK if c != Color.GRAY]
+    colors = random.sample(avaliable_colors, num_lines)
+
+    # Draw horizontal stripes with different colors
+    for i in range(num_lines):
+        x, y = 0, i * STRIPE_INTERVAL + start_from
+        draw_line(grid=grid, x=x, y=y, direction=(1, 0), color=colors[i])
+
+    # Draw the gray square and its black border, the length of the square is the same as the number of the stripes
+    square_x, square_y = np.random.randint(0, n - (num_lines + 1)), np.random.randint(0, m - (num_lines + 1))
+    black_border = np.full((num_lines + 2, num_lines + 2), Color.BLACK)
+    gray_object = np.full((num_lines, num_lines), Color.GRAY)
+    grid = blit_sprite(grid, black_border, square_x, square_y, background=Color.GRAY)
+    grid = blit_sprite(grid, gray_object, square_x + 1, square_y + 1)
+
+    # Randomly rotate the grid
+    grid = np.rot90(grid, 1) if np.random.choice([True, False]) else grid
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# rectangular cells, counting
+
+# description:
+# In the input you will see monochromatic rectangles arranged into an array.
+# To make the output, find the most common color of the 2x1 rectangles, second most common color, etc.
+# Then, make the output a vertical stripe colored with the second common color, then the third most common color, etc., starting at the top, and skipping the most common color.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the objects, arranged into the array
+    # 2. Count the colors
+    # 3. Sort the colors by count
+    # 4. Create the output grid, remembering to skip the most common color
+
+    background = Color.BLACK
+    
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4, background=background)
+    possible_x_values = [ object_position(obj, background=background, anchor="upper left")[0] for obj in objects ]
+    possible_y_values = [ object_position(obj, background=background, anchor="upper left")[1] for obj in objects ]
+    object_array = [ [ next(obj for obj in objects if (x, y) == object_position(obj, background=background, anchor="upper left") )
+                      for y in sorted(set(possible_y_values)) ]
+                    for x in sorted(set(possible_x_values)) ]
+
+    # Extract and count the colors
+    object_colors = [ obj[obj!=background][0] for obj in objects ]
+    color_counts = { color: sum(1 for object_color in object_colors if object_color == color) for color in set(object_colors) }
+
+    sorted_colors = list(sorted(color_counts, key=lambda color: color_counts[color], reverse=True))
+    # skip the most common color
+    sorted_colors = sorted_colors[1:]
+
+    # the output is a vertical stripe containing one pixel per color
+    output_grid = np.full((1, len(sorted_colors)), background)
+    for y, color in enumerate(sorted_colors):
+        output_grid[0, y] = color
+
+    return output_grid
+
+
+
+
+def generate_input():
+    # Plan:
+    # 1. randomly pick size and possible colors for the rectangles
+    # 2. randomly pick how far apart the rectangle should be when they are arranged in an array
+    # 3. create the array of rectangles, randomly choosing colors
+    # 5. double check that no two colors have the exact same count
+
+    rectangle_dimensions = np.random.randint(1, 4, size=(2))
+    number_of_distinct_colors = np.random.randint(3, 6)
+    rectangle_colors = np.random.choice(Color.NOT_BLACK, size=(number_of_distinct_colors), replace=False)
+
+    rectangle_spacing = np.random.randint(1, 4, size=(2))
+    grid_dimensions = np.random.randint(10, 30, size=(2))
+
+    grid = np.full(grid_dimensions, Color.BLACK)
+
+    possible_x_values = np.arange(rectangle_spacing[0], grid_dimensions[0] - rectangle_dimensions[0], rectangle_spacing[0] + rectangle_dimensions[0])
+    possible_y_values = np.arange(rectangle_spacing[1], grid_dimensions[1] - rectangle_dimensions[1], rectangle_spacing[1] + rectangle_dimensions[1])
+    for x in possible_x_values:
+        for y in possible_y_values:
+            color = np.random.choice(rectangle_colors)
+            sprite = random_sprite(rectangle_dimensions[0], rectangle_dimensions[1], density=1, color_palette=[color])
+            blit_sprite(grid, sprite, x, y)
+
+    # doublecheck that no pair of colors have the same count
+    for color1 in rectangle_colors:
+        for color2 in rectangle_colors:
+            if color1 == color2:
+                continue
+            count1 = sum(1 for color in grid.flatten() if color == color1)
+            count2 = sum(1 for color in grid.flatten() if color == color2)
+            assert count1 != count2
+    
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

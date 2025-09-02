@@ -1,0 +1,92 @@
+Here's the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color propagation, hole filling
+
+# description:
+# Identify a guide object by its unique color in the grid. Use this color to fill all enclosed regions (holes) within the grid. 
+# A hole is defined as a region of background (0) pixels completely surrounded by non-background pixels. 
+# The guide object's color is propagated to fill these holes, ensuring that all other non-hole areas remain unchanged.
+
+def main(input_grid):
+    # Step 1: Detect objects in the grid that are not the background
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Step 2: Identify the guide object (should be the one with a unique color)
+    guide_color = None
+    for obj in objects:
+        colors = object_colors(obj, background=Color.BLACK)
+        if len(colors) == 1:
+            guide_color = colors[0]
+            break
+
+    # Create an output grid to store the result
+    output_grid = input_grid.copy()
+
+    if guide_color is None:
+        return output_grid  # No unique guide object found
+
+    # Step 3: Fill the holes with the guide object's color
+    for obj in objects:
+        if guide_color not in object_colors(obj, background=Color.BLACK):
+            continue
+
+        # Find holes inside the object
+        interior_mask = object_interior(obj, background=Color.BLACK)
+        boundary_mask = object_boundary(obj, background=Color.BLACK)
+        hole_mask = interior_mask & ~boundary_mask & (obj == Color.BLACK)
+
+        # Fill the holes with the guide object's color
+        output_grid[hole_mask] = guide_color
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a grid with random size
+    width = np.random.randint(10, 20)
+    height = np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Add random objects to the grid
+    n_objects = np.random.randint(3, 5)
+
+    # Ensure one object has a unique color (the guide object)
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+
+    for i in range(n_objects):
+        color = guide_color if i == 0 else np.random.choice(list(Color.NOT_BLACK - {guide_color}))
+        obj_width, obj_height = np.random.randint(3, 6), np.random.randint(3, 6)
+        obj = random_sprite(obj_width, obj_height, color_palette=[color], background=Color.BLACK)
+        interior_mask = object_interior(obj, background=Color.BLACK)
+        boundary_mask = object_boundary(obj, background=Color.BLACK)
+        hole_mask = interior_mask & ~boundary_mask
+        obj[hole_mask] = Color.BLACK  # Create a hole inside the object
+
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, background=Color.BLACK, padding=1, border_size=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue  # If no location found, skip adding this object
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function:**
+  - Detects all connected components that are not the background.
+  - Identifies the guide object by finding an object with a unique color.
+  - For each object, if it contains the guide color, it identifies the holes inside it.
+  - Fills the holes with the guide object's color.
+
+- **`generate_input` Function:**
+  - Creates a grid with random size and fills it with black.
+  - Generates several random objects, ensuring one has a unique color (guide object).
+  - Creates holes in objects and places them randomly on the grid.

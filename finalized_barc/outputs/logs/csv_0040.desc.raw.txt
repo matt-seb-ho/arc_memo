@@ -1,0 +1,4 @@
+```python
+# concepts: specific color selection, connected components, filtering
+# description: Input consists of multiple objects of various colors on a grid. Identify and select all objects that are composed entirely of a specified target color. Output a grid where only these selected objects are preserved in their original positions and colors, while all other grid cells are set to background color (0).
+```

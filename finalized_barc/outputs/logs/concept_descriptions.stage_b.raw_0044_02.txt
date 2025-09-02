@@ -1,0 +1,69 @@
+Here's the implementation of the puzzle following the described concepts and description:
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# window processing, predicate check, conditional fill, grid manipulation
+
+# description:
+# Input is a grid with specific 3x3 window coordinates and a predicate function.
+# For each cell within the specified 3x3 window, check if it satisfies the predicate.
+# If a cell does not satisfy the predicate, replace its value with a specified fill_value.
+# Cells that satisfy the predicate remain unchanged. This operation completes the pattern
+# within the window by filling only the non-matching cells.
+
+def main(input_grid: np.ndarray, window_coords: Tuple[int, int], predicate: Callable[[int], bool], fill_value: int) -> np.ndarray:
+    # Copy the input_grid to avoid modifying the original
+    output_grid = np.copy(input_grid)
+    
+    # Extracting the 3x3 window starting at window_coords
+    x_start, y_start = window_coords
+    x_end, y_end = x_start + 3, y_start + 3
+    
+    # Iterate over each cell in the 3x3 window
+    for x in range(x_start, x_end):
+        for y in range(y_start, y_end):
+            # Check if the current cell satisfies the predicate
+            if not predicate(output_grid[x, y]):
+                # If not, replace its value with the fill_value
+                output_grid[x, y] = fill_value
+    
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, Tuple[int, int], Callable[[int], bool], int]:
+    # Create a random grid with dimensions between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+    
+    # Randomly choose a 3x3 window starting position, ensuring it fits within the grid
+    x_start = np.random.randint(0, n - 2)
+    y_start = np.random.randint(0, m - 2)
+    window_coords = (x_start, y_start)
+    
+    # Define a random predicate function
+    def random_predicate(value: int) -> bool:
+        # Example predicate: returns True if the value is even
+        return value % 2 == 0
+    
+    # Choose a fill_value different from the current grid colors
+    fill_value = np.random.choice(list(set(Color.NOT_BLACK) - {grid[x, y] for x in range(n) for y in range(m)}))
+    
+    return grid, window_coords, random_predicate, fill_value
+```
+
+### Explanation:
+
+- **`main` Function**: 
+  - The function takes an input grid, a starting coordinate for a 3x3 window, a predicate function, and a fill value.
+  - It processes each cell within the specified window. If a cell does not satisfy the predicate, its value is replaced with the fill value.
+
+- **`generate_input` Function**: 
+  - Generates a random grid of size between 5x5 and 10x10 filled with colors.
+  - Randomly selects a starting position for a 3x3 window.
+  - Defines a predicate function that checks if a number is even.
+  - Randomly selects a fill value that is not already present in the grid to ensure diversity. 
+
+This puzzle challenges students to understand and implement conditional checks and transformations over a specified region of a grid.

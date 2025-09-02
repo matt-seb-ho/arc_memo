@@ -1,0 +1,88 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# Input consists of a grid with a single object enclosing empty spaces (holes). Identify holes as background-color (0) regions fully enclosed by the object, not touching the grid border.
+# Use flood-fill from the border to exclude non-enclosed regions. Output the grid with holes marked or filled by a target object or color, while preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create a copy of the input grid for the output
+    output_grid = input_grid.copy()
+
+    # Flood fill from the border to mark non-enclosed regions
+    border_mask = np.zeros_like(input_grid, dtype=bool)
+    flood_fill_from_border(input_grid, border_mask)
+
+    # Identify all connected components of background color
+    holes = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Fill enclosed holes with a target color, e.g., red
+    for hole in holes:
+        if is_enclosed(hole, border_mask):
+            hole[hole == Color.BLACK] = Color.RED
+            blit_object(output_grid, hole, background=Color.BLACK)
+
+    return output_grid
+
+def flood_fill_from_border(grid, mask):
+    h, w = grid.shape
+    queue = []
+
+    # Add border positions to the queue
+    for x in range(h):
+        if grid[x, 0] == Color.BLACK:
+            queue.append((x, 0))
+        if grid[x, w-1] == Color.BLACK:
+            queue.append((x, w-1))
+    for y in range(w):
+        if grid[0, y] == Color.BLACK:
+            queue.append((0, y))
+        if grid[h-1, y] == Color.BLACK:
+            queue.append((h-1, y))
+
+    # Perform flood fill
+    while queue:
+        x, y = queue.pop(0)
+        if not (0 <= x < h and 0 <= y < w) or grid[x, y] != Color.BLACK or mask[x, y]:
+            continue
+        mask[x, y] = True
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            queue.append((x + dx, y + dy))
+
+def is_enclosed(hole, border_mask):
+    # If any part of the hole touches the border, it is not enclosed
+    for x, y in np.argwhere(hole):
+        if border_mask[x, y]:
+            return False
+    return True
+
+def generate_input():
+    # Create a grid with a single object enclosing empty spaces
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Create an outer object
+    outer_object = random_sprite(n=grid_size-2, m=grid_size-2, density=0.8, color_palette=[Color.BLUE], background=Color.BLACK)
+    grid[1:-1, 1:-1] = outer_object
+
+    # Randomly create enclosed holes
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 4)
+        hole = random_sprite(n=hole_size, m=hole_size, density=0.5, color_palette=[Color.BLACK], background=Color.BLUE)
+        try:
+            x, y = random_free_location_for_sprite(grid, hole, border_size=1, background=Color.BLUE, padding=1)
+            blit_sprite(grid, hole, x, y, background=Color.BLUE)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+This code defines a puzzle where the task is to identify and fill enclosed holes within a single object on a grid. The `main` function performs flood-fill from the border to mark non-enclosed regions and then identifies and fills enclosed holes with a target color. The `generate_input` function stochastically generates a grid with an enclosing object and several enclosed holes.

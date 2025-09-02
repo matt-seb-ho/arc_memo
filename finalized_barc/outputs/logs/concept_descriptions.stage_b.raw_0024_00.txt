@@ -1,0 +1,86 @@
+Here's a new puzzle that involves detecting a connected component in a grid and recoloring it based on a given color scheme. The color scheme could be either a single color applied uniformly or a gradient pattern based on the position of each pixel within the object.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connected components, recoloring, color scheme
+
+# description:
+# In the input grid, you will find various connected objects of different colors.
+# To create the output grid, select the largest connected object and apply a color gradient to it.
+# The gradient will transition from one color to another (e.g., from red to blue) based on the position of each pixel within the object.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the grid, considering all colors except black as part of objects
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+
+    # Identify the largest connected object
+    largest_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Define a color gradient from red to blue
+    start_color = Color.RED
+    end_color = Color.BLUE
+
+    # Calculate the dimensions of the largest object
+    x_min, y_min, x_max, y_max = bounding_box(largest_object, background=Color.BLACK)
+    width = x_max - x_min + 1
+    height = y_max - y_min + 1
+
+    # Apply the color gradient to the largest object
+    for x in range(width):
+        for y in range(height):
+            if largest_object[x + x_min, y + y_min] != Color.BLACK:
+                # Calculate the gradient color based on position
+                ratio = (x / width + y / height) / 2
+                new_color = blend_colors(start_color, end_color, ratio)
+                largest_object[x + x_min, y + y_min] = new_color
+
+    # Create the output grid, blitting the recolored largest object back in place
+    output_grid = input_grid.copy()
+    blit_object(output_grid, largest_object, background=Color.BLACK)
+
+    return output_grid
+
+def blend_colors(start, end, ratio):
+    # Blend two colors by a ratio between 0 and 1
+    # This is a simplified function that assumes colors are represented as RGB tuples
+    start_rgb = (255, 0, 0)  # Red
+    end_rgb = (0, 0, 255)    # Blue
+
+    blended_rgb = tuple(int(start_rgb[i] + (end_rgb[i] - start_rgb[i]) * ratio) for i in range(3))
+    return blended_rgb
+
+def generate_input():
+    # Create a grid of size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Add random objects with random colors
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj = random_sprite(list(range(3, 6)), list(range(3, 6)), color_palette=Color.NOT_BLACK)
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: This puzzle involves understanding connected components in a grid and applying a color scheme transformation. It uses a gradient to recolor the largest object.
+   
+2. **Description**: The task is to find the largest connected object in the grid and apply a gradient color transformation from red to blue. The gradient is applied based on the position of each pixel relative to the object's dimensions. All other grid elements remain unchanged.
+
+3. **Implementation Details**:
+   - `find_connected_components` is used to detect objects in the grid.
+   - The largest object is identified by comparing the number of non-black pixels.
+   - A gradient is applied within the largest object, transitioning from red to blue.
+   - The `blend_colors` function calculates intermediary colors in the gradient.
+   - The `generate_input` function randomly populates the grid with colored objects, ensuring variability in inputs.

@@ -1,0 +1,80 @@
+Here is a new puzzle implementation based on the description provided:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# The input grid consists of a grid with a single object and a background of black pixels (0). The task is to identify holes, which are fully enclosed regions of black pixels within the object that are not connected to the grid border.
+# The output grid should highlight these enclosed holes for further processing or filling.
+
+def main(input_grid):
+    output_grid = input_grid.copy()
+    
+    # Flood-fill from the border to detect and exclude non-enclosed regions
+    border_mask = np.zeros_like(input_grid, dtype=bool)
+    for i in range(input_grid.shape[0]):
+        if input_grid[i, 0] == 0:
+            border_mask[i, 0] = True
+        if input_grid[i, -1] == 0:
+            border_mask[i, -1] = True
+    for j in range(input_grid.shape[1]):
+        if input_grid[0, j] == 0:
+            border_mask[0, j] = True
+        if input_grid[-1, j] == 0:
+            border_mask[-1, j] = True
+
+    # Use flood fill to find all connected regions from the border
+    from scipy.ndimage import label
+    labeled_array, num_features = label(border_mask, structure=np.ones((3, 3)))
+    
+    # Identify and highlight enclosed holes
+    for i in range(1, num_features + 1):
+        component = (labeled_array == i)
+        connected_to_border = np.any(component & border_mask)
+        if not connected_to_border:
+            # Highlight enclosed hole
+            output_grid[component] = Color.YELLOW
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size 10x10 to 20x20
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create a single object that is a random shape and fills a significant part of the grid
+    object_color = np.random.choice(list(Color.NOT_BLACK))
+    sprite_size = np.random.randint(6, min(n, 10))
+    sprite = random_sprite(sprite_size, sprite_size, color_palette=[object_color], connectivity=4)
+    interior_mask = object_interior(sprite)
+    boundary_mask = object_boundary(sprite)
+    interior_but_not_edges = interior_mask & ~boundary_mask
+    sprite[interior_but_not_edges] = Color.BLACK  # Create potential holes
+
+    # Place the object in the grid
+    x, y = random_free_location_for_sprite(grid, sprite, border_size=0, padding=1)
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts:** The puzzle focuses on identifying enclosed regions (holes) within an object on a grid, excluding regions connected to the border, using flood-fill and detecting connected components.
+
+2. **Main Function:**
+   - **Flood-fill Approach:** Start by identifying all border-connected regions using a flood-fill technique starting from the border of the grid. This is achieved by marking all black pixels on the border and then identifying connected components using `scipy.ndimage.label`.
+   - **Highlight Enclosed Holes:** Any black region not connected to the border is considered an enclosed hole, and these are highlighted in yellow.
+
+3. **Generate Input Function:**
+   - **Grid Creation:** A grid of size between 10x10 and 20x20 is generated.
+   - **Object Creation:** A single random-shaped object is generated using the `random_sprite` function. The object is placed in the grid, potentially creating holes by hollowing out the interior of the object.
+   - **Placing the Object:** The object is placed onto the grid at a random location with padding to ensure it doesn't overlap with the border immediately.
+
+This implementation provides a deterministic transformation in `main` and a stochastic input generation in `generate_input` to allow for varied puzzle instances.

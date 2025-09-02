@@ -1,0 +1,65 @@
+Here's a new puzzle based on the given concepts and description:
+
+```python
+from common import *
+
+import numpy as np
+import random
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# The input grid is filled with various colors. For each 2x2 window in the grid, check if all cells match a specified target color.
+# If every cell in the window matches the target color, return True; otherwise, return False for that window.
+# The output is a boolean grid where each cell corresponds to a 2x2 window in the input grid.
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Determine the dimensions of the input grid
+    rows, cols = input_grid.shape
+    
+    # Initialize an output grid of size (rows-1) x (cols-1) to store boolean results for each 2x2 window
+    output_grid = np.zeros((rows-1, cols-1), dtype=bool)
+    
+    # Iterate over each possible top-left corner of a 2x2 window
+    for i in range(rows - 1):
+        for j in range(cols - 1):
+            # Extract the 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+            # Check if all elements in the window match the target color
+            if np.all(window == target_color):
+                output_grid[i, j] = True
+    
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Randomly determine the size of the grid
+    n = random.randint(5, 10)
+    m = random.randint(5, 10)
+    
+    # Create a grid of size n x m with random colors
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(n, m))
+    
+    # Randomly select a target color from the available colors
+    target_color = random.choice(list(Color.ALL_COLORS))
+    
+    return grid, target_color
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle involves window scanning, color matching, and pattern detection.
+   
+2. **Description**: The input is a grid of various colors, and the task is to check each 2x2 window to see if all cells match a specified target color. The output is a boolean grid representing whether each 2x2 window meets this criterion.
+
+3. **`main` Function**: 
+   - It iterates over each possible 2x2 window in the grid.
+   - For each window, it checks if all cells match the target color.
+   - It stores `True` in the output grid if they match; otherwise, it stores `False`.
+
+4. **`generate_input` Function**: 
+   - It generates a grid of random colors and selects a target color randomly.
+   - This function is stochastic, providing various inputs for testing the transformation.
+
+This puzzle encourages students to understand the process of scanning a grid and applying a pattern detection algorithm to derive a new grid based on specific rules.

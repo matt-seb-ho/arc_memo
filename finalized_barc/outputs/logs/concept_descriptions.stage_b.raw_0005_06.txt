@@ -1,0 +1,77 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color propagation, hole filling
+
+# description:
+# Identify a guide object by its unique color in the grid. Use this color to fill all enclosed regions (holes) within the grid.
+# A hole is defined as a region of background (0) pixels completely surrounded by non-background pixels. The guide object's color 
+# is propagated to fill these holes, ensuring that all other non-hole areas remain unchanged.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Determine the guide object by finding the one with a unique color
+    guide_object = None
+    guide_color = None
+    for obj in objects:
+        colors = object_colors(obj, background=Color.BLACK)
+        if len(colors) == 1:
+            guide_object = obj
+            guide_color = colors[0]
+            break
+
+    # Create an output grid to store the result
+    output_grid = input_grid.copy()
+
+    # Find enclosed regions (holes) in the grid
+    interior_mask = object_interior(input_grid)
+    boundary_mask = object_boundary(input_grid)
+    hole_mask = interior_mask & ~boundary_mask & (input_grid == Color.BLACK)
+
+    # Fill holes with the guide object's color
+    output_grid[hole_mask] = guide_color
+
+    return output_grid
+
+
+def generate_input():
+    # Create a random grid size between 10x10 to 20x20
+    grid_size = np.random.randint(10, 21)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Add random non-background objects to the grid
+    num_objects = np.random.randint(3, 6)
+    for _ in range(num_objects):
+        obj_width = np.random.randint(3, 6)
+        obj_height = np.random.randint(3, 6)
+        obj_color = np.random.choice(list(Color.NOT_BLACK))
+        sprite = np.full((obj_width, obj_height), obj_color)
+        x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1, background=Color.BLACK)
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    # Add a guide object with a unique color
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    while np.any(grid == guide_color):
+        guide_color = np.random.choice(list(Color.NOT_BLACK))
+    guide_width = np.random.randint(2, 4)
+    guide_height = np.random.randint(2, 4)
+    guide_sprite = np.full((guide_width, guide_height), guide_color)
+    x, y = random_free_location_for_sprite(grid, guide_sprite, padding=1, border_size=1, background=Color.BLACK)
+    blit_sprite(grid, guide_sprite, x, y, background=Color.BLACK)
+
+    # Create a random number of holes in the grid
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, 3)
+        hole_x = np.random.randint(1, grid_size - hole_size)
+        hole_y = np.random.randint(1, grid_size - hole_size)
+        grid[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    return grid
+```

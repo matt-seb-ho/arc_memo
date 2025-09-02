@@ -1,0 +1,90 @@
+Here's a puzzle implementation based on gravity simulation, directional movement, cohesion modes, and collision detection. The puzzle involves moving blocks on a grid according to a specified gravity direction and cohesion mode. The transformation involves moving blocks until they rest against obstacles or boundaries.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# gravity simulation, directional movement, cohesion modes, collision detection
+
+# description:
+# Input consists of blocks on a grid with a specified gravity direction ('down', 'up', 'left', 'right'). Apply gravity to translate blocks in the given direction until they rest on obstacles or boundaries.
+# If cohesion mode is 'per-column', each column of blocks falls independently, stopping at blockers; if 'cohesive', treat the entire block structure as a single rigid shape and move it until contact.
+# Maintain block order and shape; stop when further movement would result in collision or leaving the grid.
+# The output grid shows blocks shifted flush against walls or other blocks along the gravity direction, with empty space opposite the fall direction.
+
+def main(input_grid):
+    # Extract gravity direction and cohesion mode from the grid
+    gravity_direction = input_grid[0, 0]  # Assume first element encodes gravity direction
+    cohesion_mode = input_grid[0, 1]  # Assume second element encodes cohesion mode
+
+    # Remove direction and mode encoding for processing
+    input_grid = input_grid[1:, :]
+
+    # Create output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Define movement vectors based on gravity direction
+    if gravity_direction == 'down':
+        move_vector = (1, 0)
+    elif gravity_direction == 'up':
+        move_vector = (-1, 0)
+    elif gravity_direction == 'left':
+        move_vector = (0, -1)
+    elif gravity_direction == 'right':
+        move_vector = (0, 1)
+    else:
+        raise ValueError("Invalid gravity direction")
+
+    # Process connected components based on cohesion mode
+    if cohesion_mode == 'cohesive':
+        # Treat entire block structure as a single object
+        objects = [input_grid]
+    else:
+        # Treat each column independently
+        objects = [input_grid[:, i:i+1] for i in range(input_grid.shape[1])]
+
+    for obj in objects:
+        # Translate the object according to gravity until collision or boundary
+        while True:
+            translated_obj = translate(obj, *move_vector)
+            if collision(object1=translated_obj, object2=output_grid) or \
+               not (0 <= translated_obj.shape[0] <= output_grid.shape[0] and
+                    0 <= translated_obj.shape[1] <= output_grid.shape[1]):
+                break
+            obj = translated_obj
+
+        # Blit the final position of the object onto the output grid
+        blit_object(output_grid, obj)
+
+    return output_grid
+
+
+def generate_input():
+    # Define grid size
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly select gravity direction and cohesion mode
+    gravity_direction = np.random.choice(['down', 'up', 'left', 'right'])
+    cohesion_mode = np.random.choice(['per-column', 'cohesive'])
+
+    # Encode the gravity direction and cohesion mode in the first row
+    grid[0, 0] = gravity_direction
+    grid[0, 1] = cohesion_mode
+
+    # Generate random blocks in the grid
+    num_blocks = np.random.randint(3, 6)
+    for _ in range(num_blocks):
+        block_color = np.random.choice(list(Color.NOT_BLACK))
+        block_size = np.random.randint(1, 4, size=2)
+        block = random_sprite(block_size[0], block_size[1], color_palette=[block_color])
+        x, y = random_free_location_for_sprite(grid[1:], block)
+        blit_sprite(grid, block, x + 1, y)
+
+    return grid
+```
+
+This implementation generates a grid with a row that specifies gravity direction and cohesion mode. Blocks are then moved according to the specified direction until they collide with other blocks or boundaries. If the cohesion mode is 'cohesive', the entire structure is treated as one object. If 'per-column', each column falls independently.

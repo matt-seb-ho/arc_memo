@@ -1,0 +1,85 @@
+Here's an implementation for the described puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood fill, background detection
+
+# description:
+# The input grid contains a guide object formed by a closed shape (e.g., a rectangle or circle) and a background color. 
+# The task is to identify holes, which are regions of the background color that are completely enclosed by the guide object and do not touch any grid borders.
+# Use flood-fill from the grid border to mark exterior background; any remaining background component inside the object is a hole.
+# The output should be the input grid, but with these holes filled with the color of the guide object.
+
+def main(input_grid):
+    # Make a copy of the grid to avoid modifying the input directly
+    output_grid = input_grid.copy()
+
+    # Identify the background color as the most frequent color in the grid
+    background_color = np.argmax(np.bincount(input_grid.flatten()))
+    
+    # Identify the guide object's color by finding the most frequent non-background color
+    guide_color = max(Color.NOT_BLACK, key=lambda x: np.count_nonzero(input_grid == x))
+
+    # Flood-fill from the border to mark the exterior background
+    border_mask = np.full(input_grid.shape, False)
+    border_mask[0, :] = border_mask[-1, :] = border_mask[:, 0] = border_mask[:, -1] = True
+    flood_fill(input_grid, border_mask, background_color)
+
+    # Find the regions that are still background color; these are potential holes
+    potential_holes = (input_grid == background_color)
+
+    # Fill these holes with the guide object's color
+    output_grid[potential_holes] = guide_color
+
+    return output_grid
+
+def flood_fill(grid, mask, target_color):
+    """
+    Perform flood-fill from the border using a queue-based implementation.
+    This will mark all connected components of the target_color that are connected to the border.
+    """
+    q = list(zip(*np.where(mask & (grid == target_color))))
+    while q:
+        x, y = q.pop(0)
+        grid[x, y] = -1  # Mark as visited with a temporary color
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < grid.shape[0] and 0 <= ny < grid.shape[1] and grid[nx, ny] == target_color:
+                q.append((nx, ny))
+
+def generate_input():
+    # Create a grid of random size between 15x15 and 25x25 with a black background
+    n = np.random.randint(15, 26)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate a random guide object (e.g., a rectangle) with a random non-black color
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+    rect_height = np.random.randint(5, n-4)
+    rect_width = np.random.randint(5, n-4)
+    rect_x = np.random.randint(1, n-rect_height-1)
+    rect_y = np.random.randint(1, n-rect_width-1)
+    
+    grid[rect_x:rect_x+rect_height, rect_y:rect_y+rect_width] = guide_color
+    grid[rect_x+1:rect_x+rect_height-1, rect_y+1:rect_y+rect_width-1] = Color.BLACK
+
+    # Introduce random holes within the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_height = np.random.randint(1, rect_height-2)
+        hole_width = np.random.randint(1, rect_width-2)
+        hole_x = np.random.randint(rect_x+1, rect_x+rect_height-hole_height-1)
+        hole_y = np.random.randint(rect_y+1, rect_y+rect_width-hole_width-1)
+        grid[hole_x:hole_x+hole_height, hole_y:hole_y+hole_width] = Color.BLACK
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: This puzzle involves identifying enclosed regions (holes) within a guide object that are filled with a background color and do not touch the grid border, using flood-fill and background detection techniques.
+- **Description**: The `main` function processes the grid to identify and fill holes. It identifies the background and guide colors, performs a flood-fill to mark exterior regions, and then fills the internal holes with the guide color. The `generate_input` function creates a grid with random rectangles and holes to test the puzzle.
+- **Deterministic Transformation**: The transformation in `main` is deterministic because it relies on clear rules for identifying and filling holes based on the input grid.

@@ -1,0 +1,105 @@
+Here is the implementation for the puzzle you described, involving grid partitioning, separator detection, and slicing:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, separator detection, slicing
+
+# description:
+# The input is a grid containing full-length separator rows or columns of a single color that divide the grid into distinct regions.
+# Identify these separators and use them to partition the grid into contiguous sub-grids. Each sub-grid is formed by slicing the input grid
+# between consecutive separators, excluding the separators themselves. The output is a list of these sub-grids, preserving their original order and content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Plan:
+    # 1. Identify the color of the separator lines by checking for rows or columns that are entirely one color.
+    # 2. Use these separators to partition the grid into sub-grids.
+    # 3. Return the list of sub-grids as the output.
+
+    # 1. Identify the separator color
+    separator_color = None
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            separator_color = input_grid[i, 0]
+            break
+    if separator_color is None:
+        for j in range(input_grid.shape[1]):
+            if np.all(input_grid[:, j] == input_grid[0, j]):
+                separator_color = input_grid[0, j]
+                break
+
+    assert separator_color is not None, "No separator color found"
+
+    # 2. Find separator positions and partition the grid
+    horizontal_separators = [i for i in range(input_grid.shape[0]) if np.all(input_grid[i, :] == separator_color)]
+    vertical_separators = [j for j in range(input_grid.shape[1]) if np.all(input_grid[:, j] == separator_color)]
+
+    # Add boundaries for partitioning
+    horizontal_separators = [0] + horizontal_separators + [input_grid.shape[0]]
+    vertical_separators = [0] + vertical_separators + [input_grid.shape[1]]
+
+    sub_grids = []
+
+    # 3. Create sub-grids between separators
+    for h in range(len(horizontal_separators) - 1):
+        for v in range(len(vertical_separators) - 1):
+            top = horizontal_separators[h] + 1
+            bottom = horizontal_separators[h + 1]
+            left = vertical_separators[v] + 1
+            right = vertical_separators[v + 1]
+
+            if top < bottom and left < right:
+                sub_grid = input_grid[top:bottom, left:right]
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate the grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.random.choice(list(Color.NOT_BLACK), (width, height))
+
+    # Randomly choose a color for the separators
+    separator_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Randomly generate separator positions
+    num_horizontal_separators = np.random.randint(1, 4)
+    num_vertical_separators = np.random.randint(1, 4)
+    horizontal_separators = randomly_spaced_indices(max_len=width, n_indices=num_horizontal_separators, border_size=1, padding=1)
+    vertical_separators = randomly_spaced_indices(max_len=height, n_indices=num_vertical_separators, border_size=1, padding=1)
+
+    # Draw separators on the grid
+    for hs in horizontal_separators:
+        grid[hs, :] = separator_color
+
+    for vs in vertical_separators:
+        grid[:, vs] = separator_color
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**:
+  - **Grid Partitioning**: The task involves dividing the grid into smaller regions based on the separators.
+  - **Separator Detection**: Identifying rows or columns that act as separators.
+  - **Slicing**: Extracting sub-grids from the original grid based on the separators.
+
+- **Description**:
+  - The input is a grid with full-length separator rows/columns of a single color.
+  - The output is a list of sub-grids created by slicing the input grid between consecutive separators, excluding the separators themselves.
+
+- **Implementation**:
+  - **`main` Function**:
+    - Identifies the separator color by finding any row or column that is entirely one color.
+    - Uses identified separators to slice the grid into sub-grids.
+    - Collects and returns these sub-grids.
+    
+  - **`generate_input` Function**:
+    - Randomly generates a grid with random colors.
+    - Chooses a separator color and places horizontal and vertical separators at random positions.
+    - Returns the generated grid.

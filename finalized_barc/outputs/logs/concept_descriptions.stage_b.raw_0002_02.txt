@@ -1,0 +1,67 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# parity counting, guide object, color restriction
+
+# description:
+# In the input you will see a grid with colored pixels and a designated guide object.
+# The guide object is a randomly generated sprite in a specific color.
+# Count the number of pixels inside the guide object that have either odd or even color values.
+# If a specific color or set of colors is provided, restrict the count to those colors only; otherwise, consider all colors present in the guide object.
+# The output is the total count of pixels satisfying the chosen parity condition.
+
+def main(input_data):
+    input_grid, guide_object_color, parity, restricted_colors = input_data
+    
+    # Identify the guide object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    guide_object = next(obj for obj in objects if np.any(obj == guide_object_color))
+    
+    # Get the bounding box of the guide object
+    x, y, width, height = bounding_box(guide_object, background=Color.BLACK)
+    
+    # Count the pixels within the guide object according to the rules
+    restricted_colors = restricted_colors or Color.NOT_BLACK  # if no restriction, consider all colors
+    pixel_count = 0
+    
+    for i in range(x, x + width):
+        for j in range(y, y + height):
+            if input_grid[i, j] in restricted_colors:
+                color_index = list(Color.NOT_BLACK).index(input_grid[i, j])
+                if (color_index % 2 == 0 and parity == 'even') or (color_index % 2 != 0 and parity == 'odd'):
+                    pixel_count += 1
+
+    # Output is a 1x1 grid with the count as its single pixel
+    output_grid = np.full((1, 1), pixel_count)
+    
+    return output_grid
+
+def generate_input():
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # Scatter random colors on the grid
+    randomly_scatter_points(grid, color=random.choice(list(Color.NOT_BLACK)), density=0.4, background=Color.BLACK)
+    
+    # Generate a guide object sprite in a specific color
+    guide_object_color = random.choice(list(Color.NOT_BLACK))
+    sprite = random_sprite(n=3, m=3, color_palette=[guide_object_color], density=0.6)
+    
+    # Place the guide object on the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, sprite, x, y)
+    
+    # Decide on parity and optional restricted color set
+    parity = random.choice(['odd', 'even'])
+    restricted_colors = random.sample(list(Color.NOT_BLACK), k=random.randint(0, 5))  # Up to 5 colors can be restricted
+    
+    return grid, guide_object_color, parity, restricted_colors
+```
+
+This implementation involves:
+- The `main` function identifies a guide object within an input grid and counts the colored pixels within it based on a parity condition (odd or even color index).
+- The `generate_input` function stochastically creates a grid with scattered colored pixels and randomly positions a guide object (sprite) in a unique color. It also randomly selects a parity and optionally a set of restricted colors for the counting process.

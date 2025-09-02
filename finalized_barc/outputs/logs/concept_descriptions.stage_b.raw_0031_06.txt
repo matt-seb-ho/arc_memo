@@ -1,0 +1,78 @@
+Certainly! Let's design a new puzzle based on the given description and using the common library functions. The puzzle will involve identifying a connected component, translating it, and redrawing it at a new location.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, translation, erasure, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0).
+# Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates.
+# Redraw the object at the new position, preserving its shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+
+def main(input_grid):
+    # Create a copy of the input grid for manipulation
+    output_grid = np.copy(input_grid)
+    
+    # Identify connected components in the grid
+    objects = find_connected_components(output_grid, background=Color.BLACK, monochromatic=True, connectivity=8)
+    
+    # Assume there is only one object
+    assert len(objects) == 1
+    obj = objects[0]
+    
+    # Determine the bounding box of the object
+    x, y, width, height = bounding_box(obj, background=Color.BLACK)
+    
+    # Erase the object from its original position
+    output_grid[x:x+width, y:y+height] = Color.BLACK
+    
+    # Translate the object to a new position
+    new_x, new_y = np.random.randint(0, output_grid.shape[0] - width), np.random.randint(0, output_grid.shape[1] - height)
+    
+    # Create a cropped version of the object to be redrawn
+    sprite = crop(obj, background=Color.BLACK)
+    
+    # Redraw the object at the new position
+    blit_sprite(output_grid, sprite, new_x, new_y, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Create a random grid size
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate a random sprite (object) with random dimensions and color
+    width, height = np.random.randint(3, 5), np.random.randint(3, 5)
+    color = random.choice(list(Color.NOT_BLACK))
+    sprite = random_sprite(width, height, color_palette=[color], background=Color.BLACK)
+    
+    # Find a random free location for the sprite in the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1, border_size=1)
+    
+    # Place the sprite onto the grid
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+    
+    return grid
+```
+
+### Explanation:
+1. **Main Function**:
+   - We find the connected components in the grid and assume there is only one object.
+   - We determine its bounding box and erase its original location by setting these pixels to the background color.
+   - We translate the object to a new random position that fits within the grid dimensions.
+   - The object is redrawn at the new position using `blit_sprite`.
+
+2. **Generate Input Function**:
+   - We create a grid of random size and generate a random sprite with random dimensions and color.
+   - The sprite is placed randomly on the grid using `random_free_location_for_sprite` ensuring it fits and does not collide with the grid's borders.
+   - This setup ensures that each generated puzzle instance is unique and provides different challenges. 
+
+This puzzle teaches kids about object translation and grid manipulation, enhancing their understanding of spatial transformations.

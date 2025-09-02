@@ -1,0 +1,53 @@
+Here is a possible implementation of the new puzzle based on the provided description. This puzzle involves matching a pattern within a 3x3 grid using a boolean mask.
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern matching, boolean mask, predicate evaluation, exact match
+
+# description:
+# The input consists of a 3x3 grid (window) and a boolean mask (pattern_mask) of the same size.
+# The task is to apply a predicate function to each cell in the window to create a boolean mask.
+# If the generated mask matches the given pattern_mask element-wise exactly (with no rotations or flips allowed), return True.
+# Otherwise, return False.
+
+def main(input_data: Tuple[np.ndarray, np.ndarray]) -> bool:
+    input_grid, pattern_mask = input_data
+    
+    # Define the predicate function (e.g., check if the color is red)
+    def predicate(color):
+        return color == Color.RED
+    
+    # Generate the boolean mask by applying the predicate to each cell in the input grid
+    generated_mask = np.vectorize(predicate)(input_grid)
+    
+    # Check if the generated mask matches the pattern mask exactly
+    return np.array_equal(generated_mask, pattern_mask)
+
+def generate_input() -> Tuple[np.ndarray, np.ndarray]:
+    # Create a 3x3 grid of randomly chosen colors
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(3, 3))
+    
+    # Randomly generate a boolean pattern mask of the same size
+    # The pattern mask indicates the shape we are trying to match
+    pattern_mask = np.random.choice([True, False], size=(3, 3))
+    
+    return grid, pattern_mask
+
+```
+
+### Explanation:
+
+1. **Main Function:**
+   - **Predicate Function:** A simple predicate function is defined to check if a cell color matches a specific condition (e.g., red color). This can be modified according to specific needs.
+   - **Generated Mask:** Using `np.vectorize`, the predicate is applied across the entire grid to generate a boolean mask.
+   - **Exact Match:** The generated mask is compared with the provided pattern mask using `np.array_equal` to ensure an exact element-wise match.
+
+2. **Generate Input Function:**
+   - **Grid Generation:** A 3x3 grid is created with random colors.
+   - **Pattern Mask Generation:** A boolean mask of the same dimension is generated with random True/False values, which acts as the pattern to be matched.
+
+This implementation sticks to the puzzle description by generating a boolean mask from the grid using a predicate function and checking for an exact match against a given pattern mask.

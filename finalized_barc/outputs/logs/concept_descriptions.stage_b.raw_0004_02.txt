@@ -1,0 +1,93 @@
+Let's implement the puzzle as described. The task is to identify a unique guide object based on a distinct attribute (e.g., color or size), use its anchor point as a starting point, and count the number of enclosed regions (holes) in the grid originating from this guide's position.
+
+Here's the code for the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# The input grid consists of various colored objects on a black background. Identify the unique guide object based on a distinct attribute (e.g., color or size).
+# Use the guide's anchor point (e.g., centroid or top-left corner) as the starting point. From this anchor, count the number of enclosed regions (holes) in the grid.
+# The output is a count of these holes originating from the guide's position.
+
+def main(input_grid):
+    # Identify all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Determine the unique guide object based on a distinct attribute
+    # For simplicity, let's assume the guide object is the largest object by size
+    guide_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+
+    # Find the anchor point of the guide object
+    anchor_x, anchor_y = object_position(guide_object, background=Color.BLACK, anchor='center')
+
+    # Count the holes originating from the guide's position
+    # A hole is defined as a fully enclosed black region
+    enclosed_holes = 0
+    guide_interior = object_interior(guide_object, background=Color.BLACK)
+
+    # Iterate over the grid to count enclosed black regions starting from the guide's anchor point
+    def is_hole(x, y):
+        # Use flood fill algorithm to determine if a region is a hole
+        if guide_interior[x, y] or input_grid[x, y] != Color.BLACK:
+            return False
+        flood_fill = np.zeros_like(input_grid, dtype=bool)
+        stack = [(x, y)]
+        while stack:
+            cx, cy = stack.pop()
+            if flood_fill[cx, cy] or guide_interior[cx, cy] or input_grid[cx, cy] != Color.BLACK:
+                continue
+            flood_fill[cx, cy] = True
+            for nx, ny in [(cx-1, cy), (cx+1, cy), (cx, cy-1), (cx, cy+1)]:
+                if 0 <= nx < input_grid.shape[0] and 0 <= ny < input_grid.shape[1]:
+                    stack.append((nx, ny))
+        # If flood fill reached any point outside the guide object, it's not a hole
+        return not np.any(flood_fill & ~guide_interior)
+
+    # Check for holes around the anchor point
+    for dx in [-1, 1]:
+        for dy in [-1, 1]:
+            if is_hole(anchor_x + dx, anchor_y + dy):
+                enclosed_holes += 1
+
+    return enclosed_holes
+
+def generate_input():
+    # Create a grid with a random number of objects
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    num_objects = np.random.randint(3, 6)
+
+    for _ in range(num_objects):
+        color = np.random.choice(list(Color.NOT_BLACK))
+        width, height = np.random.randint(2, 5, size=2)
+        sprite = random_sprite(width, height, color_palette=[color], background=Color.BLACK, symmetry="not_symmetric")
+
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+### Explanation:
+- **`main` function**:
+  - Identifies all connected objects in the grid.
+  - Selects the largest object as the guide object.
+  - Uses the center of the guide object as the anchor point.
+  - Counts the enclosed black regions (holes) starting from the guide's anchor point using a flood fill algorithm.
+
+- **`generate_input` function**:
+  - Creates a grid with a random size and places a few colored objects randomly.
+  - Ensures there is a sufficient number of objects to test the puzzle logic.
+
+This code implements the described puzzle and provides a stochastic input generator and a deterministic transformation function.

@@ -1,0 +1,92 @@
+Below is the implementation of the puzzle based on the given description. The puzzle involves counting the number of enclosed regions (holes) within a guide object of a specific color using specified connectivity.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole counting, enclosed regions, guide object, connectivity (4/8)
+
+# description:
+# Input consists of a grid with a single guide object of a specific color, potentially enclosing regions of background color (e.g., 0).
+# Count the number of enclosed regions (holes) within the guide object that are not of the guide object's color.
+# Use specified connectivity (4 or 8) to determine whether regions are enclosed.
+# Output is the integer count of such holes.
+
+def main(input_grid):
+    # Identify the guide object color (assuming only one non-background color)
+    unique_colors = [color for color in np.unique(input_grid) if color != Color.BLACK]
+    assert len(unique_colors) == 1, "Input should have exactly one guide object color."
+    guide_color = unique_colors[0]
+
+    # Find the guide object
+    guide_objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    assert len(guide_objects) == 1, "There should be exactly one guide object."
+    guide_object = guide_objects[0]
+
+    # Determine the interior of the guide object
+    interior_mask = object_interior(guide_object, background=Color.BLACK)
+
+    # Find all connected components within the guide object that are not the guide color
+    holes = find_connected_components(input_grid, background=guide_color, connectivity=4, monochromatic=True)
+    
+    # Count the number of holes fully enclosed within the guide object
+    hole_count = 0
+    for hole in holes:
+        if np.all(interior_mask[hole]):
+            hole_count += 1
+
+    return hole_count
+
+
+def generate_input():
+    # Create a grid
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Select a random guide color
+    guide_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Create a guide object
+    guide_height, guide_width = np.random.randint(5, 8), np.random.randint(5, 8)
+    guide_object = np.full((guide_height, guide_width), guide_color)
+
+    # Create random holes inside the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, min(guide_height, guide_width) // 2)
+        hole = random_sprite(hole_size, hole_size, color_palette=[Color.BLACK], background=guide_color)
+        try:
+            hole_x, hole_y = random_free_location_for_sprite(guide_object, hole, border_size=1)
+            blit_sprite(guide_object, hole, hole_x, hole_y)
+        except ValueError:
+            continue
+
+    # Place the guide object on the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, guide_object, border_size=1)
+        blit_sprite(grid, guide_object, x, y)
+    except ValueError:
+        return generate_input()  # Retry in case of placement failure
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function:** 
+  - Identifies the unique color of the guide object.
+  - Finds the interior of the guide object using `object_interior`.
+  - Identifies all connected components (holes) inside the guide object using `find_connected_components`.
+  - Counts and returns the number of fully enclosed holes.
+
+- **`generate_input` Function:**
+  - Creates a grid with a random size.
+  - Chooses a random color for the guide object.
+  - Generates a guide object with random dimensions.
+  - Randomly places holes within the guide object.
+  - Ensures the guide object is placed on the grid.
+
+This puzzle challenges students to understand concepts of connectivity and enclosed regions, which are fundamental in computational geometry and image processing.

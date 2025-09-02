@@ -1,0 +1,376 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+diagonal movement, zigzag pattern, axis-aligned runs, boundary detection
+
+Description: 
+Starting from a seed pixel, create a diagonal zigzag pattern by alternating between horizontal and vertical movements. Move horizontally by a fixed number of pixels (horizontal_step), then vertically by another fixed number (vertical_step), painting each traversed pixel. Continue this alternating pattern until reaching the grid boundary. The result is a staircase-like diagonal composed of axis-aligned segments.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def draw_line(grid, x, y, end_x=None, end_y=None, length=None, direction=None, color=None, stop_at_color=[]):
+    """
+    Draws a line starting at (x, y) extending to (end_x, end_y) or of the specified length in the specified direction
+    Direction should be a vector with elements -1, 0, or 1.
+    If length is None, then the line will continue until it hits the edge of the grid.
+
+    stop_at_color: optional list of colors that the line should stop at. If the line hits a pixel of one of these colors, it will stop.
+
+    Returns the endpoint of the line.
+
+    Example:
+    # blue diagonal line from (0, 0) to (2, 2)
+    stop_x, stop_y = draw_line(grid, 0, 0, length=3, color=blue, direction=(1, 1))
+    draw_line(grid, 0, 0, end_x=2, end_y=2, color=blue)
+    assert (stop_x, stop_y) == (2, 2)
+    """
+
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def object_position(obj, background=Color.BLACK, anchor='upper left'):
+    """
+    (x,y) position of the provided object. By default, the upper left corner.
+
+    anchor: "upper left", "upper right", "lower left", "lower right", "center", "upper center", "lower center", "left center", "right center"
+
+    Example usage:
+    x, y = object_position(obj, background=background_color, anchor="upper left")
+    middle_x, middle_y = object_position(obj, background=background_color, anchor="center")
+    """
+
+def object_colors(obj, background=Color.BLACK):
+    """
+    Returns a list of colors in the object.
+
+    Example usage:
+    colors = object_colors(obj, background=background_color)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pixel pattern generation, falling downward
+
+# description:
+# In the input you will see a grid with several colored pixels at the top.
+# To make the output, you should draw a pattern downward from each pixel:
+# Color the diagonal corners, and then color downward with a vertical period of 2 from those corners and from the original pixel, making the pattern fall downward.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the pixels and make the output
+    # 2. Grow the pixel pattern downward from each pixel
+
+    # Extract the pixels
+    pixels = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK)
+
+    # Create output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+    width, height = input_grid.shape
+
+    # 2. Grow the pixel pattern downward from each pixel
+    for pixel in pixels:
+        pixel_x, pixel_y = object_position(pixel, background=Color.BLACK)
+        pixel_color = object_colors(pixel)[0]
+
+        # We do the diagonal corners *and* also the original pixel, so one of the offsets is 0,0
+        for offset_x, offset_y in [(0, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+            x, y = offset_x + pixel_x, offset_y + pixel_y
+
+            # Fall downward (w/ period 2)
+            while 0 <= x < width and 0 <= y < height:
+                output_grid[x, y] = pixel_color
+                # Vertical period of 2
+                y += 2
+            
+    return output_grid
+
+
+def generate_input():
+    # Generate the background grid
+    width, height = np.random.randint(10, 20, size=2)
+    grid = np.zeros((width, height), dtype=int)
+
+    # Randomly choose the number of pattern
+    num_pixels = np.random.randint(1, 4)
+    colors = np.random.choice(Color.NOT_BLACK, size=num_pixels, replace=False)
+
+    # Randomly place one pixel on the top row of the grid, each two pixels has at least two pixels padding
+    for i in range(num_pixels):
+        pixel_sprite = np.full((1,1), colors[i])
+        # Find a free spot but just in the top row
+        top_y = 0
+        top_row = grid[:, top_y:top_y+1]        
+        try:
+            x, _ = random_free_location_for_sprite(top_row, pixel_sprite, padding=2, padding_connectivity=4)
+        except:
+            # No more space
+            break
+        blit_sprite(grid, pixel_sprite, x, top_y)
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern generation
+
+# description:
+# In the input you will see a grid with a single pixel on the bottom of the grid.
+# To make the output, you should draw a geometric pattern starting outward from the pixel:
+# step 1: draw vertical bars starting from the pixel and going to the right with a horizontal period of 2.
+# step 2: put a grey pixel in between the vertical bars alternating between the top / bottom.
+
+def main(input_grid):
+    # Output grid is the same size as the input grid
+    output_grid = np.zeros_like(input_grid)
+
+    # Detect the pixel on the bottom of the grid
+    pixel = find_connected_components(input_grid, monochromatic=True)[0]
+    pixel_color = object_colors(pixel)[0]
+    pixel_x, pixel_y = object_position(pixel)
+
+    # Get the color of the pattern pixel by observation
+    pattern_pixel_color = Color.GRAY
+    
+    # STEP 1: Draw vertical bar from bottom to top starting from the pixel and going to the right, horizontal period of 2
+    horizontal_period = 2
+    for x in range(pixel_x, output_grid.shape[0], horizontal_period):
+        draw_line(output_grid, x=x, y=pixel_y, direction=(0, -1), color=pixel_color)
+    
+    # STEP 2: put a grey pixel in between the vertical bars alternating between the top / bottom.
+    cur_y = -1 if pixel_y == 0 else 0
+    for x in range(pixel_x + 1, output_grid.shape[0], horizontal_period):
+        output_grid[x, cur_y] = pattern_pixel_color
+        # alternate between top and bottom
+        cur_y = 0 if cur_y == -1 else -1
+
+    return output_grid
+
+def generate_input():
+    # Generate the background grid
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly choose the color of the line
+    pattern_pixel_color = Color.GRAY
+    color = np.random.choice([color for color in Color.NOT_BLACK if color != pattern_pixel_color])
+
+    # Randomly place the pixel on the bottom of the grid
+    x = np.random.randint(0, n)
+    grid[x, -1] = color
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# sliding objects
+
+# description:
+# In the input grid, you will see a chevron-shaped object of one color in a black grid, with pixels of another color scattered around the grid.
+# To produce the output grid, take all pixels located underneath the chevron. For each of these pixels, extend a vertical line of the same color up and down, until reaching the bottom of the grid or the boundary of the chevron.
+
+def main(input_grid):
+    # 1. find the chevron: it is the largest object by size.
+    # 2. get the color of the chevron
+    # 3. get the color of the colored pixels in the grid.
+    # 4. for each colored pixel, check if the chevron is above it. if so, extend a line of the same color above and below it until we reach the bottom of the grid or the boundary of the chevron.
+
+    # get the chevron
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=True)
+    chevron = max(objects, key=lambda o: np.count_nonzero(o))
+
+    # get the color of the chevron
+    chevron_color = chevron[chevron != Color.BLACK][0]
+
+    # get the color of the colored pixels (the other color in the grid)
+    colors = np.unique(input_grid)
+    colors = [c for c in colors if c not in [Color.BLACK, chevron_color]]
+    assert len(colors) == 1
+    pixel_color = colors[0]
+
+    # for each colored pixel, check if chevron is above it
+    # to do so, iterate through the grid and check for pixel_color.
+    # then try moving up until we hit the chevron color.
+    # if we do, then paint a vertical line onto the output grid.
+    output_grid = input_grid.copy()
+    for x in range(input_grid.shape[0]):
+        for y in range(input_grid.shape[1]):
+            if input_grid[x, y] != pixel_color:
+                continue
+            # try moving up until we hit the chevron color
+            dy = 0
+            while y + dy >= 0 and input_grid[x, y + dy] != chevron_color:
+                dy = dy - 1
+
+            if input_grid[x, y + dy] == chevron_color:
+                # make a line from here to the bottom
+                output_grid[x, y + dy + 1:] = pixel_color
+
+    return output_grid
+
+
+def generate_input():
+    # create a 20x20 black grid
+    input_grid = np.full((20, 20), Color.BLACK)
+
+    # choose a chevron color and pixel color
+    chevron_color, pixel_color = np.random.choice(Color.NOT_BLACK, 2, replace=False)
+
+    # create the chevron
+    chevron = np.full((7, 4), Color.BLACK)
+    # Create coordinate arrays
+    x, y = np.indices(chevron.shape)
+    # fill in the chevron
+    chevron[np.logical_and(y == 0, x == 3)] = chevron_color
+    chevron[np.logical_and(y == 1, np.logical_and(x >= 2, x <= 4))] = chevron_color
+    chevron[np.logical_and(y == 2, np.logical_and(x >= 1, x <= 5))] = chevron_color
+    chevron[np.logical_and(y == 3, np.logical_or(x == 0, x == 6))] = chevron_color
+    # put the chevron at a random location in the upper half of the grid
+    x, y = np.random.randint(0, 20 - 7), np.random.randint(0, 10 - 4)
+    blit_sprite(input_grid, chevron, x=x, y=y)
+
+    # generate 5-25 pixels at random (unfilled) spots.
+    n_pixels = np.random.randint(5, 26)
+    x_choices, y_choices = np.where(input_grid == Color.BLACK)
+    location_choices = list(zip(x_choices, y_choices))
+    pixel_locations = random.sample(location_choices, n_pixels)
+    for x, y in pixel_locations:
+        input_grid[x, y] = pixel_color
+
+    return input_grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pixel patterns, counting, expanding, diagonal lines
+
+# description:
+# In the input you will see a line with several colored pixels.
+# To make the output, create a square grid and place the input line at the bottom-left. Each colored pixel shoots a diagonal line outward toward the upper right.
+# The length of the output grid is the product of the number of colored input pixels and the length of the input line.
+
+def main(input_grid):
+    # Plan:
+    # 1. Figure out how big the output should be and make a blank output grid
+    # 2. Place the input line at the bottom left of the output grid
+    # 3. Repeatedly translate it diagonally toward the upper right corner, equivalently shooting diagonal lines from each colored pixel
+
+    # 1. The output grid size is the number of non-black pixels in the input grid times the original grid width
+    input_width, input_height = input_grid.shape
+    num_different_colors = sum(color in input_grid.flatten() for color in Color.NOT_BLACK )
+    output_size = input_width * num_different_colors
+    output_grid = np.full((output_size, output_size), Color.BLACK)
+
+    # 2-3. Place the input at the bottom left and then move it upward and rightward
+    bottommost_y = output_size - 1
+    for iteration in range(output_size):
+        blit_sprite(output_grid, input_grid, x=iteration, y=bottommost_y - iteration*input_height)
+
+    return output_grid
+
+def generate_input():
+    # Generate a line
+    width = np.random.randint(3, 7)
+    height = 1
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly choose colors for each grid
+    colors = np.random.choice(Color.NOT_BLACK, size=width, replace=False)
+    for x in range(width):
+        # Randomly assign a color to each pixel
+        if np.random.rand() < 0.6:
+            grid[x, 0] = colors[x]
+
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

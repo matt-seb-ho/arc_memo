@@ -1,0 +1,58 @@
+Let's design a puzzle that involves window scanning, color matching, and pattern detection. This puzzle will focus on identifying specific 2x2 patterns within a grid and returning a boolean grid indicating where the pattern matches.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# The input grid contains various colored pixels. The task is to scan the grid using a 2x2 window
+# and check if all cells in the window match a specified target color. The output will be a boolean grid
+# where True indicates that the 2x2 window matches the target color, and False otherwise.
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    # Initialize the output grid with False values
+    output_grid = np.full((input_grid.shape[0] - 1, input_grid.shape[1] - 1), False, dtype=bool)
+    
+    # Scan the input grid with a 2x2 window
+    for i in range(input_grid.shape[0] - 1):
+        for j in range(input_grid.shape[1] - 1):
+            # Extract the 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+            
+            # Check if all cells in the window match the target color
+            if np.all(window == target_color):
+                output_grid[i, j] = True
+    
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Define grid dimensions
+    n, m = np.random.randint(5, 10, size=2)
+    # Create a random grid with colors
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(n, m))
+    
+    # Randomly select a target color from the available colors
+    target_color = np.random.choice(list(Color.ALL_COLORS))
+    
+    return grid, target_color
+```
+
+### Explanation:
+
+- **Concepts**: 
+  - **Window Scanning**: The input grid is scanned using a sliding 2x2 window to inspect every possible 2x2 combination within the grid.
+  - **Color Matching**: The algorithm checks if all the cells in a 2x2 window match the specified target color.
+  - **Pattern Detection**: The task is to detect the presence of a specific pattern (all cells of a 2x2 window having the same color) and output a boolean indicator for each window.
+
+- **Description**:
+  - **Input**: A grid of various colored pixels and a specified target color.
+  - **Output**: A boolean grid where each cell represents whether the corresponding 2x2 window in the input grid matches the target color.
+  
+- **Implementation Details**:
+  - The `main` function iteratively checks each 2x2 window in the grid to see if it matches the target color.
+  - The `generate_input` function creates a new random grid each time it's called, ensuring a diverse set of input grids for testing the transformation function. It also randomly selects a target color for pattern matching.

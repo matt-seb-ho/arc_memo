@@ -1,0 +1,89 @@
+Here's a possible implementation for the puzzle involving obstacles and path blocking:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# path finding, obstacle avoidance, line drawing
+
+# description:
+# In the input grid, you will see several randomly colored obstacles scattered throughout the grid, along with a distinct start point and end point.
+# The task is to draw a line from the start point to the end point while avoiding the obstacles. 
+# The line should navigate around the obstacles and ensure no part of it overlaps with any obstacle.
+# The output grid will show the line drawn from the start to the end, avoiding obstacles, while all other grid content remains unchanged.
+
+def main(input_grid):
+    # Copy input grid to output grid
+    output_grid = input_grid.copy()
+    width, height = input_grid.shape
+
+    # Identify the start and end points
+    start_point = np.argwhere(input_grid == Color.GREEN)[0]  # Assuming start point is marked with green
+    end_point = np.argwhere(input_grid == Color.RED)[0]      # Assuming end point is marked with red
+
+    # Obstacles are any other colored pixels
+    obstacle_colors = set(Color.ALL_COLORS) - {Color.GREEN, Color.RED, Color.BLACK}
+    
+    # Implement a simple pathfinding algorithm (e.g., A* or Dijkstra's) to find a path from start to end avoiding obstacles
+    def is_valid(x, y):
+        return 0 <= x < width and 0 <= y < height and input_grid[x, y] not in obstacle_colors
+
+    from heapq import heappush, heappop
+    open_set = []
+    heappush(open_set, (0, start_point))
+    came_from = {}
+    cost_so_far = {tuple(start_point): 0}
+
+    while open_set:
+        _, current = heappop(open_set)
+
+        if np.array_equal(current, end_point):
+            break
+
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            next_step = current + np.array([dx, dy])
+            if is_valid(*next_step):
+                new_cost = cost_so_far[tuple(current)] + 1
+                if tuple(next_step) not in cost_so_far or new_cost < cost_so_far[tuple(next_step)]:
+                    cost_so_far[tuple(next_step)] = new_cost
+                    priority = new_cost + np.linalg.norm(next_step - end_point)
+                    heappush(open_set, (priority, next_step))
+                    came_from[tuple(next_step)] = current
+
+    # Reconstruct path from end to start
+    current = tuple(end_point)
+    path = []
+    while current in came_from:
+        path.append(current)
+        current = tuple(came_from[current])
+    path.append(tuple(start_point))
+    path.reverse()
+
+    # Draw the path on the output grid
+    for x, y in path:
+        output_grid[x, y] = Color.BLUE  # Draw path in blue
+
+    return output_grid
+
+def generate_input():
+    # Grid dimensions
+    n, m = 15, 15
+    grid = np.zeros((n, m), dtype=int)
+
+    # Define start and end points
+    start_x, start_y = np.random.randint(0, n // 3), np.random.randint(0, m // 3)
+    end_x, end_y = np.random.randint(2 * n // 3, n), np.random.randint(2 * m // 3, m)
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    # Randomly scatter obstacles throughout the grid
+    obstacle_density = 0.2
+    randomly_scatter_points(grid, color=random.choice(list(set(Color.NOT_BLACK) - {Color.GREEN, Color.RED})), density=obstacle_density, background=Color.BLACK)
+
+    return grid
+```
+
+This implementation uses a simplified pathfinding approach to draw a line from a start point to an end point while avoiding obstacles. The `generate_input` function creates a grid with randomly placed obstacles and designated start and end points. The `main` function calculates a path using basic pathfinding, ensuring the line avoids obstacles.

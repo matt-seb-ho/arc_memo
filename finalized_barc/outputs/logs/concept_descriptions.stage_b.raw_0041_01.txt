@@ -1,0 +1,70 @@
+Here is a puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, position-based transformation
+
+# description:
+# In the input, you will see a grid with various colored objects.
+# One object will have a distinct guide color, which is unique and does not appear in any other object.
+# Starting from the guide object, you will perform a transformation that flips the position of each object vertically with respect to the guide's horizontal line.
+# The output grid should have all objects flipped vertically around the guide object's horizontal line.
+
+def main(input_grid):
+    # Detect all objects in the grid, considering them to be monochromatic
+    objects = find_connected_components(grid=input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Find the guide object based on its unique color
+    all_colors = [object_colors(obj, background=Color.BLACK) for obj in objects]
+    guide_color = [color for color in all_colors if all_colors.count(color) == 1][0]
+    guide_object = [obj for obj in objects if guide_color in object_colors(obj, background=Color.BLACK)][0]
+    
+    # Determine the horizontal line of the guide object
+    guide_x, guide_y, guide_w, guide_h = bounding_box(guide_object)
+    guide_horizontal_line = guide_x + guide_h // 2
+    
+    output_grid = np.copy(input_grid)
+    
+    # Flip all objects vertically with respect to the guide's horizontal line
+    for obj in objects:
+        if guide_color not in object_colors(obj, background=Color.BLACK):
+            x, y, w, h = bounding_box(obj)
+            translated_obj = translate(obj, x=2 * (guide_horizontal_line - x) - h, y=0, background=Color.BLACK)
+            blit_object(output_grid, translated_obj, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    # Generate the background grid
+    n, m = np.random.randint(8, 12), np.random.randint(8, 12)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Define possible colors excluding black
+    colors = list(Color.NOT_BLACK)
+    np.random.shuffle(colors)
+    
+    # Select a guide color
+    guide_color = colors.pop()
+    
+    # Create the guide object with a unique color
+    guide_sprite = random_sprite(2, 2, color_palette=[guide_color])
+    x, y = random_free_location_for_sprite(grid, guide_sprite, background=Color.BLACK)
+    blit_sprite(grid, guide_sprite, x, y)
+    
+    # Add random other objects with different colors
+    for _ in range(np.random.randint(3, 5)):
+        color = colors.pop()
+        sprite = random_sprite(np.random.randint(2, 3), np.random.randint(2, 3), color_palette=[color])
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK)
+        blit_sprite(grid, sprite, x, y)
+    
+    return grid
+```
+
+This puzzle challenges the solver to identify a unique guide object within a grid and use its position as a reference to vertically flip other objects in the output grid. The guide object's position becomes the axis of symmetry for the transformation.

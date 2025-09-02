@@ -1,0 +1,86 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, horizontal/vertical slicing
+
+# description:
+# Input is a grid containing horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions.
+# Identify these uninterrupted divider lines and use them to partition the grid into separate sub-grids.
+# Each sub-grid is bounded by the divider lines and contains no dividers within it.
+# Output is a list of these non-empty sub-grids, preserving their original content.
+
+def main(input_grid: np.ndarray) -> List[np.ndarray]:
+    # Determine the divider color by finding a line that runs uninterrupted across the grid
+    divider_color = None
+    for i in range(input_grid.shape[0]):
+        if np.all(input_grid[i, :] == input_grid[i, 0]):
+            divider_color = input_grid[i, 0]
+            break
+    if divider_color is None:
+        for j in range(input_grid.shape[1]):
+            if np.all(input_grid[:, j] == input_grid[0, j]):
+                divider_color = input_grid[0, j]
+                break
+    assert divider_color is not None, "No divider color found"
+
+    # Identify all rows and columns that are completely filled with the divider color
+    horizontal_dividers = [i for i in range(input_grid.shape[0]) if np.all(input_grid[i, :] == divider_color)]
+    vertical_dividers = [j for j in range(input_grid.shape[1]) if np.all(input_grid[:, j] == divider_color)]
+
+    # Initialize the list of sub-grids
+    sub_grids = []
+
+    # Create the sub-grids based on the identified dividers
+    for start_row, end_row in zip([0] + horizontal_dividers, horizontal_dividers + [input_grid.shape[0]]):
+        for start_col, end_col in zip([0] + vertical_dividers, vertical_dividers + [input_grid.shape[1]]):
+            # Extract the sub-grid
+            sub_grid = input_grid[start_row:end_row, start_col:end_col]
+            # Ensure the sub-grid does not contain the divider color
+            if not np.any(sub_grid == divider_color):
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input() -> np.ndarray:
+    # Randomly generate grid dimensions
+    width, height = np.random.randint(15, 30), np.random.randint(15, 30)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(width, height))
+
+    # Randomly choose a divider color
+    divider_color = np.random.choice(list(Color.NOT_BLACK))
+
+    # Add horizontal dividers
+    num_horizontal_dividers = np.random.randint(1, 5)
+    horizontal_indices = randomly_spaced_indices(width, num_horizontal_dividers, border_size=1, padding=2)
+    for x in horizontal_indices:
+        grid[x, :] = divider_color
+
+    # Add vertical dividers
+    num_vertical_dividers = np.random.randint(1, 5)
+    vertical_indices = randomly_spaced_indices(height, num_vertical_dividers, border_size=1, padding=2)
+    for y in vertical_indices:
+        grid[:, y] = divider_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: This puzzle involves segmenting a grid based on divider lines, which requires understanding grid partitioning and identifying uninterrupted lines in both horizontal and vertical directions.
+
+2. **Main Function**: 
+   - Identifies the color used for dividers by checking for uninterrupted horizontal or vertical lines.
+   - Finds indices where these uninterrupted lines occur, marking the boundaries between distinct regions.
+   - Iterates over segments defined by these boundaries to extract the sub-grids.
+   - Ensures only non-empty sub-grids (those not filled with the divider color) are included in the output.
+
+3. **Generate Input Function**: 
+   - Generates a grid of random colors.
+   - Chooses a random color for dividers and draws random horizontal and vertical dividers.
+   - Uses random spacing to ensure dividers are not too close together, creating distinct regions in the grid. 
+
+This setup allows for a variety of inputs to be generated, each with a unique configuration of regions and dividers, providing ample challenge for middle-schoolers to discover the deterministic transformation.

@@ -1,0 +1,77 @@
+Here's an implementation of the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, position-based transformation
+
+# description:
+# In the input you will see a grid with multiple colored objects. One of these objects is uniquely colored and serves as the 
+# guide object. The task is to identify the guide object and use its position as a reference point. Starting from the guide object's 
+# position, transform the grid by mirroring the objects across a vertical axis passing through the guide object's position.
+
+def main(input_grid):
+    # Identify the guide object, which is the uniquely colored object in the grid
+    all_colors = np.unique(input_grid)
+    guide_color = [color for color in all_colors if np.sum(input_grid == color) == 1][0]
+    
+    # Find the position of the guide object
+    guide_position = np.argwhere(input_grid == guide_color)[0]
+    guide_x = guide_position[0]
+    
+    # Initialize the output grid with the same dimensions as the input grid
+    output_grid = input_grid.copy()
+    
+    # Mirror the objects across the vertical axis passing through the guide object's position
+    for row in range(input_grid.shape[0]):
+        for col in range(input_grid.shape[1]):
+            if input_grid[row, col] != Color.BLACK:
+                # Calculate the mirrored position
+                mirrored_col = 2 * guide_x - col
+                if 0 <= mirrored_col < input_grid.shape[1]:
+                    output_grid[row, mirrored_col] = input_grid[row, col]
+    
+    return output_grid
+
+def generate_input():
+    # Define the grid size
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Choose a unique color for the guide object
+    guide_color = np.random.choice(list(Color.ALL_COLORS - {Color.BLACK}))
+    
+    # Place the guide object in the grid
+    guide_x = np.random.randint(0, n)
+    guide_y = np.random.randint(0, m)
+    grid[guide_x, guide_y] = guide_color
+    
+    # Place other random colored objects in the grid
+    num_objects = np.random.randint(2, 5)
+    for _ in range(num_objects):
+        obj_color = np.random.choice(list(Color.ALL_COLORS - {Color.BLACK, guide_color}))
+        obj_sprite = random_sprite(n=2, m=2, color_palette=[obj_color], density=0.5)
+        
+        # Find a location for the sprite such that it does not overlap with other objects or the guide object
+        try:
+            x, y = random_free_location_for_sprite(grid, obj_sprite, padding=1, padding_connectivity=8)
+            blit_sprite(grid, obj_sprite, x=x, y=y)
+        except ValueError:
+            continue
+    
+    return grid
+```
+
+### Explanation:
+1. **Main Function**:
+   - **Guide Object Identification**: The uniquely colored object is identified as the guide object.
+   - **Transformation**: The grid is mirrored across the vertical axis passing through the guide object's position. This involves flipping the columns of each row symmetrically around the guide object's column.
+   
+2. **Generate Input Function**:
+   - **Grid Initialization**: A grid is initialized with a random size.
+   - **Guide Object Placement**: A uniquely colored object is placed at a random position.
+   - **Other Objects**: Randomly colored objects are added to the grid, ensuring they do not overlap with each other or the guide object.

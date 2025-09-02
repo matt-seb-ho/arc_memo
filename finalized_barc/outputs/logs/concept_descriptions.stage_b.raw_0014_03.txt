@@ -1,0 +1,70 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, object identification
+
+# description:
+# In the input grid, you will see various objects of different colors. Each object is a connected component with the same color.
+# To make the output grid, identify the objects that have colors unique to them (no other object shares their color).
+# Highlight the guide object (the unique colored object) by isolating it, and leave all other objects unchanged.
+
+def main(input_grid):
+    # Find the connected components (objects) in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    color_count = {}
+    
+    # Count the occurrence of each color among the objects
+    for obj in objects:
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Find and isolate the guide object
+    for obj in objects:
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color_count[color] == 1:  # Unique colored object
+            blit_object(output_grid, obj, background=Color.BLACK)
+            break
+    
+    return output_grid
+
+def generate_input():
+    n = np.random.randint(10, 15)
+    input_grid = np.full((n, n), Color.BLACK)
+    available_colors = list(Color.NOT_BLACK)
+    num_objects = np.random.randint(3, 6)
+    
+    used_colors = []
+    
+    for _ in range(num_objects):
+        obj_size = np.random.randint(2, 4)
+        obj_color = np.random.choice([c for c in available_colors if c not in used_colors])
+        used_colors.append(obj_color)
+        sprite = random_sprite(n=obj_size, m=obj_size, color_palette=[obj_color])
+        
+        try:
+            x, y = random_free_location_for_sprite(input_grid, sprite, padding=1)
+            blit_sprite(input_grid, sprite, x=x, y=y)
+        except ValueError:
+            continue
+    
+    # Ensure at least one color is unique
+    unique_color_object = random_sprite(n=3, m=3, color_palette=[np.random.choice(available_colors)])
+    try:
+        x, y = random_free_location_for_sprite(input_grid, unique_color_object, padding=1)
+        blit_sprite(input_grid, unique_color_object, x=x, y=y)
+    except ValueError:
+        return generate_input()
+    
+    return input_grid
+```
+
+In this implementation, the `main` function identifies all connected components in the grid and determines each object's color. It then checks for a unique-colored object and isolates it in the output grid. The `generate_input` function creates a grid with several objects of different colors, ensuring at least one object has a unique color. The input grid is generated randomly each time, providing a variety of test cases for the transformation.

@@ -1,0 +1,74 @@
+Let's design a new puzzle based on the provided description: extracting connected components and filtering them based on a certain criterion. We'll implement the puzzle where we extract all connected components (objects) from the input grid and retain only those objects that have a non-square bounding box. These selected objects will be returned as cropped images.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# The input grid contains multiple colored objects scattered around. 
+# The task is to identify all connected components (objects) and filter them based on their bounding box shape.
+# Specifically, we will retain only those objects whose bounding box is not a square.
+# The output will be a list of these selected objects, each represented by its cropped image.
+
+def main(input_grid):
+    # Find all connected components (objects) in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=False)
+
+    # Initialize an empty list to store the selected objects
+    selected_objects = []
+
+    # Iterate over each object
+    for obj in objects:
+        # Crop the object to get its bounding box
+        cropped_obj = crop(obj, background=Color.BLACK)
+
+        # Check the shape of the bounding box
+        # Retain the object if the bounding box is not a square
+        if cropped_obj.shape[0] != cropped_obj.shape[1]:
+            selected_objects.append(cropped_obj)
+
+    return selected_objects
+
+
+def generate_input():
+    # Create a grid with a random size between 15x15 and 20x20
+    n = random.randint(15, 20)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate a number of random objects
+    num_objects = random.randint(3, 6)
+
+    for _ in range(num_objects):
+        # Create a random sprite with dimensions between 3x3 and 5x5
+        sprite_n = random.randint(3, 5)
+        sprite_m = random.randint(3, 5)
+        color_palette = random.sample(Color.NOT_BLACK, k=random.randint(1, 3))
+        sprite = random_sprite(sprite_n, sprite_m, color_palette=color_palette, connectivity=8)
+
+        # Try to place the sprite in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If there's no space, skip this sprite
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts:** The puzzle focuses on object selection, connected components, and filtering these objects based on bounding box shapes.
+   
+2. **Description:** The input is a grid with multiple colored objects. The main function extracts connected components and filters them to retain only those with non-square bounding boxes. The output is a list of these selected objects, each cropped to its bounding box.
+
+3. **Implementation Details:**
+   - **`find_connected_components`**: Used to identify all objects in the grid.
+   - **`crop`**: Used to get the bounding box of each object.
+   - **Bounding Box Check**: Filters out objects whose bounding box is a square.
+   - **`generate_input`**: Generates a grid with random objects, ensuring diversity in object shape and size.

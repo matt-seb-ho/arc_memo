@@ -1,0 +1,87 @@
+Here's a new puzzle that involves selecting connected components based on a specific criterion:
+
+### Puzzle Concept:
+- **Object Selection**: Identify connected components (objects) in a grid.
+- **Filtering**: Apply a selection criterion to these objects.
+- **Output**: Retain only selected objects, represented by their bounding box and constituent pixels.
+
+### Puzzle Description:
+- **Input**: A grid filled with black and colored pixels, where each color represents different objects. The objects may have varying shapes and sizes.
+- **Output**: A list of objects that meet the selection criteria. For this puzzle, retain objects that are exactly 2x2 in size.
+- **Transformation**: Extract all connected components from the input grid, filter out objects that are not 2x2, and output a list of selected objects with their bounding boxes.
+
+### Puzzle Implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# The input is a grid with various colored objects. Extract all connected components from the grid.
+# Retain only those objects that are exactly 2x2 in size. The output is a list of these selected objects,
+# each represented by its bounding box and constituent pixels. Non-selected objects are excluded from the output.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Create a list to store the selected objects
+    selected_objects = []
+
+    # Iterate through each component and filter based on size
+    for component in components:
+        # Crop the component to get its bounding box
+        cropped_component = crop(component, background=Color.BLACK)
+        
+        # Check if the component is exactly 2x2 in size
+        if cropped_component.shape == (2, 2):
+            # Save the component and its position
+            selected_objects.append((cropped_component, object_position(component, background=Color.BLACK)))
+    
+    return selected_objects
+
+
+def generate_input():
+    # Create a grid of size 10x10 filled with black color
+    grid_size = (10, 10)
+    grid = np.full(grid_size, Color.BLACK)
+
+    # Generate random 2x2 sprites and place them in the grid
+    num_sprites = np.random.randint(3, 6)
+    available_colors = [c for c in Color.NOT_BLACK]
+
+    for _ in range(num_sprites):
+        # Randomly choose a color for the sprite
+        color = random.choice(available_colors)
+        sprite = np.full((2, 2), color)
+
+        # Try to find a location to place the sprite
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+        except ValueError:
+            continue
+
+        # Place the sprite on the grid
+        blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    # Optionally add some larger or smaller objects to test filtering
+    for _ in range(np.random.randint(1, 3)):
+        n, m = np.random.randint(1, 4), np.random.randint(1, 4)
+        larger_sprite = random_sprite(n, m, color_palette=available_colors)
+        try:
+            x, y = random_free_location_for_sprite(grid, larger_sprite, border_size=1, padding=1)
+        except ValueError:
+            continue
+        blit_sprite(grid, larger_sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+- The `main` function identifies all connected components in the input grid and filters them to retain only those that are exactly 2x2 in size. It returns a list of tuples, each containing the cropped component and its position.
+- The `generate_input` function creates a grid with several 2x2 colored sprites and some larger or smaller objects to ensure filtering is working correctly. The grid is randomly generated each time to provide variety in test cases.

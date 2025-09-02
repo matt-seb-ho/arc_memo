@@ -1,0 +1,69 @@
+Let's implement the puzzle as described. We need to detect an L-shaped triomino within a 2x2 grid and determine which corner is unoccupied. The output should be one of "tl", "tr", "bl", or "br" corresponding to the missing corner.
+
+Here's how we can implement this:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# Input is a 3-pixel L-shaped triomino on a 2x2 grid. Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape.
+# Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner. The grid may contain noise, but the L-shape is dominant.
+
+def main(input_grid):
+    # Find the coordinates of the colored pixels in the grid
+    non_black_coords = np.argwhere(input_grid != Color.BLACK)
+    
+    # Check for the missing corner by identifying which corner does not have a pixel
+    corners = {
+        "tl": (0, 0),
+        "tr": (0, 1),
+        "bl": (1, 0),
+        "br": (1, 1)
+    }
+    
+    # Determine the missing corner
+    for corner, coord in corners.items():
+        if not any((coord == non_black_coord).all() for non_black_coord in non_black_coords):
+            return np.array([[corner]])
+    
+    return np.array([["unknown"]])  # default case, should not happen if inputs are valid
+
+def generate_input():
+    # Create a 2x2 grid
+    grid = np.full((2, 2), Color.BLACK, dtype=int)
+    
+    # Choose one corner to be the missing corner
+    missing_corner = np.random.choice(["tl", "tr", "bl", "br"])
+    
+    # Define the L-shape by filling the grid except the chosen missing corner
+    corners = {
+        "tl": [(0, 1), (1, 0), (1, 1)],
+        "tr": [(0, 0), (1, 0), (1, 1)],
+        "bl": [(0, 0), (0, 1), (1, 1)],
+        "br": [(0, 0), (0, 1), (1, 0)]
+    }
+    
+    # Fill the grid according to the L-shape
+    fill_color = np.random.choice(list(Color.NOT_BLACK))
+    for coord in corners[missing_corner]:
+        grid[coord] = fill_color
+    
+    # Add some noise if desired (not necessary for the puzzle, but could be added to increase difficulty)
+    noise_level = np.random.choice([0, 0, 1])  # 0 or 1 extra noise pixels
+    for _ in range(noise_level):
+        x, y = np.random.randint(0, 2, size=2)
+        if grid[x, y] == Color.BLACK:
+            grid[x, y] = np.random.choice(list(Color.NOT_BLACK))
+    
+    return grid
+```
+
+In this implementation:
+- The `main` function detects the coordinates of the colored pixels, then checks which of the four corners is missing a colored pixel and returns that corner's identifier.
+- The `generate_input` function creates a 2x2 grid, determines which corner will be missing based on a random choice, fills the remaining pixels to form an L-shape, and occasionally adds noise pixels to increase complexity.

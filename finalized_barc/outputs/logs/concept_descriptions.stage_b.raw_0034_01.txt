@@ -1,0 +1,54 @@
+Here's an implementation of the described puzzle, which involves window scanning, color matching, and pattern detection:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# window scanning, color matching, pattern detection
+
+# description:
+# The input is a grid with various colors. For each 2x2 window in the grid, check if all cells match a specified target color.
+# Return a grid where each 2x2 window is filled with True if every cell in the window matches the target color; otherwise, False.
+# This operation is applied to each 2x2 window independently.
+
+def main(input_grid: np.ndarray, target_color: str) -> np.ndarray:
+    n, m = input_grid.shape
+    # Initialize the output grid with False values
+    output_grid = np.full((n-1, m-1), False, dtype=bool)
+
+    # Iterate over each possible 2x2 window in the input grid
+    for i in range(n - 1):
+        for j in range(m - 1):
+            # Extract the 2x2 window
+            window = input_grid[i:i+2, j:j+2]
+            # Check if all elements in the window match the target color
+            if np.all(window == target_color):
+                output_grid[i, j] = True
+
+    return output_grid
+
+def generate_input() -> Tuple[np.ndarray, str]:
+    # Generate a grid with random colors
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.random.choice(list(Color.ALL_COLORS), size=(n, m))
+
+    # Select a target color randomly from the color palette
+    target_color = np.random.choice(list(Color.ALL_COLORS))
+
+    return grid, target_color
+```
+
+### Explanation:
+1. **Main Function:**
+   - The `main` function scans through every possible 2x2 window in the given `input_grid`.
+   - For each window, it checks if all the pixels match the specified `target_color`.
+   - It returns an output grid where each position corresponds to a 2x2 window in the input grid, filled with `True` if all pixels in that window match the target color, otherwise `False`.
+
+2. **Generate Input Function:**
+   - The `generate_input` function creates a random grid of colors with dimensions ranging from 5x5 to 10x10.
+   - It randomly chooses a `target_color` from the available colors.
+
+This setup allows middle-schoolers to explore window scanning techniques and observe how local patterns affect global transformations.

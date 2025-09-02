@@ -1,0 +1,98 @@
+Below is a new puzzle implementation based on the provided description. This puzzle involves identifying a pattern of movement and predicting the next state of the grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern extrapolation, sequence prediction, feature analysis, progression detection
+
+# description:
+# The input consists of a sequence of grids representing consecutive time steps, where objects exhibit a consistent transformation pattern in terms of position (moving rightward).
+# Analyze the sequence to identify the evolving pattern of linear movement. Extrapolate the identified pattern to predict and generate the next grid in the sequence.
+# The output is a single grid that continues the detected pattern logically from the last input grid.
+
+def main(input_grids):
+    # Assume input_grids is a list of 2D numpy arrays representing consecutive time steps.
+    num_steps = len(input_grids)
+    last_grid = input_grids[-1]
+    
+    # Get the objects in the last grid
+    objects = find_connected_components(last_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Determine the movement pattern (we assume objects move right by 1 pixel per time step)
+    movement_vector = (0, 1)  # moving right by 1 pixel
+    
+    # Create the next grid by copying the last grid
+    next_grid = np.full_like(last_grid, Color.BLACK)
+    
+    # Move each object according to the detected pattern
+    for obj in objects:
+        obj_color = object_colors(obj)[0]
+        x, y = object_position(obj, background=Color.BLACK)
+        sprite = crop(obj)
+        
+        new_x = x + movement_vector[0]
+        new_y = y + movement_vector[1]
+        
+        # Ensure the new position is within grid bounds
+        if 0 <= new_x < next_grid.shape[0] and 0 <= new_y < next_grid.shape[1]:
+            blit_sprite(next_grid, sprite, new_x, new_y)
+    
+    return next_grid
+
+def generate_input():
+    num_steps = 3  # Number of steps in the sequence
+    grid_size = (10, 10)  # Size of each grid
+    grids = []
+    
+    # Start with a random grid
+    grid = np.zeros(grid_size, dtype=int)
+    
+    # Randomly place a few monochromatic objects
+    num_objects = np.random.randint(1, 4)
+    for _ in range(num_objects):
+        obj_color = np.random.choice(list(Color.NOT_BLACK))
+        obj_size = np.random.randint(1, 3)  # Small objects
+        sprite = np.full((obj_size, obj_size), obj_color)
+        
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # No space available, skip this object
+            continue
+    
+    # Generate the sequence of grids
+    for _ in range(num_steps):
+        grids.append(grid.copy())
+        next_grid = np.full_like(grid, Color.BLACK)
+        
+        # Move each object right by 1 pixel
+        objects = find_connected_components(grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+        for obj in objects:
+            obj_color = object_colors(obj)[0]
+            x, y = object_position(obj, background=Color.BLACK)
+            sprite = crop(obj)
+            
+            new_x = x
+            new_y = y + 1
+            
+            # Ensure the new position is within grid bounds
+            if new_y < grid.shape[1]:
+                blit_sprite(next_grid, sprite, new_x, new_y)
+        
+        grid = next_grid
+    
+    return grids
+```
+
+### Explanation
+
+- **Concepts:** This puzzle involves pattern extrapolation, sequence prediction, feature analysis, and progression detection. The objects in the grid move in a consistent pattern (rightward in this case) and the task is to predict the next state.
+  
+- **Description:** The `main` function takes a sequence of grids and predicts the next grid in the sequence based on the detected movement pattern (rightward movement of objects). The `generate_input` function creates a sequence of grids with objects moving right over a series of time steps.
+
+The goal is for students to understand the movement pattern and predict the next grid by extrapolating the pattern.

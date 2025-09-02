@@ -1,0 +1,81 @@
+Below is the implementation of the puzzle described in the problem statement. The puzzle involves detecting the orientation of a pointer-shaped object, rotating and/or flipping it to match a canonical orientation, and then determining its facing direction.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# Input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation.
+# Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W).
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Step 1: Find the pointer-shaped object
+    background_color = Color.BLACK
+    objects = find_connected_components(input_grid, background=background_color, connectivity=8)
+
+    # Assume there is exactly one pointer-shaped object
+    assert len(objects) == 1
+    pointer_object = objects[0]
+
+    # Step 2: Crop the object to get its sprite
+    pointer_sprite = crop(pointer_object, background=background_color)
+
+    # Step 3: Find the centroid of the pointer
+    non_black_pixels = np.argwhere(pointer_sprite != background_color)
+    centroid = np.mean(non_black_pixels, axis=0)
+
+    # Step 4: Find the tip of the pointer (farthest point from the centroid)
+    distances = np.linalg.norm(non_black_pixels - centroid, axis=1)
+    tip_index = np.argmax(distances)
+    tip = non_black_pixels[tip_index]
+
+    # Step 5: Compute the vector from centroid to tip
+    vector = tip - centroid
+
+    # Step 6: Quantize the vector to one of the cardinal directions: N, S, E, W
+    # Normalize the vector
+    if np.abs(vector[0]) > np.abs(vector[1]):
+        direction = 'E' if vector[0] > 0 else 'W'
+    else:
+        direction = 'S' if vector[1] > 0 else 'N'
+
+    return direction
+
+def generate_input():
+    # Create a grid to contain the pointer
+    grid_size = np.random.randint(10, 20)
+    grid = np.full((grid_size, grid_size), Color.BLACK)
+
+    # Generate a pointer-shaped sprite
+    pointer_length = np.random.randint(3, grid_size // 2)
+    pointer_sprite = np.full((pointer_length, pointer_length), Color.RED)  # Random color for the pointer
+
+    # Remove one corner and possibly some other pixels to form a pointer shape
+    pointer_sprite[np.tril_indices(pointer_length, -1)] = Color.BLACK
+
+    # Randomly rotate or flip the sprite to generate different orientations
+    if np.random.rand() > 0.5:
+        pointer_sprite = np.rot90(pointer_sprite, k=np.random.randint(1, 4))
+    if np.random.rand() > 0.5:
+        pointer_sprite = np.flip(pointer_sprite, axis=np.random.choice([0, 1]))
+
+    # Place the pointer on the grid
+    x, y = random_free_location_for_sprite(grid, pointer_sprite, background=Color.BLACK)
+    blit_sprite(grid, pointer_sprite, x, y)
+
+    return grid
+```
+
+### Explanation
+
+- **`main` function**: This function detects the single pointer-shaped object, calculates its centroid and tip, computes the vector from centroid to tip, and quantizes this vector to determine the direction (N, S, E, W) the pointer is facing. This direction is returned as a label.
+
+- **`generate_input` function**: This function generates a grid with a pointer-shaped object. The pointer is created by forming a triangular shape and is randomly rotated or flipped to create various orientations. The pointer is then placed in a random location on the grid.
+
+This puzzle challenges students to understand geometric transformations, vector calculation, and quantization to cardinal directions, which are fundamental concepts in computational geometry and image processing.

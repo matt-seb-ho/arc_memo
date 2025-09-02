@@ -1,0 +1,90 @@
+To implement the new puzzle, let's create a transformation where an object is identified, erased from its original position, and then redrawn at a specified target position on a grid, ensuring no overlap with existing non-background pixels. Here's how we can implement it:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# Identify a single object within the grid and a target position.
+# Remove the object from its original location by erasing its pixels.
+# Redraw the object at the specified target position, ensuring no overlap with existing non-background pixels.
+# The grid is updated to reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Plan:
+    # 1. Detect all objects in the grid.
+    # 2. Choose an object to move (for simplicity, we'll choose the first one).
+    # 3. Determine a random target position that does not cause the object to overlap with other objects.
+    # 4. Erase the object from its original position.
+    # 5. Redraw the object at the new position.
+
+    # Detect all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+    
+    # Assume we move the first object
+    object_to_move = objects[0]
+
+    # Determine original position of the object
+    original_x, original_y = object_position(object_to_move, background=Color.BLACK)
+    
+    # Generate a sprite from the object
+    sprite = crop(object_to_move, background=Color.BLACK)
+    
+    # Create a copy of the input grid to modify
+    output_grid = np.copy(input_grid)
+
+    # Erase the object from its original position
+    for x, y in np.argwhere(object_to_move != Color.BLACK):
+        output_grid[original_x + x, original_y + y] = Color.BLACK
+
+    # Find a random free location for the sprite
+    new_x, new_y = random_free_location_for_sprite(output_grid, sprite, background=Color.BLACK, padding=0)
+    
+    # Redraw the object at the new position
+    blit_sprite(output_grid, sprite, new_x, new_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input() -> np.ndarray:
+    # Create a grid with random objects scattered around
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    num_objects = np.random.randint(3, 6)
+
+    for _ in range(num_objects):
+        # Create a random object (sprite)
+        sprite_height, sprite_width = np.random.randint(2, 4), np.random.randint(2, 4)
+        sprite = random_sprite(sprite_height, sprite_width, color_palette=Color.NOT_BLACK, background=Color.BLACK)
+
+        # Find a free location for this sprite in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, padding=1)
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no space is found, skip this object
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function**: This function identifies objects in the grid, chooses one to move, erases it from its original location, and redraws it at a new position where it doesn't overlap with other objects.
+  
+- **`generate_input` Function**: This function generates a random grid with several objects scattered around. It uses the `random_sprite` and `random_free_location_for_sprite` functions to create and place the objects.
+
+### Functions Used:
+- `find_connected_components`: To detect objects in the grid.
+- `object_position`: To find the position of an object.
+- `crop`: To create a sprite from the detected object.
+- `random_free_location_for_sprite`: To find a new position for the object that doesn't overlap with others.
+- `blit_sprite`: To draw the object at the new location on the grid. 
+
+This puzzle challenges the middle-schoolers to understand object movement in a grid and how to update the grid accordingly, a useful exercise in understanding both geometry and programming logic.

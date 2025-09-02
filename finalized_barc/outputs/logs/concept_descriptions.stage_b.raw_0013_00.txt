@@ -1,0 +1,74 @@
+Let's implement a new puzzle based on the given description. The puzzle involves identifying holes in an object and filling them with a target color. We will use the functions provided in `common.py` to achieve this. 
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input consists of a grid with a single object enclosing empty spaces (holes). Identify holes as background-color (0) regions fully enclosed by the object, not touching the grid border. Use flood-fill from the border to exclude non-enclosed regions. Output the grid with holes marked or filled by a target object or color, while preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create an output grid based on the input grid
+    output_grid = input_grid.copy()
+
+    # Use flood-fill to mark non-enclosed regions connected to the border
+    non_enclosed_mask = object_interior(output_grid, background=Color.BLACK)
+
+    # Find all empty regions in the grid
+    empty_regions = find_connected_components(output_grid, background=Color.BLACK, connectivity=4)
+
+    # Identify and fill holes
+    for region in empty_regions:
+        region_mask = (region != Color.BLACK)
+        
+        # Check if the region is touching the border using non_enclosed_mask
+        touching_border = np.any(non_enclosed_mask & region_mask)
+        
+        if not touching_border:
+            # It is a hole, fill it with a specific color (e.g., Color.RED)
+            region[region_mask] = Color.RED
+            blit_object(output_grid, region, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size between 10x10 and 20x20
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create a single large object enclosing empty spaces
+    enclosing_object_size = np.random.randint(6, min(n, 12))
+    enclosing_object = np.full((enclosing_object_size, enclosing_object_size), Color.BLUE)
+    enclosing_object[1:-1, 1:-1] = Color.BLACK  # Making the object hollow
+
+    # Place the enclosing object in the grid
+    x, y = random_free_location_for_sprite(grid, enclosing_object, padding=1)
+    blit_sprite(grid, enclosing_object, x, y)
+
+    # Optionally, create random shapes inside the object to act as obstructions
+    for _ in range(np.random.randint(1, 4)):
+        obstruction_size = np.random.randint(2, enclosing_object_size // 2)
+        obstruction = random_sprite(obstruction_size, obstruction_size, color_palette=[Color.GREEN], background=Color.BLACK)
+        try:
+            x_obs, y_obs = random_free_location_for_sprite(grid, obstruction, padding=0)
+            blit_sprite(grid, obstruction, x_obs, y_obs)
+        except ValueError:
+            continue
+
+    return grid
+```
+
+### Explanation:
+- **`main` function**: This function processes the input grid to identify enclosed regions (holes) that are completely surrounded by the object and not touching the grid's border. It fills these holes with a target color (e.g., red).
+- **`generate_input` function**: Generates random input grids with a single large object enclosing empty spaces. It also randomly places small obstructions within the object to create potential holes.
+- **Key Functions Used**:
+  - `object_interior`: Used to find regions connected to the border that are not holes.
+  - `find_connected_components`: Identifies all distinct regions within the grid.
+  - `blit_object`: Copies modified regions back onto the output grid.
+  
+This puzzle requires the solver to recognize enclosed spaces and apply flood-fill techniques to differentiate between true holes and non-enclosed spaces.

@@ -1,0 +1,96 @@
+Here is the implementation for the new puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines that span the grid. Each region contains pixels of specific colors 
+# that do not appear in other regions. The task is to identify these regions and treat them as separate entities for further processing.
+# The output maintains the structure of these regions without altering the internal arrangement of pixels within each region.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the divider lines in the input grid to determine the regions.
+    # 2. Extract each region based on the divider lines.
+    # 3. Create an output grid that maintains the structure of these regions without altering their internal arrangement.
+
+    # Initialize output grid
+    output_grid = input_grid.copy()
+
+    # Step 1: Identify divider lines
+    width, height = input_grid.shape
+    divider_color = max(Color.NOT_BLACK, key=lambda color: np.sum(input_grid == color))
+    
+    # Identify vertical and horizontal lines
+    vertical_lines = [x for x in range(width) if np.all(input_grid[x, :] == divider_color)]
+    horizontal_lines = [y for y in range(height) if np.all(input_grid[:, y] == divider_color)]
+
+    # Include the boundaries of the grid as potential dividers
+    vertical_lines = [0] + vertical_lines + [width]
+    horizontal_lines = [0] + horizontal_lines + [height]
+
+    # Step 2: Extract each region based on the divider lines
+    for i in range(len(vertical_lines) - 1):
+        for j in range(len(horizontal_lines) - 1):
+            x1, x2 = vertical_lines[i], vertical_lines[i+1]
+            y1, y2 = horizontal_lines[j], horizontal_lines[j+1]
+
+            # Extract region
+            region = input_grid[x1:x2, y1:y2]
+
+            # Step 3: Maintain the structure of the region
+            # Simply blit the region back onto the output grid
+            output_grid[x1:x2, y1:y2] = region
+
+    return output_grid
+
+def generate_input():
+    # Randomly generate the grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly select the grid separation
+    n_region_horizontal, n_region_vertical = np.random.randint(2, 5), np.random.randint(2, 5)
+    horizontal_boundaries = randomly_spaced_indices(max_len=width, n_indices=n_region_horizontal - 1, border_size=1, padding=2)
+    vertical_boundaries = randomly_spaced_indices(max_len=height, n_indices=n_region_vertical - 1, border_size=1, padding=2)
+
+    # Randomly select the colors to fill each region
+    colors = np.random.choice(Color.NOT_BLACK, (n_region_horizontal, n_region_vertical), replace=True)
+
+    # Assign the colors to each region
+    for X in range(n_region_horizontal):
+        for Y in range(n_region_vertical):
+            x1 = 0 if X == 0 else horizontal_boundaries[X-1]
+            x2 = horizontal_boundaries[X] if X < len(horizontal_boundaries) else width
+            y1 = 0 if Y == 0 else vertical_boundaries[Y-1]
+            y2 = vertical_boundaries[Y] if Y < len(vertical_boundaries) else height
+
+            grid[x1:x2, y1:y2] = colors[X, Y]
+    
+    # Draw black lines to separate the regions
+    divider_color = np.random.choice(Color.NOT_BLACK)
+    for x in horizontal_boundaries:
+        draw_line(grid=grid, x=x, y=0, direction=(0, 1), color=divider_color)
+    for y in vertical_boundaries:
+        draw_line(grid=grid, x=0, y=y, direction=(1, 0), color=divider_color)
+
+    return grid
+```
+
+### Explanation:
+1. **Main Function**:
+   - **Identify Divider Lines**: The function first identifies vertical and horizontal divider lines based on a dominant color in the grid.
+   - **Extract Regions**: Using the divider lines, the function extracts distinct regions by slicing the grid.
+   - **Output Structure**: The function then blits these regions back to the output grid without altering their internal arrangement.
+
+2. **Generate Input Function**:
+   - **Grid Setup**: A grid with random dimensions is created, and a random number of horizontal and vertical partitions are determined.
+   - **Region Coloring**: Each region is filled with a unique color. Divider lines are drawn using a randomly chosen color to separate regions.
+
+This puzzle requires players to recognize and process distinct regions separated by divider lines in a grid.

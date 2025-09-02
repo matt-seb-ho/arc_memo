@@ -1,0 +1,126 @@
+Here's a new puzzle implementation based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# pattern extrapolation, sequence prediction, feature analysis, progression detection
+
+# description:
+# Input consists of a sequence of grids representing consecutive time steps, where objects exhibit a consistent transformation pattern in terms of position, size, or color. 
+# Analyze the sequence to identify the evolving pattern, such as linear movement, size change, or color shift. 
+# Extrapolate the identified pattern to predict and generate the next grid in the sequence. 
+# The output is a single grid that continues the detected pattern logically from the last input grid.
+
+def main(input_sequence):
+    # Determine the length of the sequence
+    num_steps = len(input_sequence)
+    
+    # Analyze the pattern by comparing the last two grid states
+    last_grid = input_sequence[-1]
+    second_last_grid = input_sequence[-2]
+
+    # Find connected components in the last two grids
+    last_objects = find_connected_components(last_grid, background=Color.BLACK, connectivity=8)
+    second_last_objects = find_connected_components(second_last_grid, background=Color.BLACK, connectivity=8)
+
+    # Initialize the output grid with the same size as the input grids
+    output_grid = np.full_like(last_grid, Color.BLACK)
+
+    # Process each object to detect movement pattern
+    for last_obj, second_last_obj in zip(last_objects, second_last_objects):
+        # Get positions and bounding boxes
+        last_x, last_y = object_position(last_obj, background=Color.BLACK)
+        second_last_x, second_last_y = object_position(second_last_obj, background=Color.BLACK)
+        
+        # Calculate movement vector
+        move_x = last_x - second_last_x
+        move_y = last_y - second_last_y
+
+        # Detect size change, if any
+        last_bb = bounding_box(last_obj)
+        second_last_bb = bounding_box(second_last_obj)
+        size_change_x = last_bb[2] - second_last_bb[2]
+        size_change_y = last_bb[3] - second_last_bb[3]
+
+        # Extrapolate next position and size
+        next_x = last_x + move_x
+        next_y = last_y + move_y
+        next_w = last_bb[2] + size_change_x
+        next_h = last_bb[3] + size_change_y
+
+        # Crop the object to get its sprite
+        sprite = crop(last_obj)
+
+        # Resize the sprite if there was a size change
+        sprite = np.resize(sprite, (next_w, next_h))
+
+        # Blit the sprite at the extrapolated position
+        blit_sprite(output_grid, sprite, x=next_x, y=next_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Grid size
+    grid_size = np.random.randint(10, 15)
+    num_steps = np.random.randint(3, 6)
+    
+    # Initialize sequence of grids
+    input_sequence = [np.full((grid_size, grid_size), Color.BLACK) for _ in range(num_steps)]
+
+    # Randomly create an object at the first time step
+    color = np.random.choice(list(Color.NOT_BLACK))
+    initial_size = np.random.randint(2, 4)
+    sprite = np.full((initial_size, initial_size), color)
+
+    # Choose a random initial position
+    x, y = np.random.randint(0, grid_size - initial_size, 2)
+    blit_sprite(input_sequence[0], sprite, x=x, y=y)
+    
+    # Define movement and size change
+    move_x = np.random.choice([-1, 0, 1])
+    move_y = np.random.choice([-1, 0, 1])
+    size_change_x = np.random.choice([-1, 0, 1])
+    size_change_y = np.random.choice([-1, 0, 1])
+
+    # Generate subsequent steps with consistent pattern
+    for t in range(1, num_steps):
+        prev_grid = input_sequence[t - 1]
+        new_grid = input_sequence[t]
+        
+        # Extract previous object
+        objects = find_connected_components(prev_grid, background=Color.BLACK, connectivity=8)
+        if not objects:
+            continue
+        
+        obj = objects[0]
+        x, y = object_position(obj, background=Color.BLACK)
+        bb = bounding_box(obj)
+        
+        # Update position and size
+        x += move_x
+        y += move_y
+        new_w = bb[2] + size_change_x
+        new_h = bb[3] + size_change_y
+
+        # Ensure new position and size fit within grid
+        x = min(max(0, x), grid_size - new_w)
+        y = min(max(0, y), grid_size - new_h)
+        new_w = min(max(1, new_w), grid_size - x)
+        new_h = min(max(1, new_h), grid_size - y)
+
+        # Crop and resize the object
+        sprite = crop(obj)
+        sprite = np.resize(sprite, (new_w, new_h))
+        
+        # Blit the sprite at the new position
+        blit_sprite(new_grid, sprite, x=x, y=y, background=Color.BLACK)
+
+    return input_sequence
+```
+
+This puzzle involves analyzing a sequence of grids to identify patterns in object transformations, such as movement and size change, and then extrapolating these patterns to predict the next grid state. The `main` function is deterministic and predicts the next grid based on the identified pattern, while `generate_input` creates a random sequence of input grids that follow a consistent transformation pattern.

@@ -1,0 +1,87 @@
+Here is the implementation for the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, guide object identification
+
+# description:
+# In the input grid, there are several connected components, each with its own color. Among these components, one of them has a unique color that no other component shares. 
+# To create the output grid, identify this unique-colored component and display only it. All other components are ignored in the output.
+
+def main(input_grid):
+    # Find all connected components with monochromatic colors
+    components = find_connected_components(input_grid, monochromatic=True, connectivity=8)
+
+    # Dictionary to track color frequencies
+    color_count = {}
+
+    # Count the frequency of each color
+    for component in components:
+        color = np.unique(component[component != Color.BLACK])[0]
+        color_count[color] = color_count.get(color, 0) + 1
+
+    # Identify the unique color
+    unique_color = next((color for color, count in color_count.items() if count == 1), None)
+
+    # Create the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Find the component with the unique color and blit it onto the output grid
+    for component in components:
+        if unique_color in component:
+            blit_object(output_grid, component, background=Color.BLACK)
+            break
+
+    return output_grid
+
+def generate_input():
+    n = np.random.randint(10, 15)
+    m = np.random.randint(10, 15)
+    input_grid = np.full((n, m), Color.BLACK)
+
+    num_components = np.random.randint(3, 6)
+    all_colors = list(Color.NOT_BLACK)
+    np.random.shuffle(all_colors)
+
+    # Ensure one unique color component
+    used_colors = all_colors[:num_components - 1]
+    unique_color = all_colors[num_components - 1]
+
+    # Place components with non-unique colors
+    for color in used_colors:
+        for _ in range(2):  # Ensure at least two components share each color
+            try:
+                sprite = random_sprite(n=3, m=3, color_palette=[color], density=0.6)
+                x, y = random_free_location_for_sprite(input_grid, sprite, padding=1, border_size=1)
+                blit_sprite(input_grid, sprite, x, y)
+            except ValueError:
+                continue
+
+    # Place the unique color component
+    try:
+        unique_sprite = random_sprite(n=3, m=3, color_palette=[unique_color], density=0.6)
+        x, y = random_free_location_for_sprite(input_grid, unique_sprite, padding=1, border_size=1)
+        blit_sprite(input_grid, unique_sprite, x, y)
+    except ValueError:
+        return generate_input()
+
+    return input_grid
+```
+
+### Explanation:
+- **Main Function**:
+  - The `main` function extracts connected components using `find_connected_components`.
+  - It calculates the frequency of each color to identify the unique color.
+  - It constructs the output grid by placing the unique-colored component using `blit_object`.
+
+- **Generate Input Function**:
+  - The `generate_input` function creates a grid with several connected components.
+  - It ensures that one component has a unique color not shared by other components.
+  - The grid is populated with these components, ensuring that the unique color is placed.
+
+This code creates a puzzle where the player needs to discover the unique-colored component and only display that in the output.

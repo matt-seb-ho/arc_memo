@@ -1,0 +1,83 @@
+Let's design a puzzle based on the given description:
+
+**Concepts:** Object identification, translation, erasure, grid manipulation
+
+**Description:** 
+Identify a single connected component (object) within the input grid. Determine its bounding box and erase the object by setting its pixels to the background color (0). Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates. Redraw the object at the new position, preserving its shape and color. The output grid reflects the object moved to the new location with its original position cleared.
+
+Here is an implementation for the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object identification, translation, erasure, grid manipulation
+
+# description:
+# Identify a single connected component (object) within the input grid.
+# Determine its bounding box and erase the object by setting its pixels to the background color (0).
+# Translate the object to a specified new position (row, column) by moving its bounding box to the new coordinates.
+# Redraw the object at the new position, preserving its shape and color.
+# The output grid reflects the object moved to the new location with its original position cleared.
+
+def main(input_grid):
+    # Extract the object from the input grid. Assume only one object is present.
+    objects = find_connected_components(input_grid, monochromatic=False, connectivity=8, background=Color.BLACK)
+
+    # Assume there's exactly one object
+    assert len(objects) == 1
+    obj = objects[0]
+
+    # Determine the bounding box of the object
+    x, y, width, height = bounding_box(obj, background=Color.BLACK)
+
+    # Create an output grid initialized as the input grid
+    output_grid = np.copy(input_grid)
+
+    # Erase the object from its original position
+    output_grid[x:x+width, y:y+height] = Color.BLACK
+
+    # Determine a new position for the object. For simplicity, move it to the top left corner.
+    new_x, new_y = 0, 0
+
+    # Translate the object to the new position
+    translated_obj = translate(obj, new_x - x, new_y - y, background=Color.BLACK)
+
+    # Redraw the object at the new position
+    blit_object(output_grid, translated_obj, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with a single random object
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random sprite (object)
+    sprite_width, sprite_height = np.random.randint(2, 5), np.random.randint(2, 5)
+    sprite = random_sprite(sprite_width, sprite_height, color_palette=Color.NOT_BLACK, background=Color.BLACK)
+
+    # Place the sprite at a random location on the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+
+1. **`main` function:**
+   - **Object Identification:** It identifies the single object using `find_connected_components`.
+   - **Bounding Box Calculation:** The object's bounding box is determined using `bounding_box`.
+   - **Erasure:** The object is erased from its original position by setting its pixels to `Color.BLACK`.
+   - **Translation:** The object is translated to a new position, here chosen as the top-left corner.
+   - **Redrawing:** The translated object is redrawn on the output grid using `blit_object`.
+
+2. **`generate_input` function:**
+   - A random-sized grid is created.
+   - A random sprite (object) is generated and placed on the grid using `random_free_location_for_sprite`.
+
+This setup allows middle-schoolers to see how objects can be moved around on a grid, showcasing the importance of object identification, bounding boxes, and simple transformations.

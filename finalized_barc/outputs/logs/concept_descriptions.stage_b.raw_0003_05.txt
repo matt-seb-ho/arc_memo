@@ -1,0 +1,59 @@
+Here's a new puzzle implementation based on the description provided. The puzzle involves determining the output grid's shape based on a fixed size or derived from a guide object's bounding box.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# output grid shape, guide object, bounding box, zero-initialized grid
+
+# description:
+# In the input, you will see a grid with a single colored object surrounded by a black background. 
+# The output grid's dimensions are determined by either a fixed size of 10x10 or derived from the smallest bounding box that can contain the guide object, 
+# whichever is larger. Initialize the output grid with a zero (black) background color. The output grid's dimensions are independent of the input content but adhere to the defined shape rule.
+
+def main(input_grid):
+    # Step 1: Detect objects in the input grid
+    objects = detect_objects(input_grid, background=Color.BLACK, monochromatic=True, connectivity=4)
+    
+    # Assuming there's only one object, use the first one as the guide object
+    guide_object = objects[0]
+    
+    # Step 2: Determine the bounding box dimensions of the guide object
+    guide_bounding_box = crop(guide_object, background=Color.BLACK)
+    bounding_box_dimensions = guide_bounding_box.shape
+    
+    # Step 3: Determine the output grid's shape based on the fixed size or the bounding box size
+    fixed_size = (10, 10)
+    output_shape = (
+        max(fixed_size[0], bounding_box_dimensions[0]),
+        max(fixed_size[1], bounding_box_dimensions[1])
+    )
+    
+    # Step 4: Initialize the output grid with zero (black) background color
+    output_grid = np.full(output_shape, Color.BLACK, dtype=int)
+    
+    return output_grid
+
+def generate_input():
+    # Create a random grid size between 15x15 and 20x20
+    n = np.random.randint(15, 21)
+    m = np.random.randint(15, 21)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Create a random colored sprite with a size between 4x4 and 8x8
+    sprite_size = np.random.randint(4, 9, size=2)
+    sprite = random_sprite(sprite_size[0], sprite_size[1], color_palette=[np.random.choice(Color.NOT_BLACK)])
+    
+    # Blit the sprite onto a random location in the grid
+    x, y = random_free_location_for_sprite(grid, sprite)
+    blit_sprite(grid, sprite, x, y)
+    
+    return grid
+```
+
+### Explanation:
+- **Concepts**: The puzzle involves understanding how to determine the shape of an output grid based on either a fixed size or the bounding box of a guide object, and initializing the grid with a zero (background) color.
+- **Description**: The input grid contains a single colored object. The output grid is determined by the larger of a fixed size (10x10) or the bounding box of the object. The output is initialized as black and independent of the input's specific content, except for the size determination.

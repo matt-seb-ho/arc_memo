@@ -1,0 +1,114 @@
+Let's create a puzzle where we need to draw a line between two points. The path can be obstructed by obstacles, and the goal is to find a route that navigates around these obstacles.
+
+# Concepts:
+- Obstacles
+- Path blocking
+- Line finding
+- Detours
+
+# Description:
+- In the input, you will see a grid with a start point marked in green, an endpoint marked in red, and several obstacles marked in blue.
+- The task is to connect the start point to the endpoint with a continuous line that avoids the obstacles.
+- The line should be drawn in yellow.
+- If an obstacle is encountered, the path should take a detour around it.
+
+Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line finding, detours
+
+# description:
+# In the input, you will see a grid with a start point marked in green, an endpoint marked in red, and several obstacles marked in blue.
+# The task is to connect the start point to the endpoint with a continuous line that avoids the obstacles.
+# The line should be drawn in yellow. If an obstacle is encountered, the path should take a detour around it.
+
+def main(input_grid):
+    # Plan:
+    # 1. Parse the input to find the start point, endpoint, and obstacles
+    # 2. Use a pathfinding algorithm like A* to navigate from start to end, avoiding obstacles
+    # 3. Draw the path on the grid using yellow color
+
+    # 1. Parse the input
+    background = Color.BLACK
+    start_position = np.argwhere(input_grid == Color.GREEN)[0]
+    end_position = np.argwhere(input_grid == Color.RED)[0]
+    obstacles = (input_grid == Color.BLUE)
+
+    # 2. Implement A* pathfinding algorithm
+    def heuristic(a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    def astar(start, goal, obstacles):
+        from heapq import heappop, heappush
+        open_set = []
+        heappush(open_set, (0, start))
+        came_from = {}
+        g_score = {start: 0}
+        f_score = {start: heuristic(start, goal)}
+
+        while open_set:
+            _, current = heappop(open_set)
+
+            if current == goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(start)
+                path.reverse()
+                return path
+
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4 directions
+                neighbor = (current[0] + dx, current[1] + dy)
+                if 0 <= neighbor[0] < input_grid.shape[0] and 0 <= neighbor[1] < input_grid.shape[1]:
+                    if obstacles[neighbor]:
+                        continue
+                    tentative_g_score = g_score[current] + 1
+                    if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + heuristic(neighbor, goal)
+                        heappush(open_set, (f_score[neighbor], neighbor))
+        return []
+
+    # 3. Draw the path
+    path = astar(tuple(start_position), tuple(end_position), obstacles)
+    output_grid = input_grid.copy()
+    for x, y in path:
+        if output_grid[x, y] not in [Color.GREEN, Color.RED]:
+            output_grid[x, y] = Color.YELLOW
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with a start point, endpoint, and several obstacles
+    n = np.random.randint(10, 15)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Place start point
+    start_x, start_y = np.random.randint(0, n, size=2)
+    grid[start_x, start_y] = Color.GREEN
+
+    # Place endpoint at a different location
+    end_x, end_y = start_x, start_y
+    while end_x == start_x and end_y == start_y:
+        end_x, end_y = np.random.randint(0, n, size=2)
+    grid[end_x, end_y] = Color.RED
+
+    # Place obstacles
+    num_obstacles = np.random.randint(n // 2, n)
+    for _ in range(num_obstacles):
+        obs_x, obs_y = np.random.randint(0, n, size=2)
+        if grid[obs_x, obs_y] == Color.BLACK:
+            grid[obs_x, obs_y] = Color.BLUE
+
+    return grid
+```
+
+This code block implements the puzzle described. The input is generated with random placements of start, end, and obstacles, while the main function uses the A* algorithm to find a path that avoids obstacles and connects the start and end points with a yellow line.

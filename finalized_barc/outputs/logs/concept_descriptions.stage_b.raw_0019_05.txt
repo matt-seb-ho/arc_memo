@@ -1,0 +1,91 @@
+Sure, let's design the puzzle based on the description provided. The puzzle involves identifying a uniquely colored object on a grid, which we will refer to as the "guide object", and transforming the grid to highlight this object while leaving others unchanged.
+
+Here's how we can implement the puzzle:
+
+1. **Concepts**: Unique color identification, guide object selection, connected components.
+2. **Description**: The input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the one whose color is not shared by any other object in the grid. The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+
+Now, let's write the code for the `main` and `generate_input` functions:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color identification, guide object selection, connected components
+
+# description:
+# Input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the one whose color is not shared by any other object in the grid. The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4, background=Color.BLACK)
+    
+    # Find the unique color among all objects
+    color_count = {}
+    for obj in objects:
+        color = object_colors(obj, background=Color.BLACK)[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+    
+    # Identify the guide object color
+    guide_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            guide_color = color
+            break
+    
+    # Create output grid, highlighting the guide object
+    output_grid = input_grid.copy()
+    for obj in objects:
+        obj_color = object_colors(obj, background=Color.BLACK)[0]
+        if obj_color == guide_color:
+            # Highlight the guide object
+            output_grid[obj != Color.BLACK] = obj_color
+        else:
+            # Set other objects to black
+            output_grid[obj != Color.BLACK] = Color.BLACK
+
+    return output_grid
+
+def generate_input():
+    # Define grid dimensions
+    width, height = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Create a list of unique colors
+    available_colors = list(Color.NOT_BLACK)
+    np.random.shuffle(available_colors)
+
+    # Number of objects to place
+    num_objects = np.random.randint(3, len(available_colors) + 1)
+
+    # Place objects with unique colors
+    for _ in range(num_objects):
+        # Randomly select a color for the object
+        color = available_colors.pop()
+        
+        # Generate a sprite for the object
+        sprite = random_sprite(np.random.randint(1, 4), np.random.randint(1, 4), color_palette=[color])
+        
+        # Place the sprite on the grid
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+        blit_sprite(grid, sprite, x, y)
+    
+    return grid
+```
+
+### Explanation:
+
+- **`main` function**: 
+  - Extracts all monochromatic objects from the input grid.
+  - Determines the color that appears exactly once among all the objects (the unique color).
+  - Constructs the output grid by highlighting the object with the unique color and setting all others to black.
+
+- **`generate_input` function**: 
+  - Randomly generates a grid with multiple objects, each having a unique color.
+  - Ensures that each object has a distinct color, setting up the condition for identifying a guide object.

@@ -1,0 +1,89 @@
+Here's a new puzzle design based on the provided concepts and description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input is a grid with a single object enclosing empty spaces (holes). 
+# The task is to identify holes as background-color (0) regions fully enclosed by the object, not touching the grid border.
+# Use flood-fill from the border to exclude non-enclosed regions. 
+# The output is the grid where holes are filled with a target color, preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create an output grid copying the input grid to retain the structure
+    output_grid = input_grid.copy()
+
+    # Identify all connected components using the background color (0)
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4)
+
+    # Flood-fill from the border to exclude non-enclosed regions
+    border_filled = np.full(input_grid.shape, False)
+    for i in range(input_grid.shape[0]):
+        if input_grid[i, 0] == Color.BLACK:
+            flood_fill(input_grid, border_filled, i, 0)
+        if input_grid[i, -1] == Color.BLACK:
+            flood_fill(input_grid, border_filled, i, input_grid.shape[1] - 1)
+    for j in range(input_grid.shape[1]):
+        if input_grid[0, j] == Color.BLACK:
+            flood_fill(input_grid, border_filled, 0, j)
+        if input_grid[-1, j] == Color.BLACK:
+            flood_fill(input_grid, border_filled, input_grid.shape[0] - 1, j)
+
+    # Identify holes as regions not touched by the border flood-fill
+    for component in components:
+        interior_points = np.argwhere(component)
+        is_hole = not np.any(border_filled[tuple(interior_points.T)])
+        if is_hole:
+            # Fill the hole with the target color
+            for x, y in interior_points:
+                output_grid[x, y] = Color.RED  # Example target color
+
+    return output_grid
+
+
+def flood_fill(grid, filled, x, y):
+    if not (0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]):
+        return
+    if grid[x, y] != Color.BLACK or filled[x, y]:
+        return
+    filled[x, y] = True
+    flood_fill(grid, filled, x + 1, y)
+    flood_fill(grid, filled, x - 1, y)
+    flood_fill(grid, filled, x, y + 1)
+    flood_fill(grid, filled, x, y - 1)
+
+
+def generate_input():
+    # Create a grid of size 10x10 with a single enclosing object
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Draw an enclosing object, for example, a square frame with some holes inside
+    enclosing_object = np.full((8, 8), Color.BLUE)
+    enclosing_object[1:-1, 1:-1] = Color.BLACK  # Make it hollow
+    blit(grid, enclosing_object, 1, 1)
+
+    # Randomly add holes inside the hollow object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, 3)
+        hole_x = np.random.randint(2, 8 - hole_size)
+        hole_y = np.random.randint(2, 8 - hole_size)
+        grid[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    return grid
+```
+
+### Explanation:
+- **Concepts Used**: The puzzle involves understanding holes, enclosed regions, flood-fill algorithms, and connected components.
+- **Main Function**:
+  - The `main` function identifies enclosed holes by using flood-fill to mark all regions connected to the border.
+  - It then fills any isolated regions (holes) with a target color.
+- **Generate Input Function**:
+  - The `generate_input` function creates a grid with an enclosing object and adds random holes.
+  - The enclosing object is drawn in the center of the grid, and holes are added as black regions inside the object.

@@ -1,0 +1,96 @@
+Certainly! Let's implement the puzzle based on the description provided:
+
+Concepts: 
+- line drawing
+- pixel connectivity
+- grid update
+
+Description: 
+Given a grid with two distinct pixels marked as start and end, draw a straight line connecting these two pixels using a specified color. The line is drawn using pixel connectivity, updating the grid by coloring each pixel along the path with the given color. The rest of the grid remains unchanged.
+
+Below is the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# line drawing, pixel connectivity, grid update
+
+# description:
+# In the input you will see a grid with a single start pixel and a single end pixel of different colors.
+# To make the output grid, draw a straight line connecting these two pixels using a specified color.
+# The line is drawn using pixel connectivity, updating the grid by coloring each pixel along the path with the given color.
+# The rest of the grid remains unchanged.
+
+def main(input_grid):
+    # Copy the input to the output grid
+    output_grid = np.copy(input_grid)
+
+    # Find the start and end pixels
+    start_color = Color.RED  # Assume start pixel color
+    end_color = Color.BLUE  # Assume end pixel color
+    line_color = Color.GREEN  # Use green color for the line
+
+    # Get the position of start and end pixels
+    start_pos = np.argwhere(input_grid == start_color)[0]
+    end_pos = np.argwhere(input_grid == end_color)[0]
+
+    # Extract coordinates
+    start_x, start_y = start_pos
+    end_x, end_y = end_pos
+
+    # Calculate the differences
+    dx = end_x - start_x
+    dy = end_y - start_y
+
+    # Determine the number of steps
+    steps = max(abs(dx), abs(dy))
+
+    # Calculate the increments
+    x_increment = dx / steps
+    y_increment = dy / steps
+
+    # Draw the line by updating the grid
+    for step in range(steps + 1):
+        x = int(start_x + step * x_increment)
+        y = int(start_y + step * y_increment)
+        output_grid[x, y] = line_color
+
+    return output_grid
+
+def generate_input():
+    # Generate the background grid
+    n = m = np.random.randint(10, 15)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Choose two distinct colors for start and end pixels
+    start_color = Color.RED
+    end_color = Color.BLUE
+
+    # Place start pixel
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[start_x, start_y] = start_color
+
+    # Place end pixel, ensuring it is different from start
+    end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+    while end_x == start_x and end_y == start_y:
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[end_x, end_y] = end_color
+
+    return grid
+```
+
+### Explanation:
+1. **`main` Function**:
+   - It identifies the start and end pixel positions on the grid.
+   - Using basic line interpolation, it calculates the path connecting these two pixels.
+   - A straight line is drawn by incrementally updating the grid with the specified line color.
+
+2. **`generate_input` Function**:
+   - It creates a grid of random size and places two distinct colored pixels (start and end) at random positions.
+   - Ensures the start and end pixels are not at the same position.
+
+These functions together create a puzzle where the objective is to determine the line drawing transformation from the inputs.

@@ -1,0 +1,4 @@
+```python
+# concepts: holes, enclosed regions, flood fill, background detection
+# description: Identify holes as background-color regions fully enclosed by a guide object, not connected to the grid border. Use flood-fill from the grid border to mark exterior background; any remaining background component inside the object is a hole. Fill these holes with the target object color, ensuring they are completely enclosed by the guide object.
+```

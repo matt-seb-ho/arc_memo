@@ -1,0 +1,90 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# divider detection, grid slicing, connected components, sub-grid extraction
+
+# description:
+# The input grid may have uninterrupted full rows or columns of a single color (e.g., grey) that act as dividers. 
+# Identify these dividers and split the grid into contiguous sub-grids between them. Discard any empty sub-grids.
+# Output a list of these non-empty sub-grids, preserving their original order and content.
+
+def main(input_grid):
+    # Identify the color of the dividers
+    candidate_divider_colors = [Color.GREY]  # More colors can be added if needed
+    divider_color = None
+
+    # Detect the divider color by checking for full rows or columns of a single color
+    for color in candidate_divider_colors:
+        if any(np.all(input_grid[i, :] == color) for i in range(input_grid.shape[0])) or any(np.all(input_grid[:, j] == color) for j in range(input_grid.shape[1])):
+            divider_color = color
+            break
+
+    assert divider_color is not None, "No divider color found"
+
+    # Find the positions of the horizontal and vertical dividers
+    horizontal_dividers = [i for i in range(input_grid.shape[0]) if np.all(input_grid[i, :] == divider_color)]
+    vertical_dividers = [j for j in range(input_grid.shape[1]) if np.all(input_grid[:, j] == divider_color)]
+
+    # Add implicit dividers at the borders
+    horizontal_dividers = [-1] + horizontal_dividers + [input_grid.shape[0]]
+    vertical_dividers = [-1] + vertical_dividers + [input_grid.shape[1]]
+
+    # Extract sub-grids
+    sub_grids = []
+    for h in range(len(horizontal_dividers) - 1):
+        for v in range(len(vertical_dividers) - 1):
+            x1, x2 = horizontal_dividers[h] + 1, horizontal_dividers[h + 1]
+            y1, y2 = vertical_dividers[v] + 1, vertical_dividers[v + 1]
+            sub_grid = input_grid[x1:x2, y1:y2]
+
+            # Check if the sub-grid is non-empty
+            if np.any(sub_grid != Color.BLACK):  # Assuming black is the empty color
+                sub_grids.append(sub_grid)
+
+    return sub_grids
+
+def generate_input():
+    # Randomly generate grid size
+    width, height = np.random.randint(20, 30), np.random.randint(20, 30)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly choose the number of dividers
+    num_horizontal_dividers = np.random.randint(1, 4)
+    num_vertical_dividers = np.random.randint(1, 4)
+
+    # Randomly position the dividers
+    horizontal_indices = randomly_spaced_indices(width, num_horizontal_dividers, border_size=1, padding=2)
+    vertical_indices = randomly_spaced_indices(height, num_vertical_dividers, border_size=1, padding=2)
+
+    # Set the dividers in the grid
+    for x in horizontal_indices:
+        grid[x, :] = Color.GREY
+    for y in vertical_indices:
+        grid[:, y] = Color.GREY
+
+    # Randomly generate sub-grid content between dividers
+    colors = list(Color.NOT_BLACK - {Color.GREY})
+    for h in range(len(horizontal_indices) + 1):
+        for v in range(len(vertical_indices) + 1):
+            x1 = 0 if h == 0 else horizontal_indices[h - 1] + 1
+            x2 = horizontal_indices[h] if h < len(horizontal_indices) else width
+            y1 = 0 if v == 0 else vertical_indices[v - 1] + 1
+            y2 = vertical_indices[v] if v < len(vertical_indices) else height
+
+            if x1 < x2 and y1 < y2:
+                sprite = random_sprite(
+                    n=x2 - x1, 
+                    m=y2 - y1, 
+                    density=0.3, # Adjust density as needed
+                    color_palette=colors
+                )
+                blit_sprite(grid, sprite, x=x1, y=y1, background=Color.BLACK)
+
+    return grid
+```
+
+This implementation matches the puzzle description by identifying divider lines in the input grid, splitting the grid into sub-grids, and filtering out empty ones. The `generate_input` function creates stochastic grids with random dividers and content between them, suitable for testing the transformation in `main`.

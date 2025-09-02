@@ -1,0 +1,77 @@
+Here is an implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, recolor, connected components, bounding box
+
+# description:
+# Input is a single connected object on a grid. Determine the object's orientation by identifying the missing corner in its bounding box (top-left, top-right, bottom-left, bottom-right).
+# Recolor the entire object uniformly based on this orientation using a fixed color map: top-left to red (3), top-right to yellow (4), bottom-left to green (2), and bottom-right to blue (1).
+# The background and any other grid content remain unchanged.
+
+def main(input_grid):
+    # Find the single connected object in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    assert len(objects) == 1, "There should be exactly one connected object in the input grid"
+    obj = objects[0]
+
+    # Determine the bounding box of the object
+    x, y, width, height = bounding_box(obj, background=Color.BLACK)
+
+    # Determine the missing corner by checking which corner of the bounding box does not have any part of the object
+    corners = {
+        "top-left": (x, y),
+        "top-right": (x + width - 1, y),
+        "bottom-left": (x, y + height - 1),
+        "bottom-right": (x + width - 1, y + height - 1)
+    }
+    
+    missing_corner = None
+    for corner, (cx, cy) in corners.items():
+        if not (0 <= cx < obj.shape[1] and 0 <= cy < obj.shape[0] and obj[cy, cx] != Color.BLACK):
+            missing_corner = corner
+            break
+    
+    # Recolor the object based on the missing corner
+    color_map = {
+        "top-left": Color.RED,
+        "top-right": Color.YELLOW,
+        "bottom-left": Color.GREEN,
+        "bottom-right": Color.BLUE
+    }
+    
+    new_color = color_map[missing_corner]
+
+    # Recolor the object
+    output_grid = np.copy(input_grid)
+    flood_fill(output_grid, x, y, new_color, connectivity=8)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a grid with a single connected object
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # Generate a random single connected object
+    obj_size = np.random.randint(4, 8)
+    obj = random_sprite(obj_size, obj_size, color_palette=[Color.GREY], connectivity=8)
+
+    # Place the object in the grid at a random location
+    x, y = random_free_location_for_sprite(grid, obj, background=Color.BLACK)
+    blit_sprite(grid, obj, x, y, background=Color.BLACK)
+
+    # Remove one corner from the placed object to introduce the orientation
+    x_offset, y_offset = np.random.choice([(0, 0), (obj.shape[1] - 1, 0), (0, obj.shape[0] - 1), (obj.shape[1] - 1, obj.shape[0] - 1)])
+    grid[y + y_offset, x + x_offset] = Color.BLACK
+
+    return grid
+```
+
+This puzzle involves detecting the missing corner of the bounding box of a single connected object and using this information to recolor the object based on a predefined color map. The `generate_input` function creates a grid with a single connected object, randomly removes one corner, and returns the grid for testing the `main` function.

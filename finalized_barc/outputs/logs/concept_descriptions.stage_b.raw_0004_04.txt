@@ -1,0 +1,98 @@
+Certainly! Let's create a puzzle based on the provided description. The puzzle involves identifying a unique guide object based on a distinct attribute, using its anchor point, and counting the number of enclosed regions (holes) in the grid from that position.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, unique selection, anchor point, hole counting
+
+# description:
+# The input is a grid with various colored objects. One object is distinctly larger than the others and serves as the guide.
+# The task is to identify this guide object, use its top-left corner as the anchor point, and count the number of fully enclosed black regions (holes) in the grid.
+# The output is a grid where the guide object is highlighted in red and the number of holes is displayed in the top-left corner of the grid.
+
+def main(input_grid):
+    # Find all objects in the grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    
+    # Identify the guide object based on size
+    guide_object = max(objects, key=lambda obj: np.sum(obj != Color.BLACK))
+    
+    # Get the position of the guide object's top-left corner
+    guide_x, guide_y = object_position(guide_object, background=Color.BLACK, anchor='upper left')
+    
+    # Count the number of fully enclosed regions (holes) in the grid
+    # An enclosed region is a connected component of black pixels surrounded by non-black pixels
+    hole_count = 0
+    for obj in objects:
+        # Check if the object is a hole (fully enclosed black region)
+        if np.all(obj[obj != Color.BLACK] != Color.BLACK):
+            hole_count += 1
+    
+    # Create the output grid
+    output_grid = input_grid.copy()
+    
+    # Highlight the guide object in red
+    guide_mask = guide_object != Color.BLACK
+    output_grid[guide_mask] = Color.RED
+    
+    # Display the number of holes in the top-left corner
+    output_grid[0, 0] = hole_count
+    
+    return output_grid
+
+def generate_input():
+    # Create a random grid size
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate guide object with a unique size (larger than other objects)
+    guide_object_size = np.random.randint(4, 6)
+    guide_object = random_sprite(guide_object_size, guide_object_size, color_palette=[Color.TEAL], background=Color.BLACK)
+    x, y = random_free_location_for_sprite(grid, guide_object, padding=1, border_size=1)
+    blit_sprite(grid, guide_object, x, y)
+    
+    # Generate other smaller objects (distractors)
+    num_distractors = np.random.randint(3, 6)
+    for _ in range(num_distractors):
+        distractor_size = np.random.randint(2, 3)
+        distractor = random_sprite(distractor_size, distractor_size, color_palette=[Color.BLUE])
+        try:
+            x, y = random_free_location_for_sprite(grid, distractor, padding=1, border_size=1)
+            blit_sprite(grid, distractor, x, y)
+        except ValueError:
+            pass
+    
+    # Add enclosed black regions (holes)
+    num_holes = np.random.randint(1, 3)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(1, 3)
+        hole = random_sprite(hole_size, hole_size, color_palette=[Color.BLACK], background=Color.BLACK)
+        x, y = random_free_location_for_sprite(grid, hole, padding=1, border_size=1)
+        blit_sprite(grid, hole, x, y)
+    
+    return grid
+```
+
+### Explanation:
+1. **Concepts**:
+   - **Guide Object**: The largest object in the grid is identified as the guide.
+   - **Unique Selection**: The guide is selected based on its size.
+   - **Anchor Point**: The top-left corner of the guide object is used as a reference.
+   - **Hole Counting**: The function counts fully enclosed black regions within the grid.
+
+2. **`main` Function**:
+   - Identifies the guide object by size.
+   - Counts the number of fully enclosed black regions (holes).
+   - Highlights the guide object in red and displays the hole count in the top-left corner.
+
+3. **`generate_input` Function**:
+   - Creates a grid with a single larger guide object and several smaller distractor objects.
+   - Randomly places enclosed black regions (holes) in the grid.
+
+This puzzle challenges the solver to identify a distinct feature (size) to select a guide and employs spatial reasoning to count holes based on topological properties.

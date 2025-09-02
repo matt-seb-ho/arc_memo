@@ -1,0 +1,84 @@
+Let's implement the puzzle based on the description provided. We'll create a function `main` to apply the deterministic transformation and a function `generate_input` to generate stochastic input grids that fit the puzzle's rules.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# diagonal movement, zigzag pattern, axis-aligned runs, boundary detection
+
+# description:
+# Starting from a seed pixel, create a diagonal zigzag pattern by alternating between horizontal and vertical movements.
+# Move horizontally by a fixed number of pixels (horizontal_step), then vertically by another fixed number (vertical_step),
+# painting each traversed pixel. Continue this alternating pattern until reaching the grid boundary. The result is a
+# staircase-like diagonal composed of axis-aligned segments.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the seed pixel in the input grid.
+    # 2. Create a diagonal zigzag pattern starting from the seed pixel.
+    # 3. Alternate between horizontal and vertical movements, painting the path, until reaching the boundary.
+
+    # Extract the seed pixel
+    seed_pixel = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK)[0]
+    seed_x, seed_y = object_position(seed_pixel, background=Color.BLACK)
+    seed_color = object_colors(seed_pixel)[0]
+
+    # Define the steps for horizontal and vertical movements
+    horizontal_step = 3
+    vertical_step = 2
+
+    # Create output grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+    width, height = input_grid.shape
+
+    # Starting from the seed pixel, create the zigzag pattern
+    x, y = seed_x, seed_y
+    move_horizontal = True
+
+    while 0 <= x < width and 0 <= y < height:
+        output_grid[x, y] = seed_color
+
+        if move_horizontal:
+            # Draw a horizontal line
+            end_x = min(x + horizontal_step, width)
+            draw_line(output_grid, x=x, y=y, end_x=end_x, color=seed_color)
+            x = end_x - 1  # Move to the end of the line
+        else:
+            # Draw a vertical line
+            end_y = min(y + vertical_step, height)
+            draw_line(output_grid, x=x, y=y, end_y=end_y, color=seed_color)
+            y = end_y - 1  # Move to the end of the line
+
+        # Alternate the movement direction
+        move_horizontal = not move_horizontal
+
+    return output_grid
+
+def generate_input():
+    # Generate the background grid
+    width, height = np.random.randint(10, 20, size=2)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly choose a color for the seed pixel
+    seed_color = np.random.choice(Color.NOT_BLACK)
+
+    # Randomly place the seed pixel somewhere in the grid
+    x = np.random.randint(0, width)
+    y = np.random.randint(0, height)
+    grid[x, y] = seed_color
+
+    return grid
+```
+
+### Explanation
+
+- **Concepts**: The puzzle involves creating a zigzag pattern by alternating horizontal and vertical movements from a seed pixel, with boundary detection to stop at the grid's edge.
+  
+- **Description**: The `main` function finds a seed pixel in the input grid and uses pre-determined horizontal and vertical steps to create a zigzag pattern. The `generate_input` function creates grids with a single colored pixel placed randomly to act as the seed.
+
+- **Deterministic Transformation**: The `main` function deterministically generates the zigzag pattern based on the location of the seed pixel and the fixed step sizes for movements.
+
+- **Stochastic Input Generation**: The `generate_input` function randomly chooses the seed pixel's location and color, ensuring different inputs for each call while adhering to the puzzle's rules.

@@ -1,0 +1,4 @@
+```python
+# concepts: hole counting, enclosed regions, guide object, connectivity (4/8)
+# description: Input consists of a grid with a single guide object of a specific color, potentially enclosing regions of background color (e.g., 0). Count the number of enclosed regions (holes) within the guide object that are not of the guide object's color. Use specified connectivity (4 or 8) to determine whether regions are enclosed. Output is the integer count of such holes.
+```

@@ -1,0 +1,100 @@
+Certainly! Let's design a new puzzle with a focus on identifying "enclosed holes" within a single object in a grid. The input grid contains an object made up of colored pixels surrounded by a background of black pixels. The task is to detect fully enclosed regions (holes) within the object that are not connected to the border of the grid. We'll then highlight these holes in the output.
+
+We'll use a flood-fill algorithm to differentiate between holes that are connected to the border and those that are truly enclosed.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, background components
+
+# description:
+# The input grid consists of a single contiguous object of arbitrary color(s) on a black background. 
+# The goal is to identify regions of black pixels (holes) that are fully enclosed by the object and not connected to the grid border. 
+# The output grid should highlight these enclosed holes by coloring them with a specific color, such as yellow.
+
+def main(input_grid):
+    # Create an output grid initialized to the input grid's content
+    output_grid = input_grid.copy()
+
+    # Find all connected components within the input grid using the background as black
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=8)
+    
+    # Use flood-fill to identify the border-connected components
+    border_connected = np.zeros(input_grid.shape, dtype=bool)
+    flood_fill(input_grid, border_connected, start_points=[(0, 0)], target_color=Color.BLACK, new_color=True)
+    
+    # For each component identified, check if it's not border-connected
+    for component in components:
+        if not np.any(border_connected & component):
+            # If the component is a hole, color it yellow in the output grid
+            output_grid[component] = Color.YELLOW
+
+    return output_grid
+
+def flood_fill(grid, mask, start_points, target_color, new_color):
+    """
+    Perform a flood-fill algorithm on the grid starting from the given points, 
+    marking the mask with new_color where target_color is found.
+    """
+    stack = list(start_points)
+    while stack:
+        x, y = stack.pop()
+        if mask[x, y] or grid[x, y] != target_color:
+            continue
+        mask[x, y] = new_color
+        # Add neighbors to the stack
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < grid.shape[0] and 0 <= ny < grid.shape[1]:
+                stack.append((nx, ny))
+
+def generate_input():
+    # Create a 10x10 to 20x20 grid
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create a single contiguous object of arbitrary color(s)
+    object_colors = [Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY]
+    obj_color = np.random.choice(object_colors)
+    object_size = np.random.randint(5, min(n, 10))
+    
+    # Generate a random sprite with potential holes
+    sprite = random_sprite(object_size, object_size, color_palette=[obj_color], background=Color.BLACK)
+    
+    # Ensure it has at least one fully enclosed hole
+    hole_size = np.random.randint(1, object_size - 1)
+    hole_x, hole_y = np.random.randint(1, object_size - hole_size), np.random.randint(1, object_size - hole_size)
+    sprite[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    # Place the sprite into the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, sprite, border_size=1)
+    except ValueError:
+        return generate_input()
+    
+    blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` function**: 
+  - We start by copying the input grid to the output grid.
+  - Identify connected components using `find_connected_components` with black as the background.
+  - Use a flood-fill function to identify regions of black connected to the grid borders, marking them in the `border_connected` mask.
+  - For each component, check if it is not part of a border-connected region. If not, it must be a fully enclosed hole, which we then color yellow.
+
+- **`flood_fill` function**:
+  - Implements a basic flood-fill algorithm using a stack to explore all connected pixels that match the target color.
+
+- **`generate_input` function**:
+  - Creates a grid with a single colored object that has potential holes.
+  - Ensures at least one fully enclosed hole by manually carving out a black region within the object.
+  - Uses `random_free_location_for_sprite` to place this object within the grid.
+
+This puzzle challenges middle-schoolers to understand and implement flood-fill algorithms and the concept of identifying and manipulating enclosed regions within objects.

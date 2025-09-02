@@ -1,0 +1,4 @@
+```python
+# concepts: holes, filling, guide object, target object, optimization
+# description: Given a grid with a guide object and a target object, identify holes within the guide object. Fill these holes using the target object, aiming for an optimal fit. The target object may be fully or partially used to fill the holes, similar to a "Tetris" style filling. The goal is to maximize the filled area within the guide object without altering the guide's structure. Non-hole areas and the guide object's boundaries remain unchanged.
+```

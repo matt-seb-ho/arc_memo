@@ -1,0 +1,4 @@
+```python
+# concepts: obstacles, path blocking, line drawing
+# description: Identify obstacles as distinct objects in the grid that block the path of line drawing. When drawing a line between two points, the line must navigate around these obstacles, ensuring no part of the line overlaps with any obstacle. The output grid shows the line drawn from start to end, avoiding obstacles, while all other grid content remains unchanged.
+```

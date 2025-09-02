@@ -1,0 +1,92 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing, detours
+
+# description:
+# In the input, you will see a grid with randomly placed colored obstacles and a planned line. 
+# The planned line is represented by a pair of start and end points. 
+# The task is to draw the line while navigating around any obstacles, ensuring that no obstacle is overwritten. 
+# The line should reach its intended destination even if it requires detours.
+
+def main(input_grid):
+    # Plan:
+    # 1. Find the start and end points of the planned line.
+    # 2. Identify the obstacles on the grid.
+    # 3. Implement a pathfinding algorithm to draw the line from start to end, avoiding obstacles.
+    # 4. Update the grid with the drawn line, preserving obstacles.
+
+    # Find the start and end points of the line
+    line_color = Color.RED  # Assume the line is meant to be red
+    start = None
+    end = None
+    for x, y in np.argwhere(input_grid == line_color):
+        if start is None:
+            start = (x, y)
+        else:
+            end = (x, y)
+
+    # Identify obstacles
+    obstacle_colors = {color for color in Color.ALL_COLORS if color != Color.BLACK and color != line_color}
+    obstacles = np.isin(input_grid, list(obstacle_colors))
+
+    # Pathfinding using BFS or A* to avoid obstacles
+    from queue import Queue
+    queue = Queue()
+    queue.put((start, [start]))  # Position and path
+    visited = set([start])
+
+    while not queue.empty():
+        current_position, path = queue.get()
+        x, y = current_position
+        
+        if current_position == end:
+            # Draw the path on the grid
+            for px, py in path:
+                if input_grid[px, py] not in obstacle_colors:
+                    input_grid[px, py] = line_color
+            return input_grid
+
+        # Explore neighbors
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            new_x, new_y = x + dx, y + dy
+            if 0 <= new_x < input_grid.shape[0] and 0 <= new_y < input_grid.shape[1]:
+                if (new_x, new_y) not in visited and not obstacles[new_x, new_y]:
+                    visited.add((new_x, new_y))
+                    queue.put(((new_x, new_y), path + [(new_x, new_y)]))
+
+    return input_grid  # Return the grid as it is if no path is found
+
+def generate_input():
+    # Generate a grid with random obstacles and a planned line
+    width, height = 15, 15
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly place obstacles
+    num_obstacles = np.random.randint(10, 20)
+    for _ in range(num_obstacles):
+        obstacle_color = np.random.choice(list(Color.ALL_COLORS - {Color.BLACK, Color.RED}))
+        x, y = np.random.randint(0, width), np.random.randint(0, height)
+        grid[x, y] = obstacle_color
+
+    # Add start and end points for the line
+    start_x, start_y = np.random.randint(0, width), np.random.randint(0, height)
+    end_x, end_y = np.random.randint(0, width), np.random.randint(0, height)
+    grid[start_x, start_y] = Color.RED
+    grid[end_x, end_y] = Color.RED
+
+    # Ensure start and end are not on obstacles
+    while grid[start_x, start_y] in obstacle_colors or grid[end_x, end_y] in obstacle_colors:
+        start_x, start_y = np.random.randint(0, width), np.random.randint(0, height)
+        end_x, end_y = np.random.randint(0, width), np.random.randint(0, height)
+        grid[start_x, start_y] = Color.RED
+        grid[end_x, end_y] = Color.RED
+
+    return grid
+```
+
+This code sets up a puzzle where the task is to draw a line from a start to an end point on a grid while avoiding colored obstacles. The `main` function uses a simple pathfinding approach to navigate around obstacles and draws a line on the grid. The `generate_input` function creates a grid with random obstacles and a planned line, ensuring variability in the puzzle instances.

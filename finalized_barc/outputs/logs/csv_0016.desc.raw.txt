@@ -1,0 +1,4 @@
+```python
+# concepts: holes, guide object, filling, connected components, interior regions
+# description: Input consists of a guide object and a target object on a grid. Identify all interior holes within the guide object that are not connected to the border (using 4-connectivity). For each hole, determine if the target object can be fully or partially filled into these holes, akin to a Tetris-style filling. The output is a list of hole objects, each represented by its pixel coordinates, where the target object can be placed. The rest of the grid remains unchanged.
+```

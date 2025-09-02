@@ -1,0 +1,83 @@
+Here's a new puzzle implementation based on the given description, focused on orientation detection, shape normalization, centroid-to-tip vector, and direction quantization.
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# The input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation.
+# Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W).
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Determine the background color
+    background_color = np.bincount(input_grid.flatten()).argmax()
+
+    # Find the object, which is assumed to be the only non-background component
+    objects = find_connected_components(input_grid, background=background_color, connectivity=8, monochromatic=True)
+    assert len(objects) == 1
+    pointer = objects[0]
+
+    # Find the bounding box and crop the object
+    x, y, w, h = bounding_box(pointer, background=background_color)
+    sprite = crop(pointer, background=background_color)
+
+    # Find the centroid of the object
+    points = np.argwhere(sprite != background_color)
+    centroid = np.mean(points, axis=0)
+
+    # Assume the tip is the farthest point from the centroid
+    distances = np.linalg.norm(points - centroid, axis=1)
+    tip_index = np.argmax(distances)
+    tip = points[tip_index]
+
+    # Compute the vector from centroid to tip
+    vector = tip - centroid
+
+    # Quantize the vector to one of the cardinal directions
+    direction = np.zeros(2, dtype=int)
+    if abs(vector[0]) > abs(vector[1]):
+        direction[0] = np.sign(vector[0])
+    else:
+        direction[1] = np.sign(vector[1])
+
+    # Map the direction to a label
+    direction_map = {(1, 0): "E", (-1, 0): "W", (0, 1): "S", (0, -1): "N"}
+    output_label = direction_map[tuple(direction)]
+
+    return output_label
+
+def generate_input():
+    # Create a grid of a random size
+    size = np.random.randint(5, 15)
+    grid = np.full((size, size), Color.BLACK)
+
+    # Generate a random pointer-shaped object
+    pointer_color = np.random.choice(Color.NOT_BLACK)
+    pointer_size = np.random.randint(3, size)
+    pointer = random_sprite(pointer_size, pointer_size, density=0.5, color_palette=[pointer_color])
+
+    # Place the pointer in a random location
+    x, y = random_free_location_for_sprite(grid, pointer, background=Color.BLACK)
+    blit_sprite(grid, pointer, x, y)
+
+    return grid
+```
+
+### Explanation:
+
+- **Concepts**: The puzzle involves determining the orientation of a pointer-shaped object and quantizing its direction to one of the cardinal directions.
+  
+- **Main Function**:
+  - **Normalize the shape**: Identify the single connected component in the grid, assumed to be the pointer.
+  - **Centroid and Tip Calculation**: Calculate the centroid of the object and determine the tip as the farthest point from the centroid.
+  - **Direction Quantization**: Compute the vector from centroid to tip and quantize it to one of the cardinal directions.
+  - **Output**: Map the quantized direction to a corresponding label (N, S, E, W).
+
+- **Generate Input Function**:
+  - **Grid Creation**: Create a grid and fill it with a random pointer-shaped object.
+  - **Random Placement**: Place the pointer randomly on the grid, ensuring the grid's dimensions and pointer's position allow for interesting transformations.

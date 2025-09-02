@@ -1,0 +1,103 @@
+Certainly! Let's implement the puzzle described in the overview. The task involves detecting contiguous runs of a target color (cyan) in rows and columns of a grid, and outputting the coordinates of these runs.
+
+Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# contiguous run detection, row/column scanning, maximal sequences, color filtering
+
+# description:
+# The input is a grid with various colors, including a target color (cyan).
+# For each row and column, detect and extract maximal contiguous runs of the target color.
+# Output these runs as lists of coordinates representing the start and end of each contiguous sequence of the target color.
+# Non-target colors and isolated target pixels are ignored. The result is a collection of all maximal cyan runs in the grid.
+
+def main(input_grid: np.ndarray) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+    target_color = Color.TEAL
+    runs = []
+
+    # Scan rows for contiguous runs
+    for i in range(input_grid.shape[0]):
+        start = None
+        for j in range(input_grid.shape[1]):
+            if input_grid[i, j] == target_color:
+                if start is None:
+                    start = (i, j)
+            else:
+                if start is not None:
+                    end = (i, j - 1)
+                    if end[1] > start[1]:  # Ensure it's a run
+                        runs.append((start, end))
+                    start = None
+        # Check if the last segment in the row was a run
+        if start is not None:
+            end = (i, input_grid.shape[1] - 1)
+            if end[1] > start[1]:
+                runs.append((start, end))
+
+    # Scan columns for contiguous runs
+    for j in range(input_grid.shape[1]):
+        start = None
+        for i in range(input_grid.shape[0]):
+            if input_grid[i, j] == target_color:
+                if start is None:
+                    start = (i, j)
+            else:
+                if start is not None:
+                    end = (i - 1, j)
+                    if end[0] > start[0]:  # Ensure it's a run
+                        runs.append((start, end))
+                    start = None
+        # Check if the last segment in the column was a run
+        if start is not None:
+            end = (input_grid.shape[0] - 1, j)
+            if end[0] > start[0]:
+                runs.append((start, end))
+
+    return runs
+
+
+def generate_input() -> np.ndarray:
+    # Create a grid size between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Fill the grid with random colors, including the target color (cyan)
+    for i in range(n):
+        for j in range(m):
+            grid[i, j] = np.random.choice(list(Color.NOT_BLACK))
+
+    # Add some guaranteed runs of the target color (cyan)
+    num_runs = np.random.randint(1, 4)
+    for _ in range(num_runs):
+        if np.random.rand() < 0.5:  # Horizontal run
+            row = np.random.randint(0, n)
+            start_col = np.random.randint(0, m - 1)
+            end_col = np.random.randint(start_col + 1, m)
+            grid[row, start_col:end_col] = Color.TEAL
+        else:  # Vertical run
+            col = np.random.randint(0, m)
+            start_row = np.random.randint(0, n - 1)
+            end_row = np.random.randint(start_row + 1, n)
+            grid[start_row:end_row, col] = Color.TEAL
+
+    return grid
+```
+
+### Explanation:
+
+1. **`main` function:**
+   - The function scans each row and column to identify contiguous sequences (runs) of the target color (cyan).
+   - It appends the start and end coordinates of each maximal run to a list if the run's length is greater than one pixel.
+   - It ensures that isolated pixels are not considered as runs.
+
+2. **`generate_input` function:**
+   - Generates a grid with random colors.
+   - Randomly adds a few guaranteed contiguous runs of the target color (cyan) across either rows or columns.
+
+This implementation provides a clear transformation from input to output, focusing on the detection of maximal contiguous sequences of a specific color in a grid.

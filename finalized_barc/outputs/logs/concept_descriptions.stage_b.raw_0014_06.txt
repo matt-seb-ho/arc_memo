@@ -1,0 +1,89 @@
+Here is an implementation for the puzzle described, focusing on identifying a guide object based on unique color among connected components in a grid.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, object identification, guide object
+
+# description:
+# In the input grid, you will see various objects, each with a specific color.
+# The task is to identify the object whose color is unique among all objects in the grid.
+# The output grid should highlight or isolate the guide object based on its unique color,
+# while all other objects remain unchanged.
+
+def main(input_grid):
+    # Find all connected components, assuming each component is monochromatic
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4)
+
+    # Dictionary to count the frequency of each color
+    color_count = {}
+
+    for obj in objects:
+        # Since objects are monochromatic, any non-black pixel will give the color of the object
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color in color_count:
+            color_count[color] += 1
+        else:
+            color_count[color] = 1
+
+    # Find the unique color (appears only once among the objects)
+    unique_color = None
+    for color, count in color_count.items():
+        if count == 1:
+            unique_color = color
+            break
+
+    if unique_color is None:
+        raise ValueError("No unique colored object found.")
+
+    # Create the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Isolate the object with the unique color
+    for obj in objects:
+        if np.any(obj == unique_color):
+            blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid of size n x n
+    n = np.random.randint(10, 15)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate a set of colors to use, ensuring one unique color
+    available_colors = list(Color.NOT_BLACK)
+    unique_color = np.random.choice(available_colors)
+    colors = [unique_color] + [np.random.choice(available_colors) for _ in range(np.random.randint(3, 6))]
+
+    for color in colors:
+        # Create a random object with the chosen color
+        sprite = random_sprite(n=np.random.randint(2, 4), m=np.random.randint(2, 4), color_palette=[color], density=np.random.uniform(0.3, 0.7))
+        
+        # Try to place the object on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1, border_size=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If there is no space, skip placing this object
+            continue
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` function**: 
+  - Identifies connected components in the grid.
+  - Counts the occurrence of each color among the components.
+  - Identifies the unique color and isolates the corresponding object in the output grid.
+
+- **`generate_input` function**: 
+  - Creates a grid and fills it with randomly generated objects of different colors, ensuring one color is unique.
+  - Uses provided library functions to guarantee non-overlapping placement of objects within the grid.
+
+This design leverages functions from `common.py` to detect and manipulate the grid's connected components and colors, ensuring the transformation is both effective and deterministic.

@@ -1,0 +1,58 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, color transfer, line drawing
+
+# description:
+# In the input grid, you will see one object with a unique color (the guide object) on a black background.
+# You need to draw a line from one edge of this guide object to another edge, following a path specified in the input grid.
+# The line should replace the black pixels along the path, using the guide object's color.
+# All other non-black pixels remain unchanged.
+
+def main(input_grid):
+    # Step 1: Find the guide object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    guide_object = max(objects, key=lambda obj: len(np.argwhere(obj != Color.BLACK)))
+
+    # Step 2: Determine the color of the guide object
+    guide_color = np.unique(guide_object[guide_object != Color.BLACK])[0]
+
+    # Step 3: Determine the path for the line drawing
+    # Assume the path is represented by a series of coordinates in the input grid
+    path = np.argwhere(input_grid == guide_color)
+
+    # Step 4: Draw the line along the path using the guide object's color
+    output_grid = input_grid.copy()
+    for x, y in path:
+        output_grid[x, y] = guide_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a 10x10 grid as the base
+    grid = np.zeros((10, 10), dtype=int)
+
+    # Generate a random guide object
+    guide_color = np.random.choice(Color.NOT_BLACK)
+    guide_object = random_sprite(3, 3, density=0.7, color_palette=[guide_color])
+
+    # Place the guide object at a random location on the grid
+    x, y = random_free_location_for_sprite(grid, guide_object, border_size=1)
+    blit_sprite(grid, guide_object, x, y)
+
+    # Create a path using the guide object's color
+    # The path will be a simple L-shape or zigzag within the bounds of the grid
+    path_length = np.random.randint(3, 7)
+    for i in range(path_length):
+        grid[x + i, y] = guide_color
+        if i % 2 == 0:
+            grid[x + i, y + 1] = guide_color
+
+    return grid
+```
+
+This implementation creates a puzzle where students must identify a guide object and use its color to draw a line along a specified path. The `generate_input` function stochastically generates different grids with a guide object and a path, ensuring that each example is unique.

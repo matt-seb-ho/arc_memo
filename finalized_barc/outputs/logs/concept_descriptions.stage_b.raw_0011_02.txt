@@ -1,0 +1,66 @@
+Here is a new puzzle based on the concepts of guide object detection and color transfer within a predefined tiling pattern:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object detection, color transfer, tiling pattern
+
+# description:
+# In the input grid, you will see a unique colored guide object on a black background.
+# To create the output grid, use the color of this guide object to fill a predefined checkerboard pattern
+# across the entire grid. The checkerboard pattern alternates between the guide object's color and black.
+
+def main(input_grid):
+    # Detect the unique colored guide object in the grid
+    guide_object = detect_objects(input_grid, monochromatic=True, connectivity=8, colors=Color.NOT_BLACK)[0]
+    guide_color = np.unique(guide_object[guide_object != Color.BLACK])[0]
+
+    # Create an output grid with the same dimensions as the input grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Fill the grid with the checkerboard pattern using the guide object's color
+    for x in range(output_grid.shape[0]):
+        for y in range(output_grid.shape[1]):
+            if (x + y) % 2 == 0:
+                output_grid[x, y] = guide_color
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size
+    width, height = np.random.randint(5, 10, size=2)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly place a unique colored guide object in the grid
+    available_colors = list(Color.NOT_BLACK)
+    guide_color = np.random.choice(available_colors)
+
+    # Place the guide object at a random location
+    guide_x = np.random.randint(0, width)
+    guide_y = np.random.randint(0, height)
+    grid[guide_x, guide_y] = guide_color
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle involves detecting a unique guide object in the input grid and using its color to fill a checkerboard pattern across the grid.
+
+2. **Description**: The input grid contains a single, uniquely colored pixel (the guide object) on a black background. The task is to fill the grid with a checkerboard pattern using the guide object's color.
+
+3. **`main` Function**: 
+   - Detects the guide object using `detect_objects`.
+   - Extracts the color of the guide object.
+   - Fills the output grid with a checkerboard pattern, alternating between the guide object's color and black.
+
+4. **`generate_input` Function**: 
+   - Generates a grid of random size.
+   - Randomly places a uniquely colored guide object in the grid.
+   - Ensures that the rest of the grid is black. 
+
+This setup ensures that the transformation in `main` is deterministic and adheres to the puzzle's description.

@@ -1,0 +1,87 @@
+Let's implement the puzzle based on the given description. We need to identify connected components in a grid, determine their unique colors, and isolate the object with the unique color in the output grid. Below is the code for this puzzle.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# unique color selection, connected components, object identification, guide object
+
+# description:
+# In the input grid, you will see various colored objects. Some objects may share the same color.
+# To make the output grid, identify the object with a unique color (not shared by any other object).
+# Highlight or isolate this guide object based on its unique color, while all other objects remain unchanged.
+
+def main(input_grid):
+    # Find all connected components (objects) in the grid
+    objects = find_connected_components(input_grid, connectivity=8, monochromatic=True)
+    
+    # Determine the color of each object
+    color_counts = {}
+    for obj in objects:
+        # Assume all pixels in a monochromatic object have the same color
+        color = np.unique(obj[obj != Color.BLACK])[0]
+        if color in color_counts:
+            color_counts[color] += 1
+        else:
+            color_counts[color] = 1
+
+    # Find the unique color
+    unique_colors = [color for color, count in color_counts.items() if count == 1]
+
+    # There should be exactly one unique color
+    if len(unique_colors) != 1:
+        raise ValueError("There should be exactly one object with a unique color.")
+
+    unique_color = unique_colors[0]
+
+    # Find the object with the unique color
+    guide_object = next(obj for obj in objects if np.any(obj == unique_color))
+
+    # Create the output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Place the guide object onto the output grid
+    blit_object(output_grid, guide_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Random grid size between 10x10 and 20x20
+    n = np.random.randint(10, 20)
+    input_grid = np.full((n, n), Color.BLACK)
+
+    # Choose a random number of objects to place
+    num_objects = np.random.randint(3, 6)
+
+    # Choose a set of colors to use
+    possible_colors = list(Color.NOT_BLACK)
+    np.random.shuffle(possible_colors)
+    colors_used = possible_colors[:num_objects - 1]
+
+    # Place objects on the grid
+    for _ in range(num_objects - 1):
+        # Randomly generate an object with one of the selected colors
+        obj_color = np.random.choice(colors_used)
+        obj = random_sprite(n=np.random.randint(2, 4), m=np.random.randint(2, 4), color_palette=[obj_color], density=0.7)
+        try:
+            x, y = random_free_location_for_sprite(input_grid, obj, padding=1)
+            blit_sprite(input_grid, obj, x=x, y=y)
+        except ValueError:
+            continue
+
+    # Ensure at least one object with a unique color exists
+    unique_color = possible_colors[num_objects - 1]
+    unique_obj = random_sprite(n=np.random.randint(2, 4), m=np.random.randint(2, 4), color_palette=[unique_color], density=0.7)
+    try:
+        x, y = random_free_location_for_sprite(input_grid, unique_obj, padding=1)
+        blit_sprite(input_grid, unique_obj, x=x, y=y)
+    except ValueError:
+        return generate_input()
+
+    return input_grid
+```
+
+This implementation follows the given description of identifying a unique color object in a grid and isolating it in the output grid. The `generate_input` function creates a stochastic grid that can be used to test the transformation.

@@ -1,0 +1,73 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connected components, recolor, color scheme
+
+# description:
+# In the input grid, detect a single connected object and apply a color scheme to recolor the entire object.
+# The color scheme may be a single color applied uniformly or a logic that determines the color for each part of the object.
+# All other grid elements remain unchanged.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Find the largest connected component in the grid
+    components = find_connected_components(input_grid, connectivity=8, monochromatic=False)
+    largest_component = max(components, key=lambda comp: np.sum(comp != Color.BLACK))
+
+    # Define a color scheme (e.g., a gradient or a single color)
+    color_scheme = [Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.ORANGE]
+
+    # Apply the color scheme to the largest component
+    component_size = np.sum(largest_component != Color.BLACK)
+    step = max(1, component_size // len(color_scheme))
+    
+    output_grid = input_grid.copy()
+    indices = np.argwhere(largest_component != Color.BLACK)
+    
+    for idx, (x, y) in enumerate(indices):
+        color_index = min(idx // step, len(color_scheme) - 1)
+        output_grid[x, y] = color_scheme[color_index]
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    # Create a grid of a random size
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random connected object
+    object_color = np.random.choice(Color.NOT_BLACK)
+    sprite = random_sprite(n=[3, 4, 5], m=[3, 4, 5], color_palette=[object_color], connectivity=8)
+    
+    # Place the object in the grid
+    x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1)
+    blit_sprite(grid, sprite, x=x, y=y)
+
+    # Optionally add some noise or other objects
+    noise_density = 0.1
+    for _ in range(int(noise_density * n * m)):
+        nx, ny = np.random.randint(0, n), np.random.randint(0, m)
+        if grid[nx, ny] == Color.BLACK:
+            grid[nx, ny] = np.random.choice(Color.NOT_BLACK)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle involves understanding connected components and applying a recoloring scheme to one of them.
+
+2. **Main Function**: 
+   - The `main` function identifies the largest connected component from the input grid.
+   - A color scheme is defined, which can be a list of colors (for a gradient effect) or a single color.
+   - The largest component is recolored based on this scheme. The recoloring logic uses a simple step division to apply different colors from the scheme to different parts of the component.
+
+3. **Generate Input Function**:
+   - This function creates a grid of a random size and places a randomly generated connected object within it.
+   - The object is generated with a random color and placed onto the grid using `blit_sprite`.
+   - Some additional noise or objects could be optionally added to increase complexity, ensuring the grid is not too sparse.
+
+This puzzle challenges students to identify connected components and apply a specific color transformation, enhancing their understanding of connected components and color manipulation in grids.

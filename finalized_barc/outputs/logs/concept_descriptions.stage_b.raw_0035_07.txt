@@ -1,0 +1,82 @@
+Here is the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# diagonal movement, zigzag pattern, axis-aligned runs, boundary detection
+
+# description:
+# In the input, you will see a grid with a single seed pixel.
+# To make the output, starting from this seed pixel, create a diagonal zigzag pattern by alternating between horizontal and vertical movements.
+# Move horizontally by a fixed number of pixels (horizontal_step), then vertically by another fixed number (vertical_step), painting each traversed pixel.
+# Continue this pattern until the grid boundary is reached. The result is a staircase-like diagonal composed of axis-aligned segments.
+
+def main(input_grid):
+    # Output grid is the same size as the input grid
+    output_grid = np.zeros_like(input_grid)
+
+    # Detect the seed pixel
+    pixel = find_connected_components(input_grid, monochromatic=True)[0]
+    pixel_color = object_colors(pixel)[0]
+    pixel_x, pixel_y = object_position(pixel)
+
+    # Define horizontal and vertical step sizes
+    horizontal_step = 3
+    vertical_step = 2
+
+    # Start from the seed pixel
+    x, y = pixel_x, pixel_y
+
+    # Create the zigzag pattern
+    while True:
+        # Move horizontally
+        for _ in range(horizontal_step):
+            if x >= output_grid.shape[0]:
+                return output_grid
+            output_grid[x, y] = pixel_color
+            x += 1
+
+        # Move vertically
+        for _ in range(vertical_step):
+            if y >= output_grid.shape[1]:
+                return output_grid
+            output_grid[x - 1, y] = pixel_color
+            y += 1
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random dimensions
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Randomly choose the color of the seed pixel
+    seed_pixel_color = np.random.choice(Color.NOT_BLACK)
+
+    # Randomly place the seed pixel within the grid
+    x = np.random.randint(0, n // 2)  # Place seed pixel in the left half
+    y = np.random.randint(0, m // 2)  # Place seed pixel in the top half
+    grid[x, y] = seed_pixel_color
+
+    return grid
+```
+
+**Explanation:**
+
+1. **Concepts and Description:**
+   - The puzzle involves creating a diagonal zigzag pattern starting from a seed pixel.
+   - The pattern alternates between horizontal and vertical movements until it reaches the grid boundary.
+
+2. **Main Function:**
+   - Determines the position of the seed pixel and its color.
+   - Implements a loop to alternate between horizontal and vertical movements, creating a zigzag pattern.
+   - Stops when the boundary of the grid is reached.
+
+3. **Generate Input Function:**
+   - Creates a grid with random dimensions.
+   - Places a single seed pixel randomly in the left and top half of the grid to ensure space for zigzag pattern generation.
+   - Randomly assigns a color to the seed pixel.

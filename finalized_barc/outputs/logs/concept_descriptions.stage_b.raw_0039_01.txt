@@ -1,0 +1,87 @@
+Here's a new puzzle inspired by the given concepts of obstacles, path blocking, and line drawing:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# obstacles, path blocking, line drawing
+
+# description:
+# In the input grid, you will see two distinct points: a green start point and a red end point, along with multiple irregular-shaped obstacles in grey.
+# The task is to draw a continuous line from the green start point to the red end point, avoiding the grey obstacles. The line should not touch or pass through any obstacle.
+# The line should take the shortest possible path, moving horizontally or vertically, and it can only turn 90 degrees at a time.
+
+def main(input_grid):
+    # The output grid is the same size as the input grid, and we are going to draw on top of the input, so we copy it
+    output_grid = input_grid.copy()
+    width, height = input_grid.shape
+
+    # Identify the start (green) and end (red) points
+    start_x, start_y = np.argwhere(input_grid == Color.GREEN)[0]
+    end_x, end_y = np.argwhere(input_grid == Color.RED)[0]
+
+    # Identify the grey obstacles
+    obstacles = (input_grid == Color.GREY)
+    
+    # Use BFS for shortest path finding, avoiding obstacles
+    from collections import deque
+    queue = deque([(start_x, start_y)])
+    visited = { (start_x, start_y): None }  # To track the path
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Right, Down, Left, Up
+
+    while queue:
+        x, y = queue.popleft()
+        if (x, y) == (end_x, end_y):
+            break
+        
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < width and 0 <= ny < height and (nx, ny) not in visited and not obstacles[nx, ny]:
+                queue.append((nx, ny))
+                visited[(nx, ny)] = (x, y)
+
+    # Backtrack from end point to start point to draw the path on the grid
+    current = (end_x, end_y)
+    path = []
+    while current is not None:
+        path.append(current)
+        current = visited[current]
+
+    # Draw the path in a specific color (e.g., BLUE)
+    for x, y in path:
+        output_grid[x, y] = Color.BLUE
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of random size between 10x10 and 15x15
+    n, m = np.random.randint(10, 15, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Place the start (green) and end (red) points
+    start_x, start_y = np.random.randint(0, n), np.random.randint(0, m)
+    end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+    while (end_x, end_y) == (start_x, start_y):
+        end_x, end_y = np.random.randint(0, n), np.random.randint(0, m)
+
+    grid[start_x, start_y] = Color.GREEN
+    grid[end_x, end_y] = Color.RED
+
+    # Randomly scatter grey obstacles
+    obstacle_density = np.random.uniform(0.1, 0.3)  # 10% to 30% of the grid can be obstacles
+    randomly_scatter_points(grid, color=Color.GREY, density=obstacle_density, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts and Description:** The puzzle involves detecting obstacles and drawing a path from a start to an end point while avoiding these obstacles. The line can only move vertically or horizontally and cannot pass through any obstacles.
+
+2. **Main Function (`main`):** This function takes the input grid, identifies start and end points, and uses BFS to find the shortest path avoiding obstacles. It then draws the path using a specific color (blue in this example).
+
+3. **Input Generator (`generate_input`):** This function creates a randomized grid with a start and end point, and populates it with randomly scattered obstacles. The start and end points are ensured to be distinct, and obstacle density is controlled to ensure a solvable puzzle.

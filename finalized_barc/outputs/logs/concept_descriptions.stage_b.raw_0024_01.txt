@@ -1,0 +1,74 @@
+Here's a new puzzle implementation based on the provided concepts and description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# In the input grid, you will find several connected objects of various colors. One of these objects will be marked with a special color.
+# The task is to recolor the entire marked object using a specific color scheme: alternating colors in a checkerboard pattern. 
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all the objects in the grid
+    objects = find_connected_components(input_grid, connectivity=8)
+
+    # Identify the marked object
+    marked_color = Color.MAROON  # Assume MAROON is the special color marking the object
+    marked_object = None
+    for obj in objects:
+        if np.any(obj == marked_color):
+            marked_object = obj
+            break
+
+    # Apply checkerboard pattern to the marked object
+    output_grid = input_grid.copy()
+    if marked_object is not None:
+        x, y, w, h = bounding_box(marked_object, background=Color.BLACK)
+        for i in range(x, x + w):
+            for j in range(y, y + h):
+                if marked_object[i - x, j - y] != Color.BLACK:
+                    if (i + j) % 2 == 0:
+                        output_grid[i, j] = Color.RED  # First color of the checkerboard pattern
+                    else:
+                        output_grid[i, j] = Color.BLUE  # Second color of the checkerboard pattern
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with random objects
+    n, m = np.random.randint(10, 15), np.random.randint(10, 15)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Create several random objects
+    num_objects = np.random.randint(2, 5)
+    for _ in range(num_objects):
+        obj = random_sprite(np.random.randint(3, 6), np.random.randint(3, 6), color_palette=Color.NOT_BLACK)
+        x, y = random_free_location_for_sprite(grid, obj, padding=1)
+        blit_sprite(grid, obj, x, y)
+
+    # Mark one object with the special color
+    objects = find_connected_components(grid, connectivity=8)
+    marked_obj = np.random.choice(objects)
+    for i in range(marked_obj.shape[0]):
+        for j in range(marked_obj.shape[1]):
+            if marked_obj[i, j] != Color.BLACK:
+                marked_obj[i, j] = Color.MAROON
+
+    # Blit the marked object back into the grid
+    x, y, _, _ = bounding_box(marked_obj, background=Color.BLACK)
+    blit_object(grid, marked_obj, background=Color.BLACK)
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: This puzzle focuses on identifying connected components and applying a recolor transformation in a checkerboard pattern.
+2. **Description**: The grid contains several objects, one of which is marked with a special color (MAROON). The task is to recolor this object in a checkerboard pattern, alternating between RED and BLUE, while leaving other grid elements unchanged.
+3. **`main` Function**: It finds the marked object by detecting connected components, applies the checkerboard recolor to it, and returns the transformed grid.
+4. **`generate_input` Function**: It generates a grid with random objects and marks one object with the MAROON color to ensure there's always an object to transform. This function creates varied inputs for testing the puzzle.

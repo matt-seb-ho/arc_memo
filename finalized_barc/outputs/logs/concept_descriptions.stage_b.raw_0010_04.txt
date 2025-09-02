@@ -1,0 +1,61 @@
+Let's design a new puzzle based on the guide object and position-based transformation concept. The idea is to locate a guide object within the grid and perform a transformation starting from its position. For this puzzle, we'll define the transformation as "mirroring" the entire grid around the guide object's position.
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, mirroring, position-based transformation
+
+# description:
+# In the input, you will find a grid containing a single teal pixel, which serves as the guide object.
+# The task is to reflect the entire grid around the teal pixel's position, creating a mirrored version of the grid.
+# The output should be a mirrored grid, with the teal pixel's position acting as the axis of reflection.
+
+def main(input_grid):
+    # Find the position of the guide object (teal pixel)
+    teal_x, teal_y = np.argwhere(input_grid == Color.TEAL)[0]
+
+    # Create the output grid by mirroring the input grid around the teal pixel's position
+    output_grid = input_grid.copy()
+    n, m = input_grid.shape
+
+    # Reflect horizontally around the teal pixel
+    for i in range(n):
+        for j in range(m):
+            # Calculate the mirrored position
+            mirrored_x = 2 * teal_x - i
+            mirrored_y = 2 * teal_y - j
+
+            # Check if the mirrored position is within bounds
+            if 0 <= mirrored_x < n and 0 <= mirrored_y < m:
+                output_grid[mirrored_x, mirrored_y] = input_grid[i, j]
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid of random size with random colored pixels
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+
+    # Place a single teal pixel within the grid as the guide object
+    teal_x, teal_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[teal_x, teal_y] = Color.TEAL
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: The puzzle involves identifying a guide object (a teal pixel) and performing a mirroring transformation based on its position.
+   
+2. **Description**: The input is a grid with a single teal pixel acting as the guide. The task is to reflect the grid around this teal pixel, creating a mirrored image of the grid. The teal pixel remains in the same position in the output.
+
+3. **Implementation Details**:
+   - **`main` function**: It identifies the guide object (teal pixel) and mirrors the grid around its position. The mirroring involves calculating the mirrored position for each pixel and placing its color in the corresponding mirrored location in the output grid.
+   - **`generate_input` function**: It creates a randomized grid with a randomized size and fills it with random colors. A single teal pixel is then placed at a random position to serve as the guide object.
+
+This puzzle requires understanding the concept of reflection and using spatial reasoning to determine how each pixel's position changes in a mirrored transformation.

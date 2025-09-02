@@ -1,0 +1,101 @@
+Let's create a new puzzle based on the provided description. We'll focus on the concept of identifying enclosed regions, or "holes," within a single enclosing object, and filling those holes with a specific color.
+
+Here's the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input is a grid with a single object that encloses empty spaces (holes). The task is to identify the holes as regions of the background color (0)
+# that are fully enclosed by the object and do not touch the grid border. Using a flood-fill algorithm from the border, we exclude non-enclosed regions.
+# The output should be the grid with these holes filled by a target color, while preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create a copy of the input grid to work on.
+    output_grid = input_grid.copy()
+
+    # Use flood-fill from the edges to mark regions that are not holes.
+    flood_fill_from_edges(output_grid)
+
+    # Find the connected components that are still marked as the background color.
+    holes = find_connected_components(output_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+
+    # Fill these regions with the target color, e.g., Color.RED.
+    target_color = Color.RED
+    for hole in holes:
+        if is_completely_enclosed(hole, input_grid.shape):
+            fill_hole(hole, target_color)
+            blit_object(output_grid, hole, background=Color.BLACK)
+
+    return output_grid
+
+def flood_fill_from_edges(grid):
+    # Start flood-fill from each edge of the grid to mark non-enclosed regions.
+    for x in range(grid.shape[0]):
+        if grid[x, 0] == Color.BLACK:
+            flood_fill(grid, x, 0)
+        if grid[x, grid.shape[1] - 1] == Color.BLACK:
+            flood_fill(grid, x, grid.shape[1] - 1)
+    for y in range(grid.shape[1]):
+        if grid[0, y] == Color.BLACK:
+            flood_fill(grid, 0, y)
+        if grid[grid.shape[0] - 1, y] == Color.BLACK:
+            flood_fill(grid, grid.shape[0] - 1, y)
+
+def flood_fill(grid, x, y):
+    # Perform flood-fill from (x, y) marking visited cells with a special marker.
+    stack = [(x, y)]
+    while stack:
+        cx, cy = stack.pop()
+        if 0 <= cx < grid.shape[0] and 0 <= cy < grid.shape[1] and grid[cx, cy] == Color.BLACK:
+            grid[cx, cy] = -1  # Use a special marker for visited cells
+            stack.extend([(cx + dx, cy + dy) for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]])
+
+def is_completely_enclosed(component, grid_shape):
+    # Check if the component does not touch the edges of the grid.
+    for (x, y) in np.argwhere(component):
+        if x == 0 or y == 0 or x == grid_shape[0] - 1 or y == grid_shape[1] - 1:
+            return False
+    return True
+
+def fill_hole(hole, color):
+    # Fill the hole with the specified color.
+    hole[hole != Color.BLACK] = color
+
+def generate_input():
+    # Create a grid with a single enclosing object and random holes.
+    n = np.random.randint(10, 20)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Create an enclosing object.
+    enclosing_object = random_sprite(n-2, n-2, color_palette=[Color.BLUE], connectivity=8)
+    x, y = random_free_location_for_sprite(grid, enclosing_object, border_size=1)
+    blit_sprite(grid, enclosing_object, x, y)
+
+    # Create random holes inside the enclosing object.
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, 4)
+        hole = np.full((hole_size, hole_size), Color.BLACK)
+        hx, hy = random_free_location_for_sprite(enclosing_object, hole, padding=1, background=Color.BLUE)
+        blit_sprite(enclosing_object, hole, hx, hy)
+
+    return grid
+```
+
+### Explanation:
+1. **Concepts**: This puzzle introduces the concepts of identifying holes within an enclosed object, using flood-fill to mark non-enclosed areas, and connected components to find enclosed areas.
+2. **Main Function**: 
+   - Flood-fills from the edges to mark non-enclosed regions.
+   - Identifies holes as background regions not marked by flood-fill.
+   - Fills these holes with a target color while preserving the enclosing structure.
+3. **Generate Input**: 
+   - Creates a grid with a single enclosing object and randomly placed holes that don't touch the grid borders, ensuring they are fully enclosed.
+
+This problem encourages students to explore flood-fill algorithms and connected components in a 2D grid, providing a fun and challenging puzzle involving spatial reasoning and algorithmic thinking.

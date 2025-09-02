@@ -1,0 +1,52 @@
+Here's an implementation of the puzzle based on the description you provided. This puzzle involves creating a boolean mask by evaluating a predicate on each cell in a grid region. The resulting mask serves as a template for identifying the pattern in other grid regions.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# boolean mask, predicate evaluation, pattern recognition, template creation
+
+# description:
+# The input is a grid region (block) and a predicate function. The task is to evaluate the predicate at each cell in the block 
+# to produce a boolean mask, where each mask cell is True if the predicate is satisfied at that location, otherwise False. 
+# This mask serves as a reusable template for identifying the pattern in other grid regions.
+
+def main(input_grid):
+    # Define a sample predicate function: Check if the color is not black
+    def predicate(color):
+        return color != Color.BLACK
+
+    # Create a boolean mask by evaluating the predicate at each grid cell
+    mask = np.array([
+        [predicate(input_grid[x, y]) for y in range(input_grid.shape[1])]
+        for x in range(input_grid.shape[0])
+    ])
+
+    return mask
+
+def generate_input():
+    # Randomly generate a grid size
+    width, height = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly scatter colors across the grid
+    for color in np.random.choice(list(Color.NOT_BLACK), size=np.random.randint(3, 6), replace=False):
+        randomly_scatter_points(grid, color=color, density=0.3)
+
+    return grid
+```
+
+### Explanation:
+
+- **`main` function**: 
+  - Defines a predicate function that evaluates whether the color of a grid cell is not black.
+  - Constructs a boolean mask by applying this predicate to each cell in the input grid. The mask will have `True` where the predicate is satisfied (i.e., the cell is not black) and `False` otherwise.
+
+- **`generate_input` function**:
+  - Creates a grid of random size filled initially with black.
+  - Randomly scatters a selection of colors across the grid to ensure there are colored cells to evaluate with the predicate.
+
+This puzzle challenges middle-schoolers to understand how predicates (logical conditions) can be applied across a grid to produce a meaningful pattern or template that can be reused or analyzed further.

@@ -1,0 +1,91 @@
+Below, I've implemented the puzzle as described. The puzzle involves identifying holes in an object within a grid and marking those holes with a different color. The `generate_input` function creates grids with random objects that have potential holes, and the `main` function processes the grid to identify and mark the holes.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, enclosed regions, flood-fill, connected components
+
+# description:
+# The input grid contains a single object that can enclose empty spaces (holes). 
+# The task is to identify holes, which are regions of background-color (0) that are fully enclosed by the object and not touching the grid border. 
+# Use flood-fill from the border to exclude non-enclosed regions. 
+# The output is the grid where the holes are marked or filled by a target object or color, while preserving the enclosing object and other non-hole regions.
+
+def main(input_grid):
+    # Create a copy of the input grid to use as the output grid
+    output_grid = input_grid.copy()
+
+    # Use flood-fill from the border to mark all regions connected to the border
+    border_filled = flood_fill_from_border(input_grid)
+
+    # Find the holes by identifying regions that are not part of the border-flooded area and are background
+    holes = (input_grid == Color.BLACK) & ~border_filled
+
+    # Fill the holes with a target color, e.g., Color.RED
+    output_grid[holes] = Color.RED
+
+    return output_grid
+
+def flood_fill_from_border(grid):
+    # Initialize a mask for the border-flooded areas
+    # Start with a mask of False (background)
+    border_filled = np.zeros(grid.shape, dtype=bool)
+
+    # Flood-fill from each edge of the grid
+    for x in range(grid.shape[0]):
+        flood_fill(grid, border_filled, x, 0)
+        flood_fill(grid, border_filled, x, grid.shape[1] - 1)
+
+    for y in range(grid.shape[1]):
+        flood_fill(grid, border_filled, 0, y)
+        flood_fill(grid, border_filled, grid.shape[0] - 1, y)
+
+    return border_filled
+
+def flood_fill(grid, mask, x, y):
+    # If the pixel is out of bounds or already filled or not background, return
+    if not (0 <= x < grid.shape[0] and 0 <= y < grid.shape[1]):
+        return
+    if mask[x, y] or grid[x, y] != Color.BLACK:
+        return
+
+    # Mark the current pixel as filled
+    mask[x, y] = True
+
+    # Recurse in all 4 directions (up, down, left, right)
+    flood_fill(grid, mask, x + 1, y)
+    flood_fill(grid, mask, x - 1, y)
+    flood_fill(grid, mask, x, y + 1)
+    flood_fill(grid, mask, x, y - 1)
+
+def generate_input():
+    # Create a grid of size 10x10 to 20x20
+    n = np.random.randint(10, 21)
+    grid = np.full((n, n), Color.BLACK)
+
+    # Generate a single large object with potential holes
+    object_height = np.random.randint(5, n - 3)
+    object_width = np.random.randint(5, n - 3)
+    object_x = np.random.randint(1, n - object_height - 1)
+    object_y = np.random.randint(1, n - object_width - 1)
+
+    object_grid = np.full((object_height, object_width), np.random.choice(Color.NOT_BLACK))
+    grid[object_x:object_x + object_height, object_y:object_y + object_width] = object_grid
+
+    # Create random enclosed holes within the object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_height = np.random.randint(1, object_height - 2)
+        hole_width = np.random.randint(1, object_width - 2)
+        hole_x = np.random.randint(object_x + 1, object_x + object_height - hole_height - 1)
+        hole_y = np.random.randint(object_y + 1, object_y + object_width - hole_width - 1)
+        grid[hole_x:hole_x + hole_height, hole_y:hole_y + hole_width] = Color.BLACK
+
+    return grid
+```
+
+This implementation covers the entire process of identifying and marking enclosed holes in an object within a grid. The `generate_input` function creates various configurations of objects and holes, ensuring a variety of test cases for the puzzle.

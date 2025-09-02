@@ -1,0 +1,56 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# boolean mask, predicate evaluation, pattern recognition, template creation
+
+# description:
+# The input is a grid region (block) and a predicate function. For each cell in the block, evaluate the predicate to produce a boolean mask. 
+# The mask will have True at locations where the predicate is satisfied, otherwise False. This mask acts as a template for identifying patterns.
+
+def main(input_grid, predicate):
+    # Create a boolean mask of the same shape as the input grid
+    mask = np.full(input_grid.shape, False)
+
+    # Evaluate the predicate at each cell in the grid
+    for i in range(input_grid.shape[0]):
+        for j in range(input_grid.shape[1]):
+            if predicate(input_grid[i, j]):
+                mask[i, j] = True
+
+    return mask
+
+def generate_input():
+    # Generate a grid of random size between 5x5 and 20x20
+    n, m = np.random.randint(5, 20, size=2)
+    grid = np.random.choice(list(Color.NOT_BLACK), size=(n, m))
+
+    # Define a random predicate function
+    color_to_match = np.random.choice(list(Color.NOT_BLACK))
+    def predicate(color):
+        return color == color_to_match
+
+    return grid, predicate
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle involves understanding and working with boolean masks, predicate functions, and pattern recognition within a grid of colors.
+
+2. **Description**: 
+   - The input to the `main` function is a 2D grid of colors and a predicate function.
+   - The goal is to evaluate the predicate at each cell in the grid, creating a boolean mask that is `True` wherever the predicate holds and `False` otherwise.
+   - This mask is useful as a template for identifying patterns or features in other grids.
+
+3. **Main Function**: 
+   - The `main` function iterates over each cell in the input grid.
+   - It applies the predicate function to determine if each cell satisfies the condition.
+   - The result is stored in a boolean mask of the same dimensions as the input grid.
+
+4. **Generate Input**:
+   - The `generate_input` function creates a random-sized grid filled with random colors.
+   - It also defines a random predicate function that checks if a cell's color matches a randomly chosen target color.
+   - This setup provides varied input examples for the transformation function.

@@ -1,0 +1,98 @@
+Here is the implementation of the new puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# holes, filling, guide object, target object, optimization
+
+# description:
+# In the input grid, you will see a guide object (a larger shape with holes) and a target object (a smaller shape that can be used for filling).
+# The goal is to fill the holes in the guide object using the target object in a Tetris-style manner. The target object can be rotated or flipped to achieve the best fit.
+# The objective is to maximize the filled area within the guide object without altering its structure.
+
+def main(input_grid):
+    # Plan:
+    # 1. Identify the guide object and the target object from the grid.
+    # 2. Find and mark the holes inside the guide object.
+    # 3. Attempt to fit the target object into the holes as optimally as possible.
+    # 4. Return the grid with the holes filled by the target object.
+    
+    # Identify objects in the input grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=False)
+    
+    # Assume the largest object is the guide and the second largest is the target
+    objects = sorted(objects, key=lambda obj: np.sum(obj != Color.BLACK), reverse=True)
+    guide_object = objects[0]
+    target_object = objects[1]
+    
+    # Extract the mask for the guide object
+    guide_mask = guide_object != Color.BLACK
+    
+    # Find holes in the guide object
+    interior = object_interior(guide_object, background=Color.BLACK)
+    holes = interior & ~guide_mask
+    
+    # Prepare the output grid
+    output_grid = input_grid.copy()
+    
+    # Attempt to fill holes with the target object
+    target_sprite = crop(target_object)
+    target_variants = [target_sprite, np.rot90(target_sprite), np.rot90(target_sprite, 2), np.rot90(target_sprite, 3),
+                       np.fliplr(target_sprite), np.flipud(target_sprite)]
+    
+    # Iterate over each hole and try to place the target object
+    for hole_x, hole_y in np.argwhere(holes):
+        best_fit = None
+        for variant in target_variants:
+            try:
+                # Try blitting the variant into the hole
+                blit_sprite(output_grid, variant, hole_x, hole_y, background=Color.BLACK)
+                # If successful, mark as best fit
+                best_fit = variant
+                break
+            except ValueError:
+                pass
+        
+        # If a best fit was found, update the grid
+        if best_fit is not None:
+            blit_sprite(output_grid, best_fit, hole_x, hole_y, background=Color.BLACK)
+    
+    return output_grid
+
+def generate_input():
+    n, m = np.random.randint(15, 20, size=2)
+    input_grid = np.full((n, m), Color.BLACK)
+    
+    # Create a guide object with holes
+    guide_width, guide_height = np.random.randint(8, 12, size=2)
+    guide_sprite = random_sprite(guide_width, guide_height, color_palette=[Color.GREY], background=Color.BLACK, symmetry='not_symmetric')
+    
+    # Create holes in the guide object
+    num_holes = np.random.randint(2, 4)
+    for _ in range(num_holes):
+        hole_width, hole_height = np.random.randint(1, 3, size=2)
+        hole_sprite = np.full((hole_width, hole_height), Color.BLACK)
+        hole_x, hole_y = random_free_location_for_sprite(guide_sprite, hole_sprite, background=Color.GREY, border_size=1)
+        blit_sprite(guide_sprite, hole_sprite, hole_x, hole_y, background=Color.GREY)
+    
+    # Place the guide object on the grid
+    guide_x, guide_y = random_free_location_for_sprite(input_grid, guide_sprite, padding=1, border_size=1)
+    blit_sprite(input_grid, guide_sprite, guide_x, guide_y, background=Color.BLACK)
+    
+    # Create a target object
+    target_width, target_height = np.random.randint(2, 4, size=2)
+    target_color = np.random.choice([c for c in Color.NOT_BLACK if c != Color.GREY])
+    target_sprite = random_sprite(target_width, target_height, color_palette=[target_color], background=Color.BLACK)
+    
+    # Place the target object on the grid
+    target_x, target_y = random_free_location_for_sprite(input_grid, target_sprite, padding=1)
+    blit_sprite(input_grid, target_sprite, target_x, target_y, background=Color.BLACK)
+    
+    return input_grid
+```
+
+This implementation follows the puzzle description by creating a guide object with holes and a target object that can be used to fill these holes. The `main` function attempts to optimally fill the holes using various transformations of the target object. The `generate_input` function creates a random input grid with these objects.

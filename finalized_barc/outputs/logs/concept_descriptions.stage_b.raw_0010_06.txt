@@ -1,0 +1,73 @@
+Here's a new puzzle implementation based on the given description about guide objects and position-based transformation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, position-based transformation
+
+# description:
+# In the input grid, there is one teal-colored guide object. The task is to find this guide object and use its position as the starting point.
+# From this starting point, transform all pixels in the grid to be the color of the pixel at the mirrored position across the guide object.
+# The output should have the same dimensions as the input.
+
+def main(input_grid):
+    # Find the teal object, which serves as the guide object
+    teal_objects = detect_objects(input_grid, colors=[Color.TEAL], monochromatic=True, connectivity=4)
+    assert len(teal_objects) == 1, "There should be exactly one teal guide object in the input grid"
+    
+    # Get the position of the teal guide object
+    teal_object = teal_objects[0]
+    teal_x, teal_y, _, _ = bounding_box(teal_object, background=Color.BLACK)
+    
+    # Create a new grid for the output with the same dimensions as the input
+    output_grid = np.copy(input_grid)
+    
+    # Iterate over each pixel in the grid
+    for x in range(input_grid.shape[0]):
+        for y in range(input_grid.shape[1]):
+            # Find the mirrored position across the guide object
+            mirrored_x = 2 * teal_x - x
+            mirrored_y = 2 * teal_y - y
+
+            # Ensure mirrored positions are within bounds
+            if 0 <= mirrored_x < input_grid.shape[0] and 0 <= mirrored_y < input_grid.shape[1]:
+                # Set the color of the current position to the color of its mirrored position
+                output_grid[x, y] = input_grid[mirrored_x, mirrored_y]
+    
+    return output_grid
+
+def generate_input():
+    # Create a grid with random dimensions between 5x5 and 10x10
+    n, m = np.random.randint(5, 11), np.random.randint(5, 11)
+    input_grid = np.full((n, m), Color.BLACK, dtype=int)
+
+    # Generate a random sprite to serve as the guide object, ensure it's a teal color
+    guide_sprite = np.full((1, 1), Color.TEAL)
+
+    # Place the teal guide object randomly in the grid
+    x, y = random_free_location_for_sprite(input_grid, guide_sprite, border_size=0, padding=0, background=Color.BLACK)
+    blit_sprite(input_grid, guide_sprite, x, y)
+
+    # Fill the rest of the grid with random colors
+    for i in range(n):
+        for j in range(m):
+            if input_grid[i, j] == Color.BLACK:
+                input_grid[i, j] = np.random.choice(list(Color.NOT_BLACK))
+
+    return input_grid
+```
+
+### Explanation:
+
+- **Concepts:**
+  - **Guide Object:** The teal-colored object serves as a reference point for transformations.
+  - **Position-Based Transformation:** The transformation is determined based on the position of pixels relative to the guide object.
+
+- **Description:**
+  - The input grid contains exactly one teal-colored guide object.
+  - The task is to transform the grid such that each pixel's color is replaced by the color of its mirrored position across the guide object.
+  - The output maintains the same dimensions as the input, ensuring a deterministic transformation based on the guide object's position.

@@ -1,0 +1,71 @@
+Let's implement the described puzzle involving L-shape detection on a 2x2 grid. We'll focus on identifying which corner is unoccupied by the L-shape and output the orientation as "tl", "tr", "bl", or "br".
+
+Here's the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# The input is a 2x2 grid containing a dominant L-shaped triomino (3 pixels).
+# The grid has noise, but the L-shape is clearly discernible.
+# Identify which of the four corners (top-left, top-right, bottom-left, bottom-right) is unoccupied by the L-shape.
+# Output the orientation as one of "tl", "tr", "bl", or "br" corresponding to the missing corner.
+
+def main(input_grid):
+    # Count the number of non-black pixels in each corner
+    top_left = input_grid[0, 0] != Color.BLACK
+    top_right = input_grid[0, 1] != Color.BLACK
+    bottom_left = input_grid[1, 0] != Color.BLACK
+    bottom_right = input_grid[1, 1] != Color.BLACK
+    
+    # Use the pattern of occupied corners to determine the missing corner
+    if not top_left:
+        return np.array([["tl"]], dtype=object)
+    elif not top_right:
+        return np.array([["tr"]], dtype=object)
+    elif not bottom_left:
+        return np.array([["bl"]], dtype=object)
+    elif not bottom_right:
+        return np.array([["br"]], dtype=object)
+
+def generate_input():
+    # Create a 2x2 grid with an L-shaped triomino
+    grid = np.full((2, 2), Color.BLACK, dtype=int)
+    
+    # Choose which corner will be missing (i.e., not part of the L-shape)
+    missing_corner = np.random.choice(["tl", "tr", "bl", "br"])
+    
+    # Fill the L-shape into the grid based on the missing corner
+    if missing_corner != "tl":
+        grid[0, 0] = np.random.choice(list(Color.NOT_BLACK))
+    if missing_corner != "tr":
+        grid[0, 1] = np.random.choice(list(Color.NOT_BLACK))
+    if missing_corner != "bl":
+        grid[1, 0] = np.random.choice(list(Color.NOT_BLACK))
+    if missing_corner != "br":
+        grid[1, 1] = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Introduce some noise by randomly changing one cell to another color
+    # if there is a free cell to introduce noise
+    if missing_corner == "tl":
+        grid[1, 1] = np.random.choice(list(Color.NOT_BLACK))
+    elif missing_corner == "tr":
+        grid[1, 0] = np.random.choice(list(Color.NOT_BLACK))
+    elif missing_corner == "bl":
+        grid[0, 1] = np.random.choice(list(Color.NOT_BLACK))
+    elif missing_corner == "br":
+        grid[0, 0] = np.random.choice(list(Color.NOT_BLACK))
+    
+    return grid
+```
+
+In this implementation:
+- `main` identifies the unoccupied corner by checking which corner has a `Color.BLACK` value.
+- `generate_input` creates a 2x2 grid with one corner left as `Color.BLACK` and the other three filled with random colors.
+- Noise is introduced by coloring a normally unoccupied cell when possible, ensuring the L-shape remains dominant.

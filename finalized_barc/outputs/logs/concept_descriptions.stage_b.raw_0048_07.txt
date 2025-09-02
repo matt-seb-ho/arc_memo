@@ -1,0 +1,81 @@
+Here's the implementation for the described puzzle involving color runs, recoloring, bounding box, and symmetry:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# color runs, recolor, bounding box, symmetry
+
+# description:
+# Identify contiguous horizontal or vertical runs of cyan (color=4) in the grid. For each run, compute k as the minimum of 3 or half the run's length (rounded down). 
+# Recolor the first k and last k cells of each run to yellow (color=3), leaving the interior cells unchanged. This transformation applies symmetrically to both ends of each cyan run, 
+# capping them with yellow while preserving the run's central portion.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    output_grid = np.copy(input_grid)
+    
+    # Process horizontal runs
+    for i in range(input_grid.shape[0]):
+        j = 0
+        while j < input_grid.shape[1]:
+            if input_grid[i, j] == Color.TEAL:
+                start = j
+                while j < input_grid.shape[1] and input_grid[i, j] == Color.TEAL:
+                    j += 1
+                end = j
+                run_length = end - start
+                k = min(3, run_length // 2)
+                output_grid[i, start:start+k] = Color.YELLOW
+                output_grid[i, end-k:end] = Color.YELLOW
+            else:
+                j += 1
+
+    # Process vertical runs
+    for j in range(input_grid.shape[1]):
+        i = 0
+        while i < input_grid.shape[0]:
+            if input_grid[i, j] == Color.TEAL:
+                start = i
+                while i < input_grid.shape[0] and input_grid[i, j] == Color.TEAL:
+                    i += 1
+                end = i
+                run_length = end - start
+                k = min(3, run_length // 2)
+                output_grid[start:start+k, j] = Color.YELLOW
+                output_grid[end-k:end, j] = Color.YELLOW
+            else:
+                i += 1
+
+    return output_grid
+
+def generate_input() -> np.ndarray:
+    n, m = np.random.randint(5, 15, size=2)  # Random grid size between 5x5 and 15x15
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Randomly place some horizontal and vertical runs of TEAL
+    num_runs = np.random.randint(1, 6)  # Random number of runs between 1 and 5
+    run_length_min, run_length_max = 4, 10  # Run lengths between 4 and 10
+    
+    for _ in range(num_runs):
+        if np.random.rand() < 0.5:  # 50% chance to place a horizontal run
+            row = np.random.randint(0, n)
+            start_col = np.random.randint(0, m - run_length_min)
+            length = np.random.randint(run_length_min, min(run_length_max, m - start_col + 1))
+            grid[row, start_col:start_col+length] = Color.TEAL
+        else:  # 50% chance to place a vertical run
+            col = np.random.randint(0, m)
+            start_row = np.random.randint(0, n - run_length_min)
+            length = np.random.randint(run_length_min, min(run_length_max, n - start_row + 1))
+            grid[start_row:start_row+length, col] = Color.TEAL
+
+    return grid
+```
+
+### Explanation
+- **`main` Function:** This function processes the input grid to identify and transform runs of Color.TEAL (cyan) by capping them with Color.YELLOW (yellow) at both ends. The transformation is applied symmetrically to horizontal and vertical runs.
+- **`generate_input` Function:** This function generates a grid with random size and populates it with random horizontal and vertical runs of Color.TEAL. The runs have a length between 4 and 10.
+
+This puzzle encourages exploration of detecting and transforming contiguous colored runs in a grid, emphasizing symmetry and color manipulation.

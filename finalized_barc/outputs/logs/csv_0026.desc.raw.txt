@@ -1,0 +1,4 @@
+```python
+# concepts: divider lines, region extraction, array slicing
+# description: Input is a grid potentially divided into distinct regions by horizontal or vertical lines of a specific color. Identify these divider lines and use them to segment the grid into separate regions. Each region is extracted as a subgrid, excluding the divider lines themselves. Output is a list of these subgrids, preserving their original content and relative order.
+```

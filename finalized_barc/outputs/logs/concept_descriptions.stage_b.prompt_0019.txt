@@ -1,0 +1,462 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+unique color identification, guide object selection, connected components
+
+Description: 
+Input consists of multiple distinct objects on a grid, each with a unique color. Identify the guide object as the one whose color is not shared by any other object in the grid. The output is a transformation where the guide object is selected based on its unique color, while all other objects remain unchanged.
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_object(grid, obj, background=Color.BLACK):
+    """
+    Draws an object onto the grid using its current location.
+
+    Example usage:
+    blit_object(output_grid, an_object, background=background_color)
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def object_colors(obj, background=Color.BLACK):
+    """
+    Returns a list of colors in the object.
+
+    Example usage:
+    colors = object_colors(obj, background=background_color)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def object_interior(grid, background=Color.BLACK):
+    """
+    Computes the interior of the object (including edges)
+
+    returns a new grid of `bool` where True indicates that the pixel is part of the object's interior.
+
+    Example usage:
+    interior = object_interior(obj, background=Color.BLACK)
+    for x, y in np.argwhere(interior):
+        # x,y is either inside the object or at least on its edge
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+def detect_objects(grid, _=None, predicate=None, background=Color.BLACK, monochromatic=False, connectivity=None, allowed_dimensions=None, colors=None, can_overlap=False):
+    """
+    Detects and extracts objects from the grid that satisfy custom specification.
+
+    predicate: a function that takes a candidate object as input and returns True if it counts as an object
+    background: color treated as transparent
+    monochromatic: if True, each object is assumed to have only one color. If False, each object can include multiple colors.
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. If None, the connectivity is determined automatically.
+    allowed_dimensions: a list of tuples (n, m) specifying the allowed dimensions of the objects. If None, objects of any size are allowed.
+    colors: a list of colors that the objects are allowed to have. If None, objects of any color are allowed.
+    can_overlap: if True, objects can overlap. If False, objects cannot overlap.
+
+    Returns a list of objects, where each object is a numpy array.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# same/different, color change, containment
+
+# description:
+# In the input you will see some monochromatic objects. Some of them will be contained by a grey box, and some of them will not.
+# To make the output, take each shape contained inside a grey box, and find any other shapes with the same shape (but a different color), and change their color to match the color of the shape inside the grey box.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the objects and separate them according to if they are grey or not
+    # 2. Determine if each non-grey shape is contained by a grey shape
+    # 3. Check to see which objects (among grey contained shapes) have another object which has the same shape (not contained by grey)
+    # 4. Do the color change when you find these matching objects
+
+    # 1. Extract the objects, separating them by if they are grey or not
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8, monochromatic=True)
+    grey_objects = [ obj for obj in objects if Color.GREY in object_colors(obj, background=Color.BLACK) ]
+    non_grey_objects = [ obj for obj in objects if Color.GREY not in object_colors(obj, background=Color.BLACK) ]
+
+    # 2. Determine if each non-grey shape is contained by a grey shape
+    # Divide the non-grey objects into two groups: those contained by grey, and those not contained by grey
+    # Make a helper function for checking of one object is contained by another
+    def object_contains_another_object(inside_object, outside_object):
+        # Using bounding boxes:
+        # inside_x, inside_y, inside_width, inside_height = bounding_box(inside_object)
+        # outside_x, outside_y, outside_width, outside_height = bounding_box(outside_object)
+        # return inside_x >= outside_x and inside_y >= outside_y and inside_x + inside_width <= outside_x + outside_width and inside_y + inside_height <= outside_y + outside_height
+        # Using topology+masks:
+        inside_object_mask = inside_object != Color.BLACK
+        outside_interior_mask = object_interior(outside_object, background=Color.BLACK)
+        return np.all(outside_interior_mask >= inside_object_mask)
+    objects_contained_by_grey = [ non_grey for non_grey in non_grey_objects
+                                  if any( object_contains_another_object(non_grey, grey) for grey in grey_objects ) ]
+    objects_not_contained_by_gray = [ non_grey for non_grey in non_grey_objects
+                                     if not any( object_contains_another_object(non_grey, grey) for grey in grey_objects ) ]
+    
+    # 3. Check to see which objects (among grey contained shapes) have another object which has the same shape (not contained by grey)
+    output_grid = input_grid.copy()
+
+    # Helper function to check if two objects have the same shape
+    def objects_have_same_shape(obj1, obj2):
+        mask1 = crop(obj1, background=Color.BLACK) != Color.BLACK
+        mask2 = crop(obj2, background=Color.BLACK) != Color.BLACK
+        return np.array_equal(mask1, mask2)
+    
+    for grey_contained in objects_contained_by_grey:
+        for non_grey in objects_not_contained_by_gray:
+            if objects_have_same_shape(grey_contained, non_grey):
+                # 4. Do the color change
+                target_color = object_colors(grey_contained, background=Color.BLACK)[0]
+                non_grey_mask = non_grey != Color.BLACK
+                output_grid[non_grey_mask] = target_color
+
+    return output_grid
+
+def generate_input():
+    # Make some sprites
+    # One of those sprites is going to be contained by a grey box, and occur more than once (but in different colors)
+    # The other sprites are not going to be contained by the grey box, and might occur multiple times anyway
+
+    width, height = random.choice(range(17, 30+1)), random.choice(range(17, 30+1))
+    grid = np.full((width, height), Color.BLACK)
+
+    possible_sprite_dimensions = [1,2,3,4]
+    contained_color = random.choice([ color for color in Color.NOT_BLACK if color != Color.GREY ])
+    contained_sprite = random_sprite(possible_sprite_dimensions, possible_sprite_dimensions,
+                                     color_palette=[contained_color])
+
+    # put down the contained sprite at a random spot, and then put a gray box around it
+    x, y = random_free_location_for_sprite(grid, contained_sprite, background=Color.BLACK, border_size=2, padding=2)
+    blit_sprite(grid, contained_sprite, x, y)
+    contained_w, contained_h = contained_sprite.shape
+
+    # make the gray box (outline of a rectangle)
+    grey_box = np.full((contained_w+4, contained_h+4), Color.GREY)
+    grey_box[1:-1, 1:-1] = Color.BLACK
+    blit_sprite(grid, grey_box, x-2, y-2)
+
+    # put down some other sprites which are the same shape as the contained sprite, but in different colors
+    n_duplicate_sprites = np.random.randint(1, 3)
+    for _ in range(n_duplicate_sprites):
+        duplicate_sprite = contained_sprite.copy()
+        duplicate_sprite[duplicate_sprite != Color.BLACK] = random.choice([ color for color in Color.NOT_BLACK if color != Color.GREY and color != contained_color ])
+        x, y = random_free_location_for_sprite(grid, duplicate_sprite, background=Color.BLACK, border_size=1, padding=1)
+        blit_sprite(grid, duplicate_sprite, x, y)
+    
+    # put down some other sprites which are not the same shape as the contained sprite, which might be duplicated occasionally
+    n_non_contained_sprites = np.random.randint(1, 3)
+    for _ in range(n_non_contained_sprites):
+        sprite_color = random.choice([ color for color in Color.NOT_BLACK if color != Color.GREY ])
+        sprite = random_sprite(possible_sprite_dimensions, possible_sprite_dimensions,
+                               color_palette=[sprite_color])
+        x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1, padding=1)
+        blit_sprite(grid, sprite, x, y)
+
+        # Maybe duplicate?
+        if np.random.rand() < 0.5:
+            x, y = random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=1, padding=1)
+            blit_sprite(grid, sprite, x, y)
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object detection, color change
+
+# description:
+# In the input you will see a grid with a red pattern
+# To make the output grid, you should find out any single isolated red objects with size of 1x1 and change them to blue.
+
+def main(input_grid):
+    # Detect all the red objects in the grid, ignoring objects of other colors
+    red_objects = detect_objects(grid=input_grid, colors=[Color.RED], monochromatic=True, connectivity=4)
+
+    # Convert 1x1 objects (isolated pixels) into blue
+    output_grid = input_grid.copy()
+    for object in red_objects:
+        x, y, length, width = bounding_box(object, background=Color.BLACK)
+        # Find out the single isolated red object with size of 1x1 and change it to blue.
+        if length == 1 and width == 1:
+            output_grid[x, y] = Color.BLUE
+
+    return output_grid
+
+def generate_input():
+    # Generate the background grid with size of n x m.
+    n, m = np.random.randint(3, 6), np.random.randint(3, 6)
+    grid = np.zeros((n, m), dtype=int)
+
+    colored = 0
+    # Randomly scatter density of red pixels on the grid.
+    density = 0.4
+    while colored < density * n * m:
+        x = np.random.randint(0, n)
+        y = np.random.randint(0, m)
+        if grid[x, y] == Color.BLACK:
+            grid[x, y] = Color.RED
+            colored += 1
+
+    # Ensure there is at least one 1x1 single isolated red object in the grid.
+    red_objects = detect_objects(grid=grid, colors=[Color.RED], monochromatic=True, connectivity=4)
+    if not any(np.sum(object != Color.BLACK) == 1 for object in red_objects):
+        return generate_input()
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting
+
+# description:
+# The input consists of several grey objects in a 10x10 grid.
+# To create the output, change the color of all objects of area 6 to red, and all other objects to blue.
+
+def main(input_grid):
+    # extract objects
+    objects = find_connected_components(input_grid, connectivity=4)
+
+    # convert each object to the desired color
+    for obj in objects:
+        if np.sum(obj != Color.BLACK) == 6:
+            obj[obj != Color.BLACK] = Color.RED
+        else:
+            obj[obj != Color.BLACK] = Color.BLUE
+
+    # place new objects back into a grid
+    output_grid = np.zeros_like(input_grid)
+    for obj in objects:
+        output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # create a 10x10 grid
+    grid = np.full((10, 10), Color.BLACK)
+
+    # generate objects and place into the grid until it is filled
+    # we want some area six objects, and some non-area six objects.
+    # to do so, first place a couple area six objects, then fill up the remaining space with random objects
+
+    # place two area six objects
+    for _ in range(2):
+        while True:
+            obj = random_sprite(list(range(1, 5)), list(range(1, 5)), color_palette=[Color.GREY])
+            if np.sum(obj != Color.BLACK) == 6:
+                break
+        x, y = random_free_location_for_sprite(grid, obj, padding=1)
+        grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+
+    # now fill up the remaining space with random objects.
+    while True:
+        obj = random_sprite(list(range(1, 5)), list(range(1, 5)), color_palette=[Color.GREY])
+
+        # try to place the object. if we can't, we're done
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            break
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# topology, counting
+
+# description:
+# In the input you will see a grid with several green objects with different number of bends.
+# To make the output, color the objects with one bend with blue, two bends with pink, three bends with red.
+
+def main(input_grid):
+    # Create a copy of the input grid to avoid modifying the original
+    output_grid = np.copy(input_grid)
+
+    # Find all the green objects in the grid
+    object_color = Color.GREEN
+    background = Color.BLACK
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4, background=background)
+    for obj in objects:
+        # Get the bounding box of the sprite and crop the sprite
+        x, y, w, h = bounding_box(obj, background=background)
+        sprite = crop(obj, background=Color.BLACK)
+        mask = sprite != background
+
+        # Determine how many bends the mask has
+        # Do this by building an L-shaped mask, and seeing how many times it appears in the sprite
+        bend_mask = np.array([[1, 1], [1, 0]])
+        rotated_bend_masks = [bend_mask, np.rot90(bend_mask), np.rot90(bend_mask, 2), np.rot90(bend_mask, 3)]
+
+        from scipy.ndimage import correlate
+        
+        n_bends = sum( np.sum( correlate(mask*1, filter*1, mode='constant', cval=0) == np.sum(filter*1) ) for filter in rotated_bend_masks )
+
+        # find the new color based on bends
+        new_color = {1: Color.BLUE, 2: Color.PINK, 3: Color.RED}[n_bends]
+        # color the sprite with the new color
+        sprite[sprite == object_color] = new_color
+        blit_sprite(output_grid, sprite=sprite, x=x, y=y)
+
+    return output_grid
+
+def generate_input():
+    # Generate grid of size n x m
+    n, m = np.random.randint(15, 25), np.random.randint(15, 25)
+    grid = np.zeros((n, m), dtype=int)
+
+    # The objects color is green
+    object_color = Color.GREEN
+
+    # keep track of what bends we've already created, so that we end up with at least one of each bend
+    bends_we_have = set()
+
+    for _ in range(random.randint(3, 6)):
+        # Randomly generate sprite with one to three bends
+        w, h = np.random.randint(3, 6), np.random.randint(3, 6)
+
+        # Generate sprite with the object color
+        sprite = random_sprite(w, h, color_palette=[object_color], symmetry="not_symmetric", density=0.3)
+
+        # calculate how many bends it has and make sure that the number of bends are 1-3
+        mask = sprite != Color.BLACK
+        bend_mask = np.array([[1, 1], [1, 0]])
+        rotated_bend_masks = [bend_mask, np.rot90(bend_mask), np.rot90(bend_mask, 2), np.rot90(bend_mask, 3)]
+        from scipy.ndimage import correlate
+        n_bends = sum( np.sum( correlate(mask*1, filter*1, mode='constant', cval=0) == np.sum(filter*1) ) for filter in rotated_bend_masks )
+        if n_bends not in [1, 2, 3]: continue
+
+        # keep track of what bends we've already created
+        bends_we_have.add(n_bends)
+
+        # Randomly place the sprite on the grid
+        x, y = random_free_location_for_sprite(grid=grid, sprite=sprite, padding=1, padding_connectivity=8)
+
+        blit_sprite(grid, sprite, x=x, y=y)
+
+    # The input grid should have at least one object one type of bend as example.
+    if len(bends_we_have) < 3:
+        return generate_input()
+    
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

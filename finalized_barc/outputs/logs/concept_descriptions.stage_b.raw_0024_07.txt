@@ -1,0 +1,58 @@
+Here's a new puzzle implementation based on the given puzzle description and concepts:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# recolor, connected components, color scheme
+
+# description:
+# Identify a single connected object in the input grid. Apply a given color scheme to recolor the entire object. The color scheme may be a single color applied uniformly or a logic that determines the color for each part of the object. All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Detect all the connected components in the grid
+    components = find_connected_components(input_grid, connectivity=8, monochromatic=False)
+
+    # For simplicity, apply the color scheme to the first detected object
+    target_object = components[0]
+
+    # Define a color scheme: cycle through a subset of colors
+    color_scheme = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW]
+
+    # Apply the color scheme to the target object
+    output_grid = input_grid.copy()
+    for idx, (x, y) in enumerate(zip(*np.where(target_object != Color.BLACK))):
+        output_grid[x, y] = color_scheme[idx % len(color_scheme)]
+
+    return output_grid
+
+def generate_input():
+    # Create a random grid size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Generate a random connected object
+    sprite_size = np.random.randint(4, min(n, m) // 2)
+    sprite = random_sprite(sprite_size, sprite_size, color_palette=Color.NOT_BLACK, connectivity=8)
+
+    # Place the sprite in the grid at a random location
+    x, y = random_free_location_for_sprite(grid, sprite)
+    blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+### Explanation
+
+1. **Concepts**: The puzzle involves identifying a single connected object in a grid and recoloring it using a predefined color scheme. It covers concepts like connected components and recoloring.
+
+2. **Description**: The `main` function identifies one connected component and applies a cyclic color scheme to it. The `generate_input` function creates a grid with a randomly placed connected object. 
+
+3. **Implementation**: 
+   - `main`: It uses `find_connected_components` to detect objects, selects one, and applies a cyclic color scheme.
+   - `generate_input`: It defines the grid size and generates a random connected sprite (object), then places it randomly in the grid.
+
+This puzzle is designed to challenge students to understand connected components and color transformations in a grid setting.

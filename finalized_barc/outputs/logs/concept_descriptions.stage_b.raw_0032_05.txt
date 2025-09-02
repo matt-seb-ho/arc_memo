@@ -1,0 +1,69 @@
+Certainly! Let's implement the puzzle where the task is to detect the missing corner of an L-shaped triomino on a 2x2 grid. The grid might contain some noise, but the L-shape is dominant. We'll classify the orientation based on which corner is unoccupied by the L-shape.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# L-shape detection, corner identification, orientation classification
+
+# description:
+# The input is a 2x2 grid with a dominant L-shaped triomino and some possible noise.
+# The output should be a 1x1 grid with a pixel corresponding to the missing corner of the L-shape:
+# "tl" for top-left, "tr" for top-right, "bl" for bottom-left, or "br" for bottom-right.
+
+def main(input_grid):
+    # Define the possible L-shape configurations
+    l_shapes = {
+        "tl": np.array([[0, 1], [1, 1]]),
+        "tr": np.array([[1, 0], [1, 1]]),
+        "bl": np.array([[1, 1], [0, 1]]),
+        "br": np.array([[1, 1], [1, 0]])
+    }
+    
+    # Detect the L-shape by matching the dominant pattern
+    for orientation, pattern in l_shapes.items():
+        if np.array_equal((input_grid != 0).astype(int), pattern):
+            return np.array([[orientation]])
+
+def generate_input():
+    # Create a noise-infested 2x2 grid with a dominant L-shape
+    background_color = Color.BLACK
+    colors = list(Color.NOT_BLACK)
+    
+    # Randomly choose an L-shape orientation
+    orientation = np.random.choice(["tl", "tr", "bl", "br"])
+    
+    # Create a blank 2x2 grid
+    grid = np.full((2, 2), background_color)
+    
+    # Define the L-shape patterns
+    l_patterns = {
+        "tl": [(0, 1), (1, 0), (1, 1)],
+        "tr": [(0, 0), (1, 0), (1, 1)],
+        "bl": [(0, 0), (0, 1), (1, 1)],
+        "br": [(0, 0), (0, 1), (1, 0)]
+    }
+    
+    # Add the L-shape to the grid using a random non-black color
+    l_shape_color = np.random.choice(colors)
+    for x, y in l_patterns[orientation]:
+        grid[x, y] = l_shape_color
+    
+    # Add random noise (non-L-shape colors) with a low probability
+    for i in range(2):
+        for j in range(2):
+            if grid[i, j] == background_color and np.random.rand() < 0.2:
+                grid[i, j] = np.random.choice(colors)
+    
+    return grid
+```
+
+### Explanation:
+
+- **Concepts:** This puzzle involves L-shape detection, corner identification, and orientation classification.
+- **Description:** The task is to identify the missing corner of an L-shaped triomino on a 2x2 grid. The missing corner indicates the orientation of the L-shape, which should be identified as "tl" (top-left), "tr" (top-right), "bl" (bottom-left), or "br" (bottom-right).
+- **`main` Function:** This function checks the input grid against known L-shape patterns to determine the missing corner and outputs the corresponding orientation.
+- **`generate_input` Function:** This function randomly generates a 2x2 grid containing a randomly oriented L-shape and adds some noise with a low probability. The L-shape is implemented using a random non-black color from the available color palette.

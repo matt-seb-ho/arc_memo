@@ -1,0 +1,4 @@
+```python
+# concepts: grid partitioning, divider lines, horizontal/vertical slicing
+# description: Input is a grid containing horizontal and/or vertical divider lines of a single color that segment the grid into distinct regions. Identify these uninterrupted divider lines and use them to partition the grid into separate sub-grids. Each sub-grid is bounded by the divider lines and contains no dividers within it. Output is a list of these non-empty sub-grids, preserving their original content.
+```

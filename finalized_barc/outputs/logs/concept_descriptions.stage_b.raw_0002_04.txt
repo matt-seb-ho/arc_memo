@@ -1,0 +1,66 @@
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# parity counting, guide object, color restriction
+
+# description:
+# In the input, you will see a grid with various colored pixels and a designated guide object (a specific color).
+# Count the number of pixels within the guide object that have either odd or even color values.
+# If a specific color or set of colors is provided, restrict the count to those colors only; otherwise, consider all colors present in the guide object.
+# The output is the total count of pixels satisfying the chosen parity condition.
+
+def main(input_grid: np.ndarray, guide_color: Color, parity: str = "even", restricted_colors: Set[Color] = None) -> int:
+    # Identify the guide object by finding the connected component of the guide color
+    guide_objects = find_connected_components(input_grid, background=~guide_color, monochromatic=True)
+    guide_object = guide_objects[0]  # Assuming a single guide object for simplicity
+
+    # Determine which colors to consider
+    if restricted_colors is None:
+        colors_to_consider = set(np.unique(guide_object)) - {Color.BLACK, guide_color}
+    else:
+        colors_to_consider = restricted_colors
+
+    # Count pixels within the guide object that satisfy the parity condition
+    count = 0
+    for color in colors_to_consider:
+        color_pixels = np.sum(guide_object == color)
+        if (parity == "even" and color_pixels % 2 == 0) or (parity == "odd" and color_pixels % 2 != 0):
+            count += color_pixels
+
+    return count
+
+def generate_input() -> Tuple[np.ndarray, Color, str, Set[Color]]:
+    # Create a grid
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.zeros((n, m), dtype=int)
+
+    # Scatter random colors on the grid
+    for color in Color.NOT_BLACK:
+        randomly_scatter_points(grid, color=color, density=0.1)
+
+    # Generate a guide object
+    guide_object_color = random.choice(list(Color.NOT_BLACK))
+    guide_object = random_sprite(n=3, m=3, color_palette=[guide_object_color], background=Color.BLACK)
+    
+    # Place the guide object randomly on the grid
+    try:
+        x, y = random_free_location_for_sprite(grid, guide_object, padding=1, padding_connectivity=8)
+        blit_sprite(grid, guide_object, x=x, y=y)
+    except ValueError:
+        pass
+
+    # Randomly choose the parity condition
+    parity = random.choice(["even", "odd"])
+
+    # Randomly choose if the count should be restricted to certain colors
+    if np.random.rand() < 0.5:
+        restricted_colors = set(random.sample(list(Color.NOT_BLACK), k=np.random.randint(1, 4)))
+    else:
+        restricted_colors = None
+
+    return grid, guide_object_color, parity, restricted_colors
+```

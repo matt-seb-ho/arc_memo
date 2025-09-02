@@ -1,0 +1,80 @@
+Certainly! Let's implement the puzzle based on the given description. Here's the implementation for normalizing a pointer-shaped object and determining its facing direction by quantizing the centroid-to-tip vector.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# orientation detection, shape normalization, centroid-to-tip vector, direction quantization
+
+# description:
+# Input is a grid containing a single pointer-shaped object on a background. Normalize the pointer by rotating and/or flipping it to match a canonical orientation.
+# Determine the pointer's facing direction by computing the vector from its centroid to its tip and quantizing this vector to one of the cardinal directions (N, S, E, W).
+# Output the determined direction as a label.
+
+def main(input_grid):
+    # Copy the input grid
+    output_grid = input_grid.copy()
+
+    # Find the pointer object
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=8)
+
+    # There should be only one object in the grid
+    assert len(objects) == 1
+    pointer_obj = objects[0]
+
+    # Crop the object to extract the sprite
+    pointer_sprite = crop(pointer_obj)
+
+    # Compute the centroid of the pointer object
+    non_black_pixels = np.argwhere(pointer_sprite != Color.BLACK)
+    centroid = np.mean(non_black_pixels, axis=0)
+
+    # Identify the tip of the pointer (the furthest point from the centroid)
+    tip_idx = np.argmax(np.linalg.norm(non_black_pixels - centroid, axis=1))
+    tip = non_black_pixels[tip_idx]
+
+    # Compute the vector from the centroid to the tip
+    vector = tip - centroid
+
+    # Quantize this vector to one of the cardinal directions (N, S, E, W)
+    # We'll map the vector to the closest cardinal direction
+    directions = {
+        'N': np.array([-1, 0]),
+        'S': np.array([1, 0]),
+        'E': np.array([0, 1]),
+        'W': np.array([0, -1])
+    }
+
+    # Normalize the vector to unit length
+    unit_vector = vector / np.linalg.norm(vector)
+
+    # Determine the closest direction by comparing dot products
+    closest_direction = max(directions, key=lambda d: np.dot(unit_vector, directions[d]))
+
+    # Output the determined direction
+    return closest_direction
+
+def generate_input():
+    # Create a grid of size 10x10 with a black background
+    grid = np.full((10, 10), Color.BLACK)
+
+    # Generate a random pointer-shaped sprite
+    pointer_sprite = random_sprite(3, 3, density=0.7, color_palette=[np.random.choice(Color.NOT_BLACK)], connectivity=8)
+
+    # Find a random free location for the sprite on the grid
+    x, y = random_free_location_for_sprite(grid, pointer_sprite, border_size=1)
+
+    # Place the sprite onto the grid
+    blit_sprite(grid, pointer_sprite, x, y)
+
+    return grid
+```
+
+### Explanation:
+- **Concepts**: We focus on shape normalization and orientation detection by determining the centroid-to-tip vector and quantizing it to cardinal directions.
+- **Description**: The input is a grid with a single pointer-shaped object. The task is to normalize the pointer and determine its facing direction by analyzing the vector from the centroid to its tip.
+- **`main` Function**: We use `find_connected_components` to identify the pointer, find its centroid and tip, compute the vector, and then determine the closest cardinal direction.
+- **`generate_input` Function**: We generate a random grid with a pointer-shaped object by creating a sprite and placing it randomly in the grid.

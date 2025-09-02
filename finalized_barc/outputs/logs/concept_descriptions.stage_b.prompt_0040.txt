@@ -1,0 +1,443 @@
+You are a puzzle maker designing geometric, physical, and topological puzzles for curious middle-schoolers.
+
+Each puzzle consists of uncovering a deterministic rule, pattern, procedure, algorithm, or transformation law that maps inputs to outputs.
+Both the inputs and outputs are 2D grids of colored pixels. There are 10 colors, but the order of the colors is never relevant to the puzzle.
+
+The middle schoolers are trying to discover this deterministic transformation, which can be implemented as a Python function called `main`.
+Designing a puzzle involves also creating example inputs, which can be implemented as a Python function called `generate_input`. Unlike `main`, the `generate_input` function should be stochastic, so that every time you run it, you get another good example of what the transformation can be applied to.
+
+Here is a overview of the puzzle you are designing:
+
+Concepts: 
+specific color selection, connected components, filtering
+
+Description: 
+Input consists of multiple objects of various colors on a grid. Identify and select all objects that are composed entirely of a specified target color. Output a grid where only these selected objects are preserved in their original positions and colors, while all other grid cells are set to background color (0).
+
+Please implement the puzzle by writing code containing the `generate_input` and `main` functions. Use the following standard library (`common.py`):
+
+```python
+def find_connected_components(grid, background=Color.BLACK, connectivity=4, monochromatic=True):
+    """
+    Find the connected components in the grid. Returns a list of connected components, where each connected component is a numpy array.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity.
+    monochromatic: if True, each connected component is assumed to have only one color. If False, each connected component can include multiple colors.
+    """
+
+def blit_object(grid, obj, background=Color.BLACK):
+    """
+    Draws an object onto the grid using its current location.
+
+    Example usage:
+    blit_object(output_grid, an_object, background=background_color)
+    """
+
+def blit_sprite(grid, sprite, x, y, background=Color.BLACK):
+    """
+    Draws a sprite onto the grid at the specified location.
+
+    Example usage:
+    blit_sprite(output_grid, the_sprite, x=x, y=y, background=background_color)
+    """
+
+def bounding_box(grid, background=Color.BLACK):
+    """
+    Find the bounding box of the non-background pixels in the grid.
+    Returns a tuple (x, y, width, height) of the bounding box.
+
+    Example usage:
+    objects = find_connected_components(input_grid, monochromatic=True, background=Color.BLACK, connectivity=8)
+    teal_object = [ obj for obj in objects if np.any(obj == Color.TEAL) ][0]
+    teal_x, teal_y, teal_w, teal_h = bounding_box(teal_object)
+    """
+
+def crop(grid, background=Color.BLACK):
+    """
+    Crop the grid to the smallest bounding box that contains all non-background pixels.
+
+    Example usage:
+    # Extract a sprite from an object
+    sprite = crop(an_object, background=background_color)
+    """
+
+def contact(_=None, object1=None, object2=None, x1=0, y1=0, x2=0, y2=0, background=Color.BLACK, connectivity=4):
+    """
+    Check if object1 and object2 touch each other (have contact) when object1 is at (x1, y1) and object2 is at (x2, y2).
+    They are touching each other if they share a border, or if they overlap. Collision implies contact, but contact does not imply collision.
+
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. (8-way counts diagonals as touching, 4-way only counts cardinal directions as touching)
+
+    Example usage:
+
+    # Check if a sprite touches anything if it were to be placed at (X,Y)
+    contact(object1=output_grid, object2=a_sprite, x2=X, y2=Y)
+
+    # Check if two objects touch each other
+    contact(object1=object1, object2=object2)
+    """
+
+def random_free_location_for_sprite(grid, sprite, background=Color.BLACK, border_size=0, padding=0, padding_connectivity=8):
+    """
+    Find a random free location for the sprite in the grid
+    Returns a tuple (x, y) of the top-left corner of the sprite in the grid, which can be passed to `blit_sprite`
+
+    border_size: minimum distance from the edge of the grid
+    background: color treated as transparent
+    padding: if non-zero, the sprite will be padded with a non-background color before checking for collision
+    padding_connectivity: 4 or 8, for 4-way or 8-way connectivity when padding the sprite
+
+    Example usage:
+    x, y = random_free_location_for_sprite(grid, sprite, padding=1, padding_connectivity=8, border_size=1, background=Color.BLACK) # find the location, using generous padding
+    assert not collision(object1=grid, object2=sprite, x2=x, y2=y)
+    blit_sprite(grid, sprite, x, y)
+
+    If no free location can be found, raises a ValueError.
+    """
+
+def random_sprite(n, m, density=0.5, symmetry=None, color_palette=None, connectivity=4, background=Color.BLACK):
+    """
+    Generate a sprite (an object), represented as a numpy array.
+
+    n, m: dimensions of the sprite. If these are lists, then a random value will be chosen from the list.
+    symmetry: optional type of symmetry to apply to the sprite. Can be 'horizontal', 'vertical', 'diagonal', 'radial', 'mirror', 'not_symmetric'. If None, a random symmetry type will be chosen.
+    color_palette: optional list of colors to use in the sprite. If None, a random color palette will be chosen.
+
+    Returns an (n,m) NumPy array representing the sprite.
+    """
+
+def detect_objects(grid, _=None, predicate=None, background=Color.BLACK, monochromatic=False, connectivity=None, allowed_dimensions=None, colors=None, can_overlap=False):
+    """
+    Detects and extracts objects from the grid that satisfy custom specification.
+
+    predicate: a function that takes a candidate object as input and returns True if it counts as an object
+    background: color treated as transparent
+    monochromatic: if True, each object is assumed to have only one color. If False, each object can include multiple colors.
+    connectivity: 4 or 8, for 4-way or 8-way connectivity. If None, the connectivity is determined automatically.
+    allowed_dimensions: a list of tuples (n, m) specifying the allowed dimensions of the objects. If None, objects of any size are allowed.
+    colors: a list of colors that the objects are allowed to have. If None, objects of any color are allowed.
+    can_overlap: if True, objects can overlap. If False, objects cannot overlap.
+
+    Returns a list of objects, where each object is a numpy array.
+    """
+
+class Color:
+    """
+    Enum for colors
+
+    Color.BLACK, Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.GREY, Color.PINK, Color.ORANGE, Color.TEAL, Color.MAROON
+
+    Use Color.ALL_COLORS for `set` of all possible colors
+    Use Color.NOT_BLACK for `set` of all colors except black
+
+    Colors are strings (NOT integers), so you CAN'T do math/arithmetic/indexing on them.
+    (The exception is Color.BLACK, which is 0)
+    """
+```
+
+Here are some examples from puzzles with similar descriptions to show you how to use functions in `common.py`:
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting
+
+# description:
+# The input consists of several grey objects in a 10x10 grid.
+# To create the output, change the color of all objects of area 6 to red, and all other objects to blue.
+
+def main(input_grid):
+    # extract objects
+    objects = find_connected_components(input_grid, connectivity=4)
+
+    # convert each object to the desired color
+    for obj in objects:
+        if np.sum(obj != Color.BLACK) == 6:
+            obj[obj != Color.BLACK] = Color.RED
+        else:
+            obj[obj != Color.BLACK] = Color.BLUE
+
+    # place new objects back into a grid
+    output_grid = np.zeros_like(input_grid)
+    for obj in objects:
+        output_grid = blit_object(output_grid, obj, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # create a 10x10 grid
+    grid = np.full((10, 10), Color.BLACK)
+
+    # generate objects and place into the grid until it is filled
+    # we want some area six objects, and some non-area six objects.
+    # to do so, first place a couple area six objects, then fill up the remaining space with random objects
+
+    # place two area six objects
+    for _ in range(2):
+        while True:
+            obj = random_sprite(list(range(1, 5)), list(range(1, 5)), color_palette=[Color.GREY])
+            if np.sum(obj != Color.BLACK) == 6:
+                break
+        x, y = random_free_location_for_sprite(grid, obj, padding=1)
+        grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+
+    # now fill up the remaining space with random objects.
+    while True:
+        obj = random_sprite(list(range(1, 5)), list(range(1, 5)), color_palette=[Color.GREY])
+
+        # try to place the object. if we can't, we're done
+        try:
+            x, y = random_free_location_for_sprite(grid, obj, padding=1)
+            grid = blit_sprite(grid, obj, x, y, background=Color.BLACK)
+        except ValueError:
+            break
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# counting, uniqueness, surrounding
+
+# description:
+# In the input, you will see a grid with a black background and colored pixels sprinkled on it. Exactly one color occurs only one time.
+# To make the output, find the cell whose color is unique (color occurs only one time), and surround that cell with red pixels. Make all the other pixels black.
+
+def main(input_grid: np.ndarray) -> np.ndarray:
+    # Plan:
+    # 1. Create a blank new canvas (so that the non-unique colors don't get copied)
+    # 2. Find the unique cell
+    # 3. Surround the unique cell with red pixels
+
+    output_grid = np.zeros_like(input_grid)
+
+    # 2. Find the unique cell
+    unique_color = None
+    for color in Color.NOT_BLACK:
+        if np.count_nonzero(input_grid == color) == 1:
+            unique_color = color
+            break
+    
+    # 3. Surround the unique cell with red pixels
+    # First get the coordinates of the unique cell
+    x, y, width, height = bounding_box(input_grid == unique_color)
+    # Copy red over the region around the unique cell (but this will accidentally delete the unique cell, so be copied back)
+    for i in range(x-1, x+2):
+        for j in range(y-1, y+2):
+            if 0 <= i < len(input_grid) and 0 <= j < len(input_grid[0]):
+                output_grid[i, j] = Color.RED
+    # Copy the unique cell back
+    output_grid[x, y] = unique_color
+
+    return output_grid
+
+
+    
+
+
+
+def generate_input() -> np.ndarray:
+    
+    # make a 10x10 black grid first as background
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # randomly select a unique color from Color.NOT_BLACK
+    unique_color = random.choice(Color.NOT_BLACK)
+
+    # randomly choose a non-border cell for the unique color
+    non_border_cells = [ (i, j) for i in range(1, n-1) for j in range(1, m-1) ]
+    unique_cell = random.choice(non_border_cells)
+    grid[unique_cell] = unique_color
+
+    # remove the unique color from the list
+    remaining_colors = [ color for color in Color.NOT_BLACK if color != unique_color ]
+
+    for remaining_color in remaining_colors:
+        # Pick a random frequency but make sure that this colour is not unique (does not have frequency 1)
+        frequency_of_this_color = random.choice([0, 2, 3, 4, 5, 6])
+
+        for _ in range(frequency_of_this_color):
+            # randomly choose an unoccupied cell for the remaining color
+            empty_cells = [ (i, j) for i in range(n) for j in range(m) if grid[i][j] == Color.BLACK ]
+            x, y = random.choice(empty_cells)
+            grid[x, y] = remaining_color
+    
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# objects, alignment by color
+
+# description:
+# In the input you will see some objects scattered around on a black grid. Each object has a single grey pixel, but everything else is a single other color.
+# To make the output, place each object into the output grid such that the grey pixel is in the center of the output.
+# Equivalently, move the objects to line up all their grey pixels so they overlap.
+# The output grid should be the smallest possible size that contains all the objects (after they have been placed correctly), which for all the inputs here is 3x3.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the objects from the input, convert them into sprites by cropping them
+    # 2. Make a big output grid
+    # 3. Place each sprite into the output grid such that the grey pixel is in the center of the output
+    # 4. Make the output as small as you can to contain all the objects
+
+    # Extract the objects from the input. It is not monochromatic because the grey pixel is different, and they can be connected on the diagonals (connectivity=8)
+    objects = find_connected_components(input_grid, monochromatic=False, connectivity=8)
+
+    # Convert the objects into sprites by cropping them
+    sprites = [crop(obj, background=Color.BLACK) for obj in objects]
+
+    # Make a big output grid
+    output_grid = np.full(input_grid.shape, Color.BLACK)
+
+    # Place each sprite into the output grid such that the grey pixel is in the center of the output
+    for sprite in sprites:
+        # Find the grey pixel
+        grey_pixel_x, grey_pixel_y = np.argwhere(sprite == Color.GREY)[0]
+
+        # Find the center of the output. We want the grey pixel to end up here.
+        center_x, center_y = output_grid.shape[0] // 2, output_grid.shape[1] // 2
+
+        # Calculate the offset to ensure the grey pixel ends up in the center of the output
+        x, y = center_x - grey_pixel_x, center_y - grey_pixel_y
+        
+        # Place the sprite into the output grid
+        blit_sprite(output_grid, sprite, x, y, background=Color.BLACK)
+
+    # Make the output as small as you can to contain all the objects
+    output_grid = crop(output_grid)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a series of 3x3 objects, each of which has a great pixel at the center, and none of which overlap except for the grey pixels
+    sprites = []
+
+    # To make sure there is no overlap, we keep track of what pixels are already occupied
+    occupied = np.full((3, 3), False)
+
+    n_objects = np.random.randint(2, 4)
+    for _ in range(n_objects):
+        sprite = np.full((3, 3), Color.BLACK)
+        sprite[1, 1] = Color.GREY
+        other_color = random.choice([c for c in Color.NOT_BLACK if c != Color.GREY])
+
+        # Randomly pick a subset of valid pixels to color
+        # To be valid it has to be unoccupied and not grey (it will be black)
+        valid_pixels = np.argwhere(~occupied & (sprite == Color.BLACK))
+        if len(valid_pixels) == 0:
+            break
+
+        n_pixels = np.random.randint(1, len(valid_pixels) + 1)
+        pixels = valid_pixels[np.random.choice(len(valid_pixels), n_pixels, replace=False)]
+        for x, y in pixels:
+            sprite[x, y] = other_color
+            occupied[x, y] = True
+        
+        sprites.append(sprite)
+
+    # Place the sprites randomly on a medium sized canvas but make sure they don't touch each other
+    n, m = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((n, m), Color.BLACK)
+    for sprite in sprites:
+        x, y = random_free_location_for_sprite(grid, sprite, padding=2, padding_connectivity=8)
+        blit_sprite(grid, sprite, x, y)
+
+    return grid
+```
+
+Example puzzle code:
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object extraction, contact, cropping
+
+# description:
+# In the input you will see several objects with same color placed in a 10x10 grid, only one of 
+# them contact a gray pixel.
+# To make the output grid, you should select the object contact the gray pixel, crop it, and then output it.
+
+def main(input_grid):
+    # Get the color of the pattern
+    pattern_color = [color for color in np.unique(input_grid) if color != Color.BLACK and color != Color.GRAY][0]
+
+    # Detect all the patterns with pattern color in the input grid
+    pattern_list = detect_objects(grid=input_grid, colors=[pattern_color], connectivity=8, monochromatic=True)
+
+    # Detect the indicator gray pixel
+    gray_pixel = detect_objects(grid=input_grid, colors=[Color.GRAY], connectivity=8, monochromatic=True)[0]
+
+    # Find out which pattern has contact the gray pixel
+    for pattern in pattern_list:
+        cropped_pattern = crop(grid=pattern)
+        # Check if the gray pixel contact the pattern
+        if contact(object1=pattern, object2=gray_pixel, connectivity=4):
+            # Crop the pattern and output it
+            output_grid = cropped_pattern
+            break
+
+    return output_grid
+
+def generate_input():
+    # Generate a 10x10 grid with several objects with same color placed in it
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+    
+    # Select a color for the objects and the number of objects.
+    available_colors = [c for c in Color.NOT_BLACK if c != Color.GRAY]
+    obj_color = random.choice(available_colors)
+    num_sprite = np.random.randint(2,4)
+
+    # Place the objects in the grid.
+    for i in range(num_sprite):
+        # Create a 3x3 object with the selected color and random pattern.
+        sprite = random_sprite(n=3, m=3, color_palette=[obj_color], density=0.4)
+        # Place the object in the grid.
+        try:
+            x, y = random_free_location_for_sprite(grid=grid, sprite=sprite, padding=1, padding_connectivity=8, border_size=1)
+        except:
+            continue
+        # Add a gray pixel to contact one of the object.
+        if i == 0:
+            grid[x + 1, y - 1] = Color.GRAY
+            # Make sure the grey pixel contact the object.
+            grid[x + 1, y] = obj_color
+        # Place the object in the grid.
+        grid = blit_sprite(x=x, y=y, grid=grid, sprite=sprite, background=Color.BLACK)
+            
+    return grid
+```
+
+Your task is to implement the puzzle, following these steps:
+
+1. Inspect the example puzzle implementations, making note of the functions used and the physical/geometric/topological/logical details
+2. Inspect the new puzzle's description
+3. Brainstorm a possible implementation for the new puzzle
+4. Generate a code block formatted like the earlier examples with a comment starting `# concepts:` listing the concepts and `# description:` describing the inputs and transformation from the given description.
+
+Be sure to make the transformation `main` deterministic. Follow the description closely.

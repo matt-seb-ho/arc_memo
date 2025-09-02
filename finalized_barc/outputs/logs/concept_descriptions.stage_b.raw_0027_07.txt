@@ -1,0 +1,89 @@
+Here's an implementation of the puzzle described, involving translation, alignment, and merging of objects in a grid:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# translation, alignment, merging, connected components
+
+# description:
+# Given a grid with a reference object and a target object, translate the target so it touches the reference on a specified side (up/down/left/right).
+# Align the nearest edge of the target to the contact edge of the reference without overlap. Merge the target into the reference by painting target pixels into the grid, preserving existing reference pixels.
+# The output grid shows the target object aligned and merged with the reference object on the specified side.
+
+def main(input_grid):
+    # Plan:
+    # 1. Detect the reference and target objects.
+    # 2. Determine the side where the target should align with the reference.
+    # 3. Translate the target to align with the reference on the specified side.
+    # 4. Merge the target into the reference by painting its pixels into the grid.
+
+    # Detect objects in the input grid
+    objects = find_connected_components(input_grid, connectivity=4, monochromatic=True)
+
+    # Assume the reference object is the largest one, and the target is the second largest
+    reference_object = max(objects, key=lambda o: np.count_nonzero(o))
+    objects.remove(reference_object)
+    target_object = max(objects, key=lambda o: np.count_nonzero(o))
+
+    # Determine the side for alignment (assume input provides this information)
+    # For example, we can say the target should align to the 'right' of the reference
+    alignment_side = 'right'
+
+    # Get the bounding box of the reference object
+    ref_x_min, ref_y_min = np.min(np.argwhere(reference_object != Color.BLACK), axis=0)
+    ref_x_max, ref_y_max = np.max(np.argwhere(reference_object != Color.BLACK), axis=0)
+    
+    # Get the bounding box of the target object
+    tgt_x_min, tgt_y_min = np.min(np.argwhere(target_object != Color.BLACK), axis=0)
+    tgt_x_max, tgt_y_max = np.max(np.argwhere(target_object != Color.BLACK), axis=0)
+
+    # Calculate translation based on alignment side
+    if alignment_side == 'right':
+        translate_x = ref_x_max - tgt_x_min + 1
+        translate_y = ref_y_min - tgt_y_min
+    elif alignment_side == 'left':
+        translate_x = ref_x_min - tgt_x_max - 1
+        translate_y = ref_y_min - tgt_y_min
+    elif alignment_side == 'up':
+        translate_x = ref_x_min - tgt_x_min
+        translate_y = ref_y_min - tgt_y_max - 1
+    elif alignment_side == 'down':
+        translate_x = ref_x_min - tgt_x_min
+        translate_y = ref_y_max - tgt_y_min + 1
+
+    # Translate the target object
+    translated_target = translate(target_object, translate_x, translate_y, background=Color.BLACK)
+
+    # Create the output grid by merging the reference object with the translated target object
+    output_grid = np.copy(input_grid)
+    blit_object(output_grid, translated_target, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid with reference and target objects
+    n, m = 10, 10
+    grid = np.zeros((n, m), dtype=int)
+
+    # Define reference and target colors
+    ref_color = random.choice(Color.NOT_BLACK)
+    tgt_color = random.choice([c for c in Color.NOT_BLACK if c != ref_color])
+
+    # Generate reference object
+    ref_sprite = random_sprite(n=[2, 3], m=[2, 3], color_palette=[ref_color], density=0.5)
+    x, y = random_free_location_for_sprite(grid, ref_sprite, background=Color.BLACK, padding=1, border_size=1)
+    blit_sprite(grid, ref_sprite, x, y, background=Color.BLACK)
+
+    # Generate target object
+    tgt_sprite = random_sprite(n=[2, 3], m=[2, 3], color_palette=[tgt_color], density=0.5)
+    x, y = random_free_location_for_sprite(grid, tgt_sprite, background=Color.BLACK, padding=1, border_size=1)
+    blit_sprite(grid, tgt_sprite, x, y, background=Color.BLACK)
+
+    return grid
+```
+
+This implementation detects the reference and target objects and translates the target to align it with the reference on a specified side. The `generate_input` function creates stochastic examples of grids containing a reference and a target object, each with distinct colors, positioned randomly.

@@ -1,0 +1,79 @@
+Sure! Let's create a puzzle based on the provided description. The goal is to identify a single object within a grid and move it to a target position while ensuring no overlap with existing pixels. We'll use the `common.py` library functions to implement this puzzle. Here is the implementation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object movement, grid update, erase and redraw
+
+# description:
+# In the input grid, there is a single object represented by connected pixels of the same color.
+# A target position is marked by a unique color (not black or the object's color).
+# The task is to remove the object from its original location and redraw it at the target position, ensuring no overlap with existing non-background pixels.
+# The output grid should reflect the object's new position, with all other elements unchanged.
+
+def main(input_grid):
+    # Plan:
+    # 1. Extract the object from the input grid.
+    # 2. Identify the target position using the unique color.
+    # 3. Check if moving the object to the target position would cause any overlap.
+    # 4. If no overlap, move the object to the target position.
+    # 5. Return the updated grid.
+
+    # Step 1: Extract the object from the input grid.
+    objects = find_connected_components(input_grid, monochromatic=True, connectivity=4, background=Color.BLACK)
+    assert len(objects) == 1, "There should be exactly one object in the input grid."
+    original_object = objects[0]
+
+    # Step 2: Identify the target position using the unique color.
+    # The unique color is not black and not the object's color.
+    unique_colors = [color for color in Color.NOT_BLACK if np.count_nonzero(input_grid == color) == 1]
+    assert len(unique_colors) == 1, "There should be exactly one unique color in the input grid."
+    target_color = unique_colors[0]
+    target_x, target_y = np.argwhere(input_grid == target_color)[0]
+
+    # Step 3: Check if moving the object to the target position would cause any overlap.
+    sprite = crop(original_object, background=Color.BLACK)
+    sprite_height, sprite_width = sprite.shape
+    destination_x = target_x - sprite_height // 2
+    destination_y = target_y - sprite_width // 2
+
+    if collision(object1=input_grid, object2=sprite, x2=destination_x, y2=destination_y):
+        raise ValueError("Moving the object to the target position would cause overlap.")
+
+    # Step 4: Move the object to the target position.
+    output_grid = np.copy(input_grid)
+    output_grid[output_grid == target_color] = Color.BLACK  # Clear the target mark
+    blit_sprite(output_grid, sprite, destination_x, destination_y, background=Color.BLACK)
+
+    return output_grid
+
+
+def generate_input():
+    # Create a medium-sized grid (e.g., 10x10) with a black background.
+    n, m = 10, 10
+    grid = np.full((n, m), Color.BLACK)
+
+    # Randomly generate an object as a sprite.
+    obj_width, obj_height = np.random.randint(2, 4), np.random.randint(2, 4)
+    object_color = random.choice(Color.NOT_BLACK)
+    object_sprite = random_sprite(obj_height, obj_width, color_palette=[object_color], background=Color.BLACK)
+
+    # Find a random free location for the object sprite and place it on the grid.
+    x, y = random_free_location_for_sprite(grid, object_sprite, padding=1, background=Color.BLACK)
+    blit_sprite(grid, object_sprite, x, y, background=Color.BLACK)
+
+    # Place a unique color on the grid to mark the target position.
+    target_color = random.choice([color for color in Color.NOT_BLACK if color != object_color])
+    target_x, target_y = np.random.randint(0, n), np.random.randint(0, m)
+    while grid[target_x, target_y] != Color.BLACK:
+        target_x, target_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[target_x, target_y] = target_color
+
+    return grid
+```
+
+This puzzle involves moving a single object to a designated target position on a grid, ensuring no overlap with existing non-background pixels. The `main` function implements a deterministic transformation, while the `generate_input` function provides stochastic examples of input grids for testing and exploration.

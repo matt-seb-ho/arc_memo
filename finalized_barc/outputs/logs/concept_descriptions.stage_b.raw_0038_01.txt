@@ -1,0 +1,89 @@
+Certainly! Let's design a puzzle implementing the given description:
+
+**Concepts:**
+- Object Selection
+- Connected Components
+- Filtering
+
+**Description:**
+The input grid is a black grid containing multicolored objects. Each object is a connected component with a single color. The task is to extract these objects and apply a selection criterion: retain only those objects larger than a specified minimum size. The output is a list of the selected objects, each represented by its bounding box and constituent pixels. Non-selected objects are excluded from the output.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# The input grid is a black grid containing multicolored objects. Each object is a connected component with a single color.
+# Apply a selection criterion: retain only those objects larger than a specified minimum size.
+# The output is a list of the selected objects, each represented by its bounding box and constituent pixels.
+# Non-selected objects are excluded from the output.
+
+def main(input_grid):
+    # Define the minimum size for object selection
+    min_size = 5  # Minimum number of pixels an object must have to be retained
+
+    # Detect all connected components (objects) in the input grid
+    objects = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Create a list to store selected objects
+    selected_objects = []
+
+    # Iterate over each object and apply the selection criterion
+    for obj in objects:
+        # Crop the object to get its bounding box
+        cropped_obj = crop(obj, background=Color.BLACK)
+        
+        # If the object meets the size criterion, add it to the selected objects list
+        if np.count_nonzero(cropped_obj != Color.BLACK) >= min_size:
+            selected_objects.append(cropped_obj)
+
+    return selected_objects
+
+def generate_input():
+    # Create a grid of random size between 15x15 and 20x20
+    n, m = np.random.randint(15, 21), np.random.randint(15, 21)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Define possible colors excluding black
+    colors = list(Color.NOT_BLACK)
+
+    # Number of objects to add
+    num_objects = np.random.randint(3, 6)
+
+    # Add objects to the grid
+    for _ in range(num_objects):
+        # Generate a random sprite with a random color
+        color = np.random.choice(colors)
+        sprite_size = np.random.randint(3, 6)
+        sprite = random_sprite(sprite_size, sprite_size, density=0.5, color_palette=[color], connectivity=4)
+        
+        try:
+            # Find a random location for the sprite in the grid
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+            # Place the sprite in the grid
+            blit_sprite(grid, sprite, x, y, background=Color.BLACK)
+        except ValueError:
+            # If no location is found, continue to next sprite
+            continue
+            
+    return grid
+```
+
+### Explanation:
+
+- **`main` Function:**
+  - Detects connected components using `find_connected_components`.
+  - Applies a size criterion to select objects of sufficient size.
+  - Crops each selected object and appends it to the output list.
+
+- **`generate_input` Function:**
+  - Generates a random grid size.
+  - Places a random number of colored objects on the grid.
+  - Ensures the objects are non-overlapping and randomly sized.
+
+This puzzle challenges students to understand and apply concepts of object detection, filtering by properties, and grid manipulation.

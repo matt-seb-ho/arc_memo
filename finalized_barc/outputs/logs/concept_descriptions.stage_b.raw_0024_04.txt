@@ -1,0 +1,83 @@
+Certainly! Let's design a new puzzle based on the description provided:
+
+# Puzzle Description:
+- **Concepts:** Connected components, recoloring, color scheme, random color choice
+- **Description:** Given a grid with colored objects, identify a single connected object. Apply a new color scheme to recolor the entire object. The color scheme may be a single color applied uniformly to the object. All other grid elements remain unchanged.
+
+Here is the implementation of the puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# connected components, recoloring, color scheme
+
+# description:
+# In the input grid, you will see multiple colored objects.
+# Identify one single connected object and recolor it with a randomly selected single color from the available color palette.
+# All other grid elements remain unchanged.
+
+def main(input_grid):
+    # Find all connected components in the grid
+    objects = find_connected_components(input_grid, connectivity=8)
+    
+    # Choose a single object to recolor
+    selected_object = objects[0]  # Select the first object for simplicity
+    
+    # Choose a new color from the available palette, excluding black
+    new_color = np.random.choice(list(Color.NOT_BLACK))
+    
+    # Recolor the entire object with the new color
+    selected_object[selected_object != Color.BLACK] = new_color
+    
+    # Create a copy of the input grid to form the output
+    output_grid = input_grid.copy()
+    
+    # Apply the recolored object back onto the grid
+    blit_object(output_grid, selected_object, background=Color.BLACK)
+
+    return output_grid
+
+def generate_input():
+    # Create a grid of size between 10x10 and 15x15
+    n, m = np.random.randint(10, 16), np.random.randint(10, 16)
+    grid = np.full((n, m), Color.BLACK)
+    
+    # Generate random objects with random colors
+    num_objects = np.random.randint(3, 6)
+    
+    for _ in range(num_objects):
+        # Generate a random sprite with random color
+        sprite_size = np.random.randint(3, 5)
+        color = np.random.choice(list(Color.NOT_BLACK))
+        sprite = random_sprite(sprite_size, sprite_size, color_palette=[color], connectivity=8)
+        
+        # Place the sprite in a random location on the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, padding=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If unable to place the sprite, retry
+            return generate_input()
+    
+    return grid
+```
+
+### Explanation:
+
+1. **`main` function:**
+   - It identifies all connected components in the input grid.
+   - It selects the first object from the list of connected components for recoloring.
+   - It chooses a new color randomly from the available colors (excluding black).
+   - It recolors the selected object uniformly with the chosen color.
+   - It places the recolored object back onto a copy of the input grid to form the output.
+
+2. **`generate_input` function:**
+   - It generates a grid of random size between 10x10 and 15x15.
+   - It then generates a random number of colored objects with random colors (excluding black).
+   - It attempts to place these objects randomly on the grid, ensuring they do not overlap.
+
+This puzzle challenges the solver to identify and recolor a connected component while keeping the rest of the grid unchanged. The randomness in input generation ensures varied and interesting puzzle instances.

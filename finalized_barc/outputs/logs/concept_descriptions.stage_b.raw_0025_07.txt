@@ -1,0 +1,87 @@
+Here's a new puzzle design based on the provided description, involving grid partitioning, divider lines, and color-based regions:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# grid partitioning, divider lines, color-based regions
+
+# description:
+# The input grid is divided into distinct regions by divider lines of a specific color that span the grid vertically or horizontally. 
+# Each region is filled with a unique color that does not appear in other regions. 
+# The task is to identify these regions and output a grid where each region is represented by a single pixel of that region's color.
+
+def main(input_grid):
+    # 1. Identify the divider lines and use them to partition the grid into regions.
+    # 2. Determine the color of each region.
+    # 3. Create an output grid where each region is represented by a single pixel with the region's color.
+
+    # Assume the divider lines are the most frequent non-background color.
+    divider_color = max(Color.NOT_BLACK, key=lambda color: np.sum(input_grid == color))
+
+    # Find all connected components separated by the divider color
+    regions = find_connected_components(input_grid, background=divider_color, connectivity=4, monochromatic=True)
+    
+    # Determine the color of each region
+    region_colors = [object_colors(region, background=divider_color)[0] for region in regions]
+
+    # Create output grid, where each region is represented by a single pixel
+    output_width = len(set(object_position(region)[0] for region in regions))
+    output_height = len(set(object_position(region)[1] for region in regions))
+    output_grid = np.full((output_width, output_height), Color.BLACK)
+
+    for region, color in zip(regions, region_colors):
+        x, y = object_position(region, background=divider_color)
+        output_grid[x, y] = color
+
+    return output_grid
+
+def generate_input():
+    # Generate a random grid size
+    width, height = np.random.randint(10, 20), np.random.randint(10, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Randomly choose a divider color
+    divider_color = np.random.choice(Color.NOT_BLACK)
+
+    # Create random dividers to partition the grid into regions
+    num_vertical_dividers = np.random.randint(1, 4)
+    num_horizontal_dividers = np.random.randint(1, 4)
+    
+    vertical_dividers = randomly_spaced_indices(width, num_vertical_dividers, border_size=1, padding=2)
+    horizontal_dividers = randomly_spaced_indices(height, num_horizontal_dividers, border_size=1, padding=2)
+
+    for x in vertical_dividers:
+        draw_line(grid, x=x, y=0, direction=(0, 1), color=divider_color)
+
+    for y in horizontal_dividers:
+        draw_line(grid, x=0, y=y, direction=(1, 0), color=divider_color)
+
+    # Fill each region with a unique color
+    regions = find_connected_components(grid, background=divider_color, connectivity=4, monochromatic=True)
+    available_colors = list(Color.NOT_BLACK - {divider_color})
+    np.random.shuffle(available_colors)
+
+    for region in regions:
+        color = available_colors.pop()
+        interior_mask = object_interior(region, background=divider_color)
+        for x, y in np.argwhere(interior_mask):
+            grid[x, y] = color
+    
+    return grid
+```
+
+### Explanation:
+
+1. **Concepts**: The puzzle revolves around partitioning a grid using divider lines and recognizing distinct regions based on color.
+
+2. **Description**: 
+   - **Input**: A grid with divider lines of a specific color that split the grid into regions. Each region is filled with a unique color.
+   - **Output**: A grid where each region is represented by a single pixel of the region's color.
+
+3. **Implementation**:
+   - In `main`, the input grid is analyzed to find regions separated by dividers. Each region's color is identified, and the output grid is constructed with each region represented by one pixel.
+   - In `generate_input`, a grid is generated with random dimensions. Random dividers are drawn to create regions, each filled with a unique color. This stochastic process provides varied examples for the puzzle.

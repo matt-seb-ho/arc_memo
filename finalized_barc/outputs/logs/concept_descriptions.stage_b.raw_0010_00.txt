@@ -1,0 +1,63 @@
+Here's a new puzzle implementation based on the provided description. This puzzle involves identifying a guide object within a grid and using its position as the starting point for a transformation:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# guide object, starting point, position-based transformation
+
+# description:
+# In the input grid, there is a unique guide object represented by a distinct color (TEAL).
+# The task is to identify this guide object and use its position to perform a transformation.
+# Specifically, the transformation involves creating a radial gradient of colors around the guide object
+# in the output grid. The colors in the radial gradient should be chosen randomly from the available colors,
+# excluding BLACK and TEAL, and should change with increasing distance from the guide object.
+
+def main(input_grid):
+    # Find the guide object in the grid (TEAL colored)
+    guide_object = detect_objects(grid=input_grid, colors=[Color.TEAL], monochromatic=True, connectivity=8)[0]
+    
+    # Get the position of the guide object
+    guide_x, guide_y, *_ = bounding_box(guide_object, background=Color.BLACK)
+    
+    # Create an output grid of the same size as the input grid
+    output_grid = np.full_like(input_grid, Color.BLACK)
+
+    # Define the available colors for the radial gradient, excluding BLACK and TEAL
+    available_colors = [color for color in Color.NOT_BLACK if color != Color.TEAL]
+
+    # Fill the output grid with a radial gradient centered at the guide object's position
+    n, m = input_grid.shape
+    for i in range(n):
+        for j in range(m):
+            # Calculate the distance from the guide object
+            distance = int(np.sqrt((i - guide_x) ** 2 + (j - guide_y) ** 2))
+            # Choose a color based on the distance
+            color = available_colors[distance % len(available_colors)]
+            output_grid[i, j] = color
+
+    return output_grid
+
+def generate_input():
+    # Generate a grid with a unique TEAL colored guide object
+    n, m = np.random.randint(5, 10), np.random.randint(5, 10)
+    grid = np.full((n, m), Color.BLACK, dtype=int)
+    
+    # Randomly place a TEAL colored pixel as the guide object
+    guide_x, guide_y = np.random.randint(0, n), np.random.randint(0, m)
+    grid[guide_x, guide_y] = Color.TEAL
+
+    # Optionally, add some random colored pixels around the grid
+    num_random_pixels = np.random.randint(0, 5)
+    for _ in range(num_random_pixels):
+        rx, ry = np.random.randint(0, n), np.random.randint(0, m)
+        if (rx, ry) != (guide_x, guide_y):
+            grid[rx, ry] = np.random.choice([c for c in Color.NOT_BLACK if c != Color.TEAL])
+    
+    return grid
+```
+
+This puzzle challenges students to identify the guide object and use its position to create a radial gradient transformation. The `generate_input` function ensures that each input grid has a unique TEAL colored pixel serving as the guide object, while `main` applies the transformation by filling the grid with a radial gradient of colors.

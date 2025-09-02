@@ -1,0 +1,4 @@
+```python
+# concepts: recolor, connected components, color scheme
+# description: Identify a single connected component (object) within the grid. Apply a given color scheme to recolor the entire object. The color scheme may be a single color or a function that determines the color based on object properties. All other grid elements remain unchanged.
+```

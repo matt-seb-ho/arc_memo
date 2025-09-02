@@ -1,0 +1,66 @@
+To implement the new puzzle based on the provided description, we'll create a system where a specific 3x3 window is processed according to a given predicate function. The cells within the window will be checked against this predicate, and those that do not satisfy it will be filled with a specified fill value. This requires understanding grid manipulation and applying conditional logic to manipulate the grid.
+
+Here's how we can implement this puzzle:
+
+```python
+from common import *
+import numpy as np
+from typing import *
+
+# concepts:
+# window processing, predicate check, conditional fill, grid manipulation
+
+# description:
+# The input is a grid with specific 3x3 window coordinates and a predicate function.
+# For each cell within the specified 3x3 window, check if it satisfies the predicate.
+# If a cell does not satisfy the predicate, replace its value with a specified fill_value.
+# Cells that satisfy the predicate remain unchanged.
+
+def main(input_grid, window_coords, predicate, fill_value):
+    # Extract the 3x3 window based on the provided coordinates
+    x_start, y_start = window_coords
+    x_end, y_end = x_start + 3, y_start + 3
+    
+    # Create a copy of the input grid to modify
+    output_grid = np.copy(input_grid)
+    
+    # Process each cell within the 3x3 window
+    for x in range(x_start, x_end):
+        for y in range(y_start, y_end):
+            # Check if the cell satisfies the predicate
+            if not predicate(input_grid[x, y]):
+                # If not, replace its value with the fill_value
+                output_grid[x, y] = fill_value
+    
+    return output_grid
+
+def generate_input():
+    # Define the grid size
+    grid_size = np.random.randint(5, 10)
+    grid = np.random.choice(Color.NOT_BLACK, size=(grid_size, grid_size))
+    
+    # Randomly pick a 3x3 window within the grid
+    x_start = np.random.randint(0, grid_size - 2)
+    y_start = np.random.randint(0, grid_size - 2)
+    window_coords = (x_start, y_start)
+    
+    # Define the predicate function (example: check if the color is in a specific subset)
+    colors_subset = np.random.choice(Color.NOT_BLACK, size=3, replace=False)
+    predicate = lambda color: color in colors_subset
+    
+    # Define the fill value (a random color not in the subset)
+    fill_value = np.random.choice([color for color in Color.NOT_BLACK if color not in colors_subset])
+    
+    return grid, window_coords, predicate, fill_value
+
+# Example usage:
+# input_grid, window_coords, predicate, fill_value = generate_input()
+# transformed_grid = main(input_grid, window_coords, predicate, fill_value)
+```
+
+### Explanation:
+- **`main` function**: This function processes a specific 3x3 region within the grid determined by `window_coords`. Each cell in this window is checked against a predicate function. If a cell does not satisfy the predicate, it is replaced with a `fill_value`. The function returns the modified grid.
+  
+- **`generate_input` function**: This function generates a random grid and defines a random 3x3 window within it. It also generates a random predicate function that checks if a color belongs to a randomly chosen subset of colors. A `fill_value` is chosen as a color not in the subset. The function returns the grid, window coordinates, predicate, and fill value for use in `main`.
+
+This puzzle challenges students to understand grid manipulation, apply conditional logic, and work with randomization in grid-based puzzles.

@@ -1,0 +1,4 @@
+```python
+# concepts: obstacles, path blocking, line drawing, detours
+# description: Identify any non-background pixels (obstacles) that lie along a planned line or replication path. These obstacles block the direct path and require handling such as detours, bypassing, or recoloring. The transformation involves navigating around these obstacles to complete the path without overwriting them, ensuring the line or replication reaches its intended destination while preserving existing objects.
+```

@@ -1,0 +1,70 @@
+Below is a new puzzle implementation that involves extracting connected components from a color grid, applying a selection criterion, and outputting the selected components.
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object selection, connected components, filtering
+
+# description:
+# The input is a grid containing several colored objects. Each object is a connected component of pixels with the same color.
+# To produce the output, extract all connected components and filter them such that only those with an area greater than a threshold remain.
+# The output is a list of selected objects, represented by their bounding boxes and constituent pixels. Non-selected objects are excluded.
+
+def main(input_grid):
+    # Define the area threshold for selection
+    area_threshold = 5
+
+    # Detect all connected components in the input grid
+    components = find_connected_components(input_grid, background=Color.BLACK, connectivity=4, monochromatic=True)
+
+    # Prepare a list to store the selected objects
+    selected_objects = []
+
+    # Iterate over each component to apply the selection criterion
+    for comp in components:
+        # Calculate the area of the component (number of pixels)
+        area = np.sum(comp != Color.BLACK)
+
+        # If the component's area is greater than the threshold, select it
+        if area > area_threshold:
+            # Crop the component to get its bounding box
+            cropped_comp = crop(comp, background=Color.BLACK)
+
+            # Add the cropped component to the list of selected objects
+            selected_objects.append(cropped_comp)
+
+    return selected_objects
+
+def generate_input():
+    # Generate a grid with dimensions between 10x10 to 20x20
+    n, m = np.random.randint(10, 20, size=2)
+    grid = np.full((n, m), Color.BLACK)
+
+    # Define the number of objects to place on the grid
+    num_objects = np.random.randint(3, 6)
+
+    # Place objects randomly on the grid
+    for _ in range(num_objects):
+        # Randomly determine the size of the object
+        obj_n, obj_m = np.random.randint(2, 5, size=2)
+
+        # Create a random sprite of the object
+        obj_color = random.choice(list(Color.NOT_BLACK))
+        sprite = random_sprite(obj_n, obj_m, color_palette=[obj_color], density=0.5)
+
+        # Try to place the object in the grid
+        try:
+            x, y = random_free_location_for_sprite(grid, sprite, border_size=1, padding=1)
+            blit_sprite(grid, sprite, x, y)
+        except ValueError:
+            # If no space, continue with next object
+            continue
+
+    return grid
+```
+
+This puzzle prompts students to understand how to extract and manipulate connected components in a grid and apply a filtering criterion based on a property of the components, such as their area. The `generate_input` function creates a grid with several random colored objects, while the `main` function extracts and filters these objects based on the specified area threshold.

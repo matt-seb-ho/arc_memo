@@ -1,0 +1,83 @@
+Here is the implementation of the puzzle based on the provided description:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# hole filling, guide object, target object, enclosed regions, non-overlapping placement
+
+# description:
+# The input consists of a guide object with enclosed holes and a separate target object. Identify interior holes within the guide object (regions not connected to the border).
+# Fill these holes using the target object by fitting its pixels or blocks into the hole geometry without overlapping existing non-background pixels.
+# Continue filling until all holes are filled or no more legal placements are possible. The output grid shows previously empty regions inside the guide object filled with the target object's pixels.
+
+def main(input_grid):
+    # Detect the guide object
+    guide_objects = detect_objects(grid=input_grid, colors=Color.ALL_COLORS, monochromatic=False, connectivity=4)
+    assert len(guide_objects) == 1, "There should be exactly one guide object"
+    guide_object = guide_objects[0]
+
+    # Detect the target object
+    target_objects = detect_objects(grid=input_grid, colors=Color.ALL_COLORS, monochromatic=False, connectivity=4)
+    assert len(target_objects) == 2, "There should be exactly one guide and one target object"
+    target_object = target_objects[1]
+
+    # Identify interior holes in the guide object
+    interior_mask = object_interior(guide_object)
+    guide_mask = (guide_object != Color.BLACK)
+    holes_mask = interior_mask & ~guide_mask
+
+    output_grid = input_grid.copy()
+
+    # Fill holes using the target object
+    for x, y in np.argwhere(holes_mask):
+        try:
+            blit_sprite(output_grid, target_object, x, y, background=Color.BLACK)
+        except ValueError:
+            continue  # Skip if no legal placement is possible
+
+    return output_grid
+
+def generate_input():
+    # Create a random grid size
+    width = np.random.randint(12, 20)
+    height = np.random.randint(12, 20)
+    grid = np.full((width, height), Color.BLACK)
+
+    # Create a guide object with enclosed holes
+    guide_width = np.random.randint(6, min(width, 10))
+    guide_height = np.random.randint(6, min(height, 10))
+    guide_object = np.full((guide_width, guide_height), np.random.choice(list(Color.NOT_BLACK)))
+
+    # Create holes in the guide object
+    num_holes = np.random.randint(1, 4)
+    for _ in range(num_holes):
+        hole_size = np.random.randint(2, min(guide_width, guide_height) // 2)
+        hole_x = np.random.randint(1, guide_width - hole_size - 1)
+        hole_y = np.random.randint(1, guide_height - hole_size - 1)
+        guide_object[hole_x:hole_x + hole_size, hole_y:hole_y + hole_size] = Color.BLACK
+
+    # Blit the guide object onto the grid
+    guide_x, guide_y = random_free_location_for_sprite(grid, guide_object, padding=1)
+    blit_sprite(grid, guide_object, guide_x, guide_y)
+
+    # Create a target object
+    target_size = np.random.randint(1, 3)
+    target_object = random_sprite(target_size, target_size, color_palette=list(Color.NOT_BLACK), background=Color.BLACK)
+
+    # Blit the target object onto the grid in a random location
+    target_x, target_y = random_free_location_for_sprite(grid, target_object, padding=1)
+    blit_sprite(grid, target_object, target_x, target_y)
+
+    return grid
+```
+
+### Explanation:
+- **`main` Function**: This function detects the guide object and the target object from the input grid. It identifies the interior holes within the guide object and attempts to fill these holes using the target object by fitting it without overlapping existing non-background pixels.
+
+- **`generate_input` Function**: This function generates a grid with a guide object that contains enclosed holes and places a target object on the grid. The guide object is created by defining a random size and filling it with a random color, then carving out random holes within it. The target object is also randomly generated and placed on the grid.
+
+This puzzle challenges students to understand hole-filling with constraints, object detection, and non-overlapping sprite placement.

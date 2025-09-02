@@ -1,0 +1,123 @@
+Sure! Let's create a new puzzle based on the description provided. This puzzle will involve detecting objects in a sequence of grids and extrapolating their movements over time.
+
+## Puzzle Description:
+- **Concepts**: Object tracking, linear movement, pattern extrapolation
+- **Description**: 
+  - The input consists of a sequence of grids representing consecutive time steps. Each grid contains one or more colored objects that consistently move in a straight line. 
+  - The task is to analyze the sequence to identify the movement pattern of each object. 
+  - The output is a grid that predicts the next position of each object based on its detected linear movement.
+
+Here is the implementation of the `main` and `generate_input` functions for this puzzle:
+
+```python
+from common import *
+
+import numpy as np
+from typing import *
+
+# concepts:
+# object tracking, linear movement, pattern extrapolation
+
+# description:
+# The input consists of a sequence of grids representing consecutive time steps. Each grid contains one or more colored objects moving linearly.
+# The task is to analyze the sequence to identify the movement pattern of each object and predict the next position of each object.
+
+def main(input_grids):
+    # We assume input_grids is a list of 2D numpy arrays representing the grids at each time step
+
+    # Extract the number of time steps and the grid dimensions
+    num_steps = len(input_grids)
+    grid_height, grid_width = input_grids[0].shape
+
+    # Create an output grid for the next time step prediction
+    output_grid = np.zeros((grid_height, grid_width), dtype=int)
+
+    # Track each object's movement across the time steps
+    objects_trajectory = {}
+
+    for t, grid in enumerate(input_grids):
+        objects = find_connected_components(grid, monochromatic=True, background=Color.BLACK)
+
+        for obj in objects:
+            color = object_colors(obj)[0]
+            x, y = object_position(obj, background=Color.BLACK)
+
+            if color not in objects_trajectory:
+                objects_trajectory[color] = []
+            
+            objects_trajectory[color].append((x, y))
+
+    # Extrapolate each object's movement to predict the next position
+    for color, trajectory in objects_trajectory.items():
+        if len(trajectory) >= 2:
+            # Calculate movement vector based on last two positions
+            (x1, y1), (x2, y2) = trajectory[-2], trajectory[-1]
+            dx, dy = x2 - x1, y2 - y1
+
+            # Predict the next position
+            next_x, next_y = x2 + dx, y2 + dy
+
+            # Place the object in the predicted position if within grid bounds
+            if 0 <= next_x < grid_width and 0 <= next_y < grid_height:
+                output_grid[next_x, next_y] = color
+
+    return output_grid
+
+
+def generate_input():
+    # Generate a sequence of grids with moving objects
+
+    # Random grid size
+    grid_height, grid_width = np.random.randint(5, 10, size=2)
+
+    # Number of time steps in the sequence
+    num_steps = np.random.randint(3, 5)
+
+    # Create a list to store the sequence of grids
+    input_grids = []
+
+    # Number of objects
+    num_objects = np.random.randint(1, 4)
+
+    # Initialize positions and velocities for each object
+    positions = [np.array([np.random.randint(0, grid_height), np.random.randint(0, grid_width)]) for _ in range(num_objects)]
+    velocities = [np.array([np.random.choice([-1, 0, 1]), np.random.choice([-1, 0, 1])]) for _ in range(num_objects)]
+    colors = np.random.choice(list(Color.NOT_BLACK), size=num_objects, replace=False)
+
+    for _ in range(num_steps):
+        # Create a new grid for this time step
+        grid = np.zeros((grid_height, grid_width), dtype=int)
+
+        # Update positions and draw objects
+        for i in range(num_objects):
+            x, y = positions[i]
+            color = colors[i]
+
+            # Place the object
+            grid[x, y] = color
+
+            # Update position for next time step
+            next_x, next_y = positions[i] + velocities[i]
+
+            # Ensure the object stays within bounds, bounce if necessary
+            if not (0 <= next_x < grid_height):
+                velocities[i][0] *= -1
+            if not (0 <= next_y < grid_width):
+                velocities[i][1] *= -1
+            positions[i] = positions[i] + velocities[i]
+
+        input_grids.append(grid)
+
+    return input_grids
+```
+
+### Explanation:
+- **`main` Function**: 
+  - It takes a list of grids as input, each representing a time step.
+  - It tracks the movement of each colored object, calculates their movement vectors based on their last two positions, and extrapolates the next position.
+  - It outputs a grid with the predicted new positions of the objects.
+
+- **`generate_input` Function**: 
+  - It creates a sequence of grids with randomly placed moving objects.
+  - Each object is assigned a random initial position and velocity.
+  - The grids are populated in sequence, with each object's position updated according to its velocity, and objects are made to bounce off the grid edges.
