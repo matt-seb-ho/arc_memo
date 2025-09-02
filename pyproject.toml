@@ -1,0 +1,2 @@
+[tool.ruff.isort]
+known-first-party = ["concept_mem"]

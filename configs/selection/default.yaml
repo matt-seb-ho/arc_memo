@@ -18,3 +18,7 @@ ensemble_method: null
 summary_generation:
   temperature: 0.0
   max_tokens: 1024
+
+
+mem_str_path: null
+mem_path: null

@@ -1,0 +1,11 @@
+dataset: custom
+split: chen_curriculum_5_support
+
+problem_ids:
+  97239e3d:
+  0607ce86:
+  69889d6e:
+  351d6448:
+  1c0d0a4b:
+
+num_problems: null

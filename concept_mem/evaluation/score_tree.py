@@ -250,6 +250,7 @@ def strict_score_per_puzzle(
     *,
     include_train: bool = False,
     step_selection: Literal["all", "last"] = "all",
+    aggregate_step_method: Literal["any", "mean"] = "any",
 ) -> pd.Series:
     step_correct = strict_score_per_step(
         df,
@@ -257,8 +258,11 @@ def strict_score_per_puzzle(
         step_selection=step_selection,
     )
     if step_correct.empty:
-        return pd.Series(dtype=int)
-    per_puzzle = step_correct.groupby("puzzle_id", sort=False).any()
+        return pd.Series(dtype=float)
+    if aggregate_step_method == "any":
+        per_puzzle = step_correct.groupby("puzzle_id", sort=False).any()
+    else:
+        per_puzzle = step_correct.groupby("puzzle_id", sort=False).mean()
     return per_puzzle
 
 
@@ -267,12 +271,14 @@ def strict_score(
     *,
     include_train: bool = False,
     step_selection: Literal["all", "last"] = "all",
-) -> int:
+    aggregate_step_method: Literal["any", "mean"] = "any",
+) -> float:
     strict_score_per_puzzle_series = strict_score_per_puzzle(
         df,
         include_train=include_train,
         step_selection=step_selection,
+        aggregate_step_method=aggregate_step_method,
     )
     if strict_score_per_puzzle_series.empty:
-        return 0
+        return 0.0
     return strict_score_per_puzzle_series.sum()

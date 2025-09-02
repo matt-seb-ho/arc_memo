@@ -1,0 +1,7 @@
+dataset: arc-agi
+split: validation
+
+# op3_fixedcm_solved
+problem_ids: data/testbeds/op3f_solved_ids.json
+
+num_problems: null

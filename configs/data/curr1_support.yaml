@@ -1,0 +1,9 @@
+dataset: custom
+split: msho_curr1_support
+
+problem_ids:
+  69889d6e_line: data/curriculum/69889d6e/draw_line.json
+  69889d6e_diagonal: data/curriculum/69889d6e/draw_pattern.json
+  69889d6e_obstacle: data/curriculum/69889d6e/obstacle.json
+
+num_problems: null

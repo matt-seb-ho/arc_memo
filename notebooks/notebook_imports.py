@@ -16,7 +16,6 @@ import yaml
 from omegaconf import OmegaConf
 from tqdm import tqdm
 
-plt.style.use("rose-pine-dawn")
 
 package_path = os.path.abspath("..")
 if package_path not in sys.path:
@@ -92,3 +91,7 @@ def oai_token_len(text: str) -> int:
 @cache
 def _get_gpt4o_tokenizer():
     return tiktoken.encoding_for_model("gpt-4o")
+
+
+def use_rose_pine_dawn_mpl_theme():
+    plt.style.use("rose-pine-dawn")

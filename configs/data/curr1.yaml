@@ -1,0 +1,7 @@
+dataset: custom
+split: msho_curriculum_1_diagonal_line_with_obstacle
+
+problem_ids:
+  69889d6e:
+
+num_problems: null

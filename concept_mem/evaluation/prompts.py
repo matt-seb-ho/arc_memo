@@ -99,6 +99,46 @@ We also have some recommendations on how to approach problem solving with these 
 
 {hints}"""
 
+HINT_TEMPLATE_OP3A = """\
+### Concepts from Previously Solved Puzzles
+We recorded concepts about structures and routines we observed in previously solved puzzles. These concepts may or may not be relevant to this puzzle, but they provide useful context to show examples of what structures may appear in the grids, what operations may be used, and how they might be composed. Concepts are annotated with fields like:
+- cues: (short for "relevance cues"), what to look for that might indicate this concept is relevant in this puzzle
+- implementation: notes on how this concept was implemented in past solution programs
+- output typing: what the output of this routine is (e.g. a grid, a list, a number, a bool, etc.)
+- parameters: a list of parameters that describe ways the concept may vary
+We also have some recommendations on how to approach problem solving with these concepts in mind:
+- We label the grid manipulation routines separately-- these directly affect the grids so they are easier to spot (along with structure concepts)
+- You might try to first identify which grid manipulation operations are used, then investigate their parameters
+- The non-grid manipulation routines might describe ways we've seen previous puzzles set parameters, so you can look to these for inspiration
+- There may not be exact matches to this list, so we encourage you to think about variations, novel ways to recombine existing ideas, as well as completely new concepts
+- These concepts and this approach are only suggestions, use them as you see fit
+We want to emphasize:
+- These concepts are not exhaustive, but rather a set that has been (1) observed in previous solved puzzles (2) marked as potentially relevant to this puzzle in a rough initial analysis. 
+- The selection of concepts we fully present is likely imperfect and incomplete, so we include the titles of all other previous concepts in case they're useful.
+- These only represent pieces-- they can be put together in any number of ways such as:
+  - [`color criteria`, `size criteria`, `tiling`]: maybe you only tile an object if it's red and the number of tiling copies depends on the size of the object
+  - [`recolor objects`, `position criteria`, `split object`]: maybe objects' color scheme depends on their position or distance from something, or maybe only portions of objects are recolored
+  - [`counting`, `recolor object`, `line drawing`, `collision criteria`]: maybe you draw a line, navigating around obstacles when you collide with them, and change the line color according to the number of obstacles hit
+  - [`color criteria`, `draw object`, `shape criteria`, `direction selection`]: maybe an object's color determines what shape should be drawn and some other shape determines what direction to draw it in
+  - [`region grid`, `line drawing`, `recolor object`, `intersection criteria`]: maybe a you need to draw lines between objects arranged in their own grid, and then recolor the objects if lines intersect them
+- Again, the puzzle at hand may require entirely new operations, these are only the ones we've seen so far
+
+{hints}"""
+
+HINT_TEMPLATE_CHEATSHEET_MIN = """\
+### Cheatsheet
+Here is a cheatsheet containing relevant strategies, patterns, and examples from similar problems:
+
+{hints}"""
+# ---
+
+# ## 1. ANALYSIS & STRATEGY
+
+# - Carefully analyze both the question and cheatsheet before starting
+# - Search for and identify any applicable patterns, strategies, or examples within the cheatsheet
+# - Create a structured approach to solving the problem at hand
+# - Review and document any limitations in the provided reference materials
+
 HINT_TEMPLATES = {
     "basic": HINT_TEMPLATE_MIN,
     "default": HINT_TEMPLATE_MIN,
@@ -108,6 +148,8 @@ HINT_TEMPLATES = {
     "abstract": HINT_TEMPLATE_ABSTRACT,
     "curr3": HINT_TEMPLATE_CURR3,
     "op3": HINT_TEMPLATE_OP3,
+    "op3a": HINT_TEMPLATE_OP3A,
+    "cheatsheet_min": HINT_TEMPLATE_CHEATSHEET_MIN,
 }
 
 # -- code generation instructions ----------------------------------------------

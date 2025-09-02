@@ -139,6 +139,7 @@ class ConceptMemory:
         skip_implementation: bool = False,
         # usage-condensed rendering
         usage_threshold: int = 2,
+        show_other_concepts: bool = False,
         indentation: int = 0,
         filter_concept: Callable[[Concept], bool] | None = None,
     ) -> str:
@@ -161,6 +162,7 @@ class ConceptMemory:
             skip_cues=skip_cues,
             skip_implementation=skip_implementation,
             usage_threshold=usage_threshold,
+            show_other_concepts=show_other_concepts,
             indentation=indentation,
             filter_concept=filter_concept,
         )
@@ -182,6 +184,7 @@ class ConceptMemory:
             skip_cues=skip_cues,
             skip_implementation=skip_implementation,
             usage_threshold=usage_threshold,
+            show_other_concepts=show_other_concepts,
             indentation=indentation,
             filter_concept=filter_concept,
         )
@@ -199,6 +202,7 @@ class ConceptMemory:
             skip_cues=True,
             skip_implementation=skip_implementation,
             usage_threshold=usage_threshold,
+            show_other_concepts=show_other_concepts,
             indentation=indentation,
             filter_concept=filter_concept,
         )
@@ -220,21 +224,24 @@ class ConceptMemory:
         skip_cues: bool,
         skip_implementation: bool,
         usage_threshold: int,
+        show_other_concepts: bool,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
-        names = [
-            n
-            for n in self.categories.get("structure", [])
-            if (not whitelist or n in whitelist)
-        ]
-        if not names:
+        all_names = self.categories.get("structure", [])
+        names_in = [n for n in all_names if (not whitelist or n in whitelist)]
+        names_out = (
+            [n for n in all_names if whitelist and n not in whitelist]
+            if show_other_concepts
+            else []
+        )
+        if not names_in and not names_out:
             return ""
 
         full_render: list[str] = []
         low_usage_names: list[str] = []
 
-        for n in names:
+        for n in names_in:
             c = self.concepts[n]
             if filter_concept and not filter_concept(c):
                 continue
@@ -256,7 +263,11 @@ class ConceptMemory:
 
         lines: list[str] = ["## structure concepts", *full_render]
         if low_usage_names:
-            lines.append(f"- lower usage concepts: [{', '.join(low_usage_names)}]")
+            lines.append(
+                f"- lower usage concepts: [{', '.join(sorted(low_usage_names))}]"
+            )
+        if names_out:
+            lines.append(f"- other concepts: [{', '.join(sorted(names_out))}]")
         return "\n".join(lines)
 
     def _to_string_types(self, *, indentation: int) -> str:
@@ -279,22 +290,28 @@ class ConceptMemory:
         skip_cues: bool,
         skip_implementation: bool,
         usage_threshold: int,
+        show_other_concepts: bool,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
-        grid_names = [
+        all_grid_names = [
             n
             for n in self.categories.get("routine", [])
-            if (not whitelist or n in whitelist)
-            and self.concepts[n].routine_subtype == "grid manipulation"
+            if self.concepts[n].routine_subtype == "grid manipulation"
         ]
-        if not grid_names:
+        grid_in = [n for n in all_grid_names if (not whitelist or n in whitelist)]
+        grid_out = (
+            [n for n in all_grid_names if whitelist and n not in whitelist]
+            if show_other_concepts
+            else []
+        )
+        if not grid_in and not grid_out:
             return ""
 
         full_render: list[str] = []
         low_usage_names: list[str] = []
 
-        for n in grid_names:
+        for n in grid_in:
             c = self.concepts[n]
             if filter_concept and not filter_concept(c):
                 continue
@@ -316,7 +333,11 @@ class ConceptMemory:
 
         lines: list[str] = ["## grid manipulation routines", *full_render]
         if low_usage_names:
-            lines.append(f"- lower usage concepts: [{', '.join(low_usage_names)}]")
+            lines.append(
+                f"- lower usage concepts: [{', '.join(sorted(low_usage_names))}]"
+            )
+        if grid_out:
+            lines.append(f"- other concepts: [{', '.join(sorted(grid_out))}]")
         return "\n".join(lines)
 
     def _to_string_other_routines(
@@ -331,20 +352,31 @@ class ConceptMemory:
         skip_cues: bool,
         skip_implementation: bool,
         usage_threshold: int,
+        show_other_concepts: bool,
         indentation: int,
         filter_concept: Callable[[Concept], bool] | None,
     ) -> str:
-        routines = [
+        routines_all = [
             self.concepts[n]
             for n in self.categories.get("routine", [])
-            if (not whitelist or n in whitelist)
-            and self.concepts[n].routine_subtype != "grid manipulation"
+            if self.concepts[n].routine_subtype != "grid manipulation"
         ]
-        if not routines:
+
+        # Partition into whitelisted and other buckets preserving subtype groupings
+        routines_in = [
+            c for c in routines_all if (not whitelist or c.name in whitelist)
+        ]
+        routines_out_names = (
+            [c.name for c in routines_all if whitelist and c.name not in whitelist]
+            if show_other_concepts
+            else []
+        )
+
+        if not routines_in and not routines_out_names:
             return ""
 
         buckets: dict[str, list[Concept]] = defaultdict(list)
-        for c in routines:
+        for c in routines_in:
             key = c.routine_subtype or "misc"
             buckets[key].append(c)
 
@@ -373,7 +405,11 @@ class ConceptMemory:
                     )
 
         if low_usage_overall:
-            lines.append(f"- lower usage concepts: [{', '.join(low_usage_overall)}]")
+            lines.append(
+                f"- lower usage concepts: [{', '.join(sorted(low_usage_overall))}]"
+            )
+        if routines_out_names:
+            lines.append(f"- other concepts: [{', '.join(sorted(routines_out_names))}]")
         return "\n".join(lines)
 
     # ----------------------------------------------------------------- #
