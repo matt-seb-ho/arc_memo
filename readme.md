@@ -80,3 +80,11 @@ The shape of the problem data json file is as follows:
     ...
 }
 ```
+
+## Dataset (Under Construction)
+We release our concept annotations for difficult target puzzles in `data/dataset/`.
+The current annotations support future work in reformatting the current concepts to determine an optimal representation to enable the model to solve the previously unsolved puzzles.
+
+We are currently working on (1) additional annotations for these puzzles and (2) an automated pipeline to convert individual concepts into helper puzzles.
+The goal here is to simulate the end-to-end setting of learning concepts from helper puzzles -> reusing the concept to solve target puzzles.
+This in-progress dataset would enable future work in measuring model abilities to extract salient concepts from puzzles, with and without distractors.
