@@ -1,0 +1,32 @@
+
+Original Concept:
+```yaml
+connect guide object pairs:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: guide_object
+      typing: object | list[object]
+      description: the object(s) whose colour is unique and used as reference
+    - name: connection color
+      typing: color
+      description: colour to paint along connection paths
+    - name: color mode
+      typing: Literal['pixels','objects']
+      description: whether to paint individual pixels or recolour objects along the path
+    Description: For all non-guide objects or pixels, fill them with a connection
+      color if they are along the path(s) (row/column) between a pair of guide objects.
+      There might be multiple guide objects, and the connection path need to ensure
+      that all pairs of guide objects are connected (in a row/column/row+column way).
+    Implementation:
+    - For each unordered guide-object pair, rasterize the Manhattan path (row/column) between their anchors; paint along the path using connection color, respecting color mode.
+    Cues:
+    - Output shows straight orthogonal bands connecting guide objects.
+```
+
+Converted Description:
+```python
+# concepts: guide selection (unique color), anchors, Manhattan path, orthogonal L routing, recolor
+# description: Identify guide objects as those whose color is unique in the grid; let each guide’s anchor be its bbox centroid rounded down. For every unordered pair of guides, draw an L-shaped Manhattan path that moves HORIZONTALLY first to match the target’s column, then VERTICALLY to match its row. Paint every traversed cell with the fixed connection color (overwriting background or objects). If paths overlap, cells are painted once. All non-path cells remain as in the input.
+```

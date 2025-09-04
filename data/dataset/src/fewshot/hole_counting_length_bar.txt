@@ -1,0 +1,34 @@
+
+Original Concept:
+```yaml
+0a2355a6:
+  hole counting:
+    Kind: intermediate operation
+    Routine Subtype: N/A
+    Output Typing: int
+    Parameters:
+    - name: guide object
+      typing: object
+      description: object within which to count enclosed background regions
+    - name: color
+      typing: colour | set[colour]
+      description: which colours count as background for holes (e.g., 0)
+    - name: hole_connectivity
+      typing: 4 | 8
+      description: connectivity used for counting holes
+    Description: count the number of holes in an guide object (i.e. the number of
+      enclosed pixels that are not the guide object's color)
+    Implementation:
+    - Flood-fill background from the grid border to mark exterior 0-regions.
+    - Compute mask of the guide object; treat any 0-region fully enclosed by the object as a hole.
+    - Count holes (connected components) according to hole_connectivity if provided.
+    Cues:
+    - Donut/ring shapes where 0-cells are fully enclosed by an object.
+    - Outputs or later steps depend on the number of interior holes.
+```
+
+Converted Description:
+```python
+# concepts: holes (enclosed 0-regions), flood-fill from border, connected components (4-connectivity), length bar encoding
+# description: Choose a single colored guide object (largest non-background component). Using 4-connectivity, flood-fill background 0 from the outer border to mark exterior. Any remaining 0-region fully enclosed by the guide is a hole. Let k be the hole count. Output a new 1×k grid filled with the guide’s color (k columns, 1 row). If k=0, output a 1×1 grid of background 0. No other drawing is performed.
+```

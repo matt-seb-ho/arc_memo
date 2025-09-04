@@ -1,0 +1,30 @@
+
+Original Concept:
+```yaml
+963f59bc:
+  colour-transfer stamping:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: reflected shape
+      typing: object
+      description: the transformed copy to stamp
+    - name: stamp colour
+      typing: color
+      description: colour taken from the pivot mark
+    Description: Apply the reflection transform, recolour the resulting shape with
+      the pivot mark's colour, and write it into the grid without altering existing
+      non-background pixels.
+    Implementation:
+    - Recolour all pixels of the transformed shape to the stamp colour.
+    - Paste onto the canvas at the computed location, skipping non-background cells.
+    Cues:
+    - Output adds coloured copies of the reference shape without overwriting existing objects.
+```
+
+Converted Description:
+```python
+# concepts: reflection across pivot axis, recolor from pivot, non-destructive blit (skip nonzero), connected components
+# description: Identify a single seed object and a distinct 1-pixel pivot mark. Reflect the seed across the vertical line through the pivot’s column (mirror columns about pivot col). Translate the reflected seed to its computed location. Recolor every pixel of the reflected copy to the pivot’s color. Stamp onto the grid by writing only into background 0 cells (skip overwrite of any nonzero); leave existing content unchanged elsewhere.
+```
