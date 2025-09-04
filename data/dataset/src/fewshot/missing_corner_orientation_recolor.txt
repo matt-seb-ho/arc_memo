@@ -1,0 +1,44 @@
+
+Original Concept:
+```yaml
+626c0bcc:
+  missing-corner orientation:
+    Kind: routine
+    Routine Subtype: intermediate
+    Output Typing: orientation := Literal["tl","tr","bl","br"]
+    Parameters:
+    - name: mask
+      typing: grid
+      description: Boolean 2 × 2 mask for the L-shape
+    Description: identify which of the four corners is *not* occupied in a 3-pixel
+      L-shape.
+    Implementation:
+    - Inspect the 2×2 mask and locate the zero cell; map its position to one of {tl,tr,bl,br}.
+    - Robustness: allow one-pixel noise by using majority over local neighbourhood if needed.
+    Cues:
+    - An L-shaped triomino needs to be classified to drive colour assignment.
+  orientation-based recolor:
+    Kind: routine
+    Routine Subtype: grid manipulation
+    Output Typing: grid | object
+    Parameters:
+    - name: object
+      typing: object
+      description: the object to recolor
+    - name: orientation
+      typing: orientation
+      description: one of tl/tr/bl/br computed from the object's L-shape mask
+    Description: recolour an object using a fixed map (tl→red 3, bl→green 2, tr→yellow
+      4, br→blue 1).
+    Implementation:
+    - Compute orientation via missing-corner orientation; pick colour by lookup table.
+    - Paint all object pixels with the mapped colour.
+    Cues:
+    - Output shows identical shapes recoloured differently depending on their corner orientation.
+```
+
+Converted Description:
+```python
+# concepts: connected components (4-connectivity), 2x2 L-triomino, orientation classification, recolor via lookup
+# description: Extract all 4-connected components and find each 3-pixel L-triomino that occupies 3 cells of a 2×2 window. For each such object, locate the missing corner of its minimal 2×2 bbox to classify orientation in {tl,tr,bl,br}. Recolor the entire object by a fixed mapping: tl→3, bl→2, tr→4, br→1. Keep all other pixels unchanged.
+```
