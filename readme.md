@@ -88,3 +88,5 @@ The current annotations support future work in reformatting the current concepts
 We are currently working on (1) additional annotations for these puzzles and (2) an automated pipeline to convert individual concepts into helper puzzles.
 The goal here is to simulate the end-to-end setting of learning concepts from helper puzzles -> reusing the concept to solve target puzzles.
 This in-progress dataset would enable future work in measuring model abilities to extract salient concepts from puzzles, with and without distractors.
+
+We are continuing to improve and clean the puzzle generation pipeline, but it is currently functional and documented on this [branch](https://github.com/matt-seb-ho/arc_memo/tree/update_data).
