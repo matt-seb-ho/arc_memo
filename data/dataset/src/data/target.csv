@@ -1,0 +1,853 @@
+Puzzle ID,Concept,Kind,Routine Subtype,Output Typing,Parameters,Description,Implementation,Cues,helper_puzzle
+0a2355a6,hole counting,intermediate operation,,int,"- name: guide object
+  typing: object
+  description: object within which to count enclosed background regions
+- name: color
+  typing: colour | set[colour]
+  description: which colours count as background for holes (e.g., 0)
+- name: hole_connectivity
+  typing: 4 | 8
+  description: connectivity used for counting holes",count the number of holes in an guide object (i.e. the number of enclosed pixels that are not the guide object's color),"- Flood-fill background from the grid border to mark exterior 0-regions.
+- Compute mask of the guide object; treat any 0-region fully enclosed by the object
+  as a hole.
+- Count holes (connected components) according to hole_connectivity if provided.","- Donut/ring shapes where 0-cells are fully enclosed by an object.
+- Outputs or later steps depend on the number of interior holes.",
+0a2355a6,holes,term definition,,,,holes are empty spaces in the guide object that can be filled by the target object,"- Define holes as background-colour regions fully enclosed by the guide object (not
+  connected to the grid border).
+- Detect by flood-filling background from the border to mark exterior; any remaining
+  background component inside the object is a hole.","- Donut/ring-like shapes or enclosed 0-regions inside an object.
+- Tasks that count, recolour, or otherwise reference interior empty regions.",
+0a2355a6,odd/even counting,intermediate operation,,int,"- name: guide object
+  typing: object
+  description: the object whose pixels are checked for parity
+- name: color
+  typing: colour | set[colour]
+  description: restrict counting to specific colours (e.g., only background 0)",count the number of odd or even pixels in a guide object (i.e. the number of pixels with odd or even values),"- Build a mask of the guide object; iterate its pixels and apply parity test on colour
+  index.
+- If 'color' provided, restrict to those colours; otherwise consider all colours within
+  the object except its own if specified.
+- Sum pixels satisfying the chosen parity.","- Task logic references odd vs even counts or colour-index parity.
+- Examples show decisions based on whether a count is odd or even.",
+0a2355a6,set output grid shape,grid manipulation,,grid,"- name: output grid shape
+  typing: tuple[int, int] | Callable[[object], tuple[int, int]]
+  description: target (rows, cols) or a function deriving shape from a guide object","set the shape of the output grid according to the guide object, other concepts, or a fixed size","- Derive (rows, cols) from the chosen scheme (e.g., guide object's bbox or fixed size).
+- Allocate a new zero-initialised grid with that shape (dtype uint8).","- Output dimensions are independent of specific drawing but match a rule (bbox, fixed
+  N×M).
+- Specification mentions output shape explicitly.",
+0a2355a6,start from guide object,parameter selection,,,"- name: starting point
+  typing: coord | object
+  description: anchor derived from the guide object",use a guide object's position as a starting point for counting holes,"- Detect candidate objects; select the guide by uniqueness criterion (e.g., colour
+  or size).
+- Use the guide's anchor (e.g., centroid or top-left) as the starting point for downstream
+  steps.",- One object has a unique role or colour; subsequent steps originate from that object.,
+0a2355a6,use guide object color,parameter selection,,,"- name: color scheme
+  typing: colour | Callable[[object], colour]
+  description: use the guide object's colour value",use the color of a guide object for identifying holes,"- Read the guide object's colour index and propagate it to the target operation (e.g.,
+  fill/stamp).",- Outputs reuse the guide object's colour for new pixels or shapes.,
+0d87d2a6,draw line,routine,grid manipulation,grid,"- name: start_pixel
+  typing: object
+  description: the starting pixel to draw the line from
+- name: end_pixel
+  typing: object
+  description: the ending pixel to draw the line to
+- name: color
+  typing: color
+  description: the color of the line to draw","draw a line between two pixels in a grid, updating the grid accordingly","- draw the line pixel by pixel, picking a starting point and following the direction
+  to the end point",- output grid contains lines not present in the input grid,
+0d87d2a6,obstacles,term definition,,,,obstacles are objects that block the path of line drawing typically,"- Any non-background pixels (objects) along a planned line/replication path that would
+  be overwritten.
+- Can be handled via detours, bypass rules, or recolouring, depending on parameters.",- The step specifies obstacle handling or shows detours around existing objects.,
+0d87d2a6,pattern replication,routine,grid manipulation,grid,"- name: starting object
+  typing: object
+  description: which is the start object to replicate
+- name: direction
+  typing: Literal['horizontal','vertical','diagonal']
+  description: direction to extend the replication
+- name: color scheme
+  typing: colour | Callable[[object], colour]
+  description: what color(s) to use for the replication (keep the same, change to
+    another)
+- name: number of copies
+  typing: int | Callable[[grid], int]
+  description: how many copies to make (fixed number or derived from grid state)
+- name: obstacles
+  typing: bool | obstacle handling := Literal['bypass','ignore','recolor']
+  description: whether and how to handle obstacles while replicating",,"- Extract the starting object's shape mask and colour; compute offset steps per direction.
+- Iteratively translate the mask along the direction, painting copies according to
+  color scheme.
+- Stop after the requested number of copies or when blocked if obstacles not bypassed.","- Output shows multiple evenly spaced copies of the same shape along a straight direction;
+  lines in the puzzle indicate placement rails.",
+0d87d2a6,recolor object,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to recolor
+- name: color scheme
+  typing: color scheme := color | Callable[[object], color]
+  description: either a single color or logic that determines what object gets which
+    color",recolor an object based on a color scheme,,"- if existing structures from the input grid appear in the output grid with different
+  colors",
+0d87d2a6,select guide object,parameter selection,,object,"- name: candidate_objects
+  typing: list[object]
+  description: all components detected in the grid",From all candidate_objects choose the one whose color is not shared by any other object; this becomes the guide object.,"- Extract all connected components and compute per-object features (colour, size).
+- Select the unique-colour object (or by other specified criterion) as the guide.",- Exactly one object has a unique colour or feature that distinguishes it from others.,
+0d87d2a6,start from guide object,routine,parameter selection,,,use a guide object's position as a starting point,,,
+0d87d2a6,use guide object color,routine,parameter selection,,,use the color of a guide object for the tiling,,,
+16b78196,fill in holes,routine,intermediate,grid,"- name: guide object
+  typing: object
+  description: the object that serves as a reference for filling in holes
+- name: target object
+  typing: object
+  description: the object to fill in holes on","find holes on guide object so that the target object can be fully or partially filled in. The filling can be like ""Tetris"" style, as we try to find a optimized way to fill in the holes.","- Compute interior-hole mask of the guide object (background regions not connected
+  to the border).
+- Choose target-object pixels/blocks to fit the hole geometry; place them without
+  overlapping existing non-background pixels.
+- Repeat until holes are filled or no legal placement remains.","- Output shows previously empty regions inside a shape filled with pixels of another
+  object.
+- Holes are fully enclosed by a container object.",
+16b78196,holes,term definition,,,,holes are empty spaces in the guide object that can be filled by the target object,"- Define as background-colour components fully enclosed by the object (not connected
+  to grid border).
+- Detect via border flood-fill; remaining background components inside the object
+  are holes.","- Enclosed 0-regions inside a container object.
+- Later steps fill or count these regions.",
+16b78196,move object,parameter selection,,object,"- name: candidate_objects
+  typing: list[object]
+  description: all components detected in the grid",From all candidate_objects choose the one whose color is not shared by any other object; this becomes the guide object.,"- Extract connected components and compute features (colour, size, location).
+- Select the unique-colour object (or other specified criterion) as the guide.",- Exactly one object has a unique colour or feature that distinguishes it from others.,
+1acc24af,fill in holes,routine,intermediate,,"- name: guide object
+  typing: object
+  description: the object that serves as a reference for filling in holes
+- name: target object
+  typing: object
+  description: the object to fill in holes on","find holes on guide object so that the target object can be fully or partially filled in. The filling can be like ""Tetris"" style, as we try to find a optimized way to fill in the holes.",,,
+1acc24af,get object holes,routine,intermediate,list[object] | mask,"- name: guide_object
+  typing: object
+  description: the object that serves as a reference for filling in holes
+- name: target_object
+  typing: object
+  description: the object to fill in holes on","find holes on guide object so that the target object can be fully or partially filled in. The filling can be like ""Tetris"" style, as we try to find an optimized way to fill in the holes.","- Derive a boolean mask of interior background components within the guide object
+  (not connected to border).
+- Optionally convert each connected component of the mask into a hole object (with
+  pixel coordinates).",- The next step uses hole regions as placement targets for filling or counting.,
+1acc24af,holes,term definition,,,,holes are empty spaces in the guide object that can be filled by the target object,"- Define as background-colour components fully enclosed by the object (not connected
+  to the grid border).
+- Detect by border flood-fill; remaining background components inside the object are
+  holes.","- Enclosed 0-regions inside a container object.
+- Later steps fill or count these regions.",
+1acc24af,recolor object,routine,intermediate,,"- name: object
+  typing: object
+  description: the object to recolor
+- name: new_color
+  typing: color
+  description: the new color to apply to the object",change the color of an object to match the guide object,,,
+1acc24af,select guide object,parameter selection,,,"- name: candidate_objects
+  typing: ''
+  description: all components detected in the grid",From all candidate_objects choose the one whose color is not shared by any other object; this becomes the guide object.,,,
+1acc24af,split grid,routine,intermediate,list[grid],"- name: input_grid
+  typing: grid
+  description: the grid to split into regions
+- name: divider_lines
+  typing: list[int] | list[tuple[int, int]]
+  description: indices or coordinate pairs of full-row/column separators",split the grid into regions based on the divider lines.,"- Detect full-length separator rows/columns (e.g., grey bars) and collect their indices.
+- Slice the input grid into contiguous bands between separators.",- Presence of repeated full rows/columns of a single colour separating content bands.,
+1acc24af,split on divider lines,routine,intermediate,list[grid],"- name: input_grid
+  typing: grid
+  description: the grid to split into regions
+- name: divider_lines
+  typing: list[int] | list[tuple[int, int]]
+  description: indices or coordinate pairs of full-row/column separators","split the grid into regions based on divider lines, which are horizontal or vertical lines that separate different areas in the grid.","- Scan for uninterrupted rows/columns of a single divider colour; record their indices.
+- Use these indices to slice the grid into bands; return the non-empty sub-grids.",- Alternating content and uniform divider rows/columns are visible in the grid.,
+351d6448,extrapolate pattern,routine,pattern recognition,pattern,"- name: grids
+  typing: list[grid]
+  description: a list of sequential grids (e.g., time steps) to analyze for evolving
+    patterns
+- name: feature
+  typing: enum['position', 'size', 'color']
+  description: the aspect of the object to extrapolate from (e.g., movement, growth,
+    recoloring)","infer a consistent transformation pattern (e.g., movement, size change, or color shift) across multiple steps and apply it to predict the next step.","- Reduce each relevant row to a 1D feature (e.g., length/position of coloured run
+  separated by grey rows).
+- Fit the simplest progression consistent with the examples (constant section, linear
+  growth, or repetition length).
+- Emit a compact 1×W grid encoding the predicted sequence for the next step.","- look for step-wise changes in object position, size, or color
+- check for linear, arithmetic, or geometric progressions
+- identify the next logical continuation of a visual or spatial trend",
+351d6448,move object,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to move
+- name: position
+  typing: position
+  description: the position to move the object to","move an object to a new position in the grid, updating the grid accordingly","- can draw the object at the new position, but most erase the object pixels from the
+  old position first","- if existing structures from the input grid appear in the output grid with different
+  positions",
+351d6448,recolor object,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to recolor
+- name: color scheme
+  typing: color scheme := color | Callable[[object], color]
+  description: either a single color or logic that determines what object gets which
+    color",recolor an object based on a color scheme,,"- if existing structures from the input grid appear in the output grid with different
+  colors",
+351d6448,split grid,structure,,,,where the grid is split into multiple regions that are treated as distinct,,"- divider lines that span the grid and partition it
+- color based regions-- i.e. pixels of a color only appear in a certain section of
+  the grid",
+351d6448,split on divider lines,routine,splitting scheme,list[grid],"- name: grid
+  typing: grid
+  description: the grid to split","identify lines that divide the grid into regions, extract these regions",- determine where divider lines are and use array slicing to extract the regions,,
+351d6448,split regions,routine,intermediate,list[grid],"- name: input grid
+  typing: grid
+  description: the grid to split into regions
+- name: splitting scheme
+  typing: splitting scheme := str | Callable[[grid], list[grid]]
+  description: logic to determine how to split the grid into regions",,,,
+4c177718,attach object,routine,grid manipulation,grid,"- name: reference
+  typing: object | grid
+  description: anchor object/grid to attach to (top/bottom row acts as reference band)
+- name: target
+  typing: object
+  description: the object to translate toward the reference
+- name: side
+  typing: direction
+  description: which side of the reference the target must touch (up/down/left/right)",translate the target so it touches the reference on *side* and merge the two shapes into one.,"- Compute target bbox and reference contact edge for the given side.
+- Translate target so its nearest edge touches the reference edge without overlap.
+- Paint target pixels into the grid; preserve existing reference pixels.","- Output shows target objects lined up to touch a band (e.g., below a grey divider)
+  or another object with no gap.",
+4c177718,orientation of pointer,routine,intermediate,direction,"- name: pointer
+  typing: object
+  description: the pointer-shaped object whose orientation encodes a direction
+- name: mapping
+  typing: dict[shape, direction]
+  description: optional explicit mapping from canonical rotated shape to direction",infer the cardinal direction encoded by a rotated pointer shape.,"- Normalise the pointer by rotation/flip to a canonical template; select the matching
+  direction.
+- Alternatively, compute facing by comparing centroid-to-tip vector to axes and quantising
+  to NSEW.",- A consistent pointer/arrowhead shape whose orientation determines where to attach/move.,
+4c177718,split on divider lines,routine,intermediate,list[grid],"- name: input_grid
+  typing: grid
+  description: the grid to split into bands
+- name: divider_lines
+  typing: list[int] | list[tuple[int, int]]
+  description: indices or coordinate pairs of full-row/column separators","identify lines that divide the grid into regions, extract these regions","- Detect uninterrupted full rows/columns of a single colour (e.g., grey) and record
+  their indices.
+- Slice the grid into contiguous sub-grids between separators; discard empty bands.",- Visible uniform divider bars separating top/bottom regions.,
+5ffb2104,gravity movement,intermediate operation,,grid,"- name: direction
+  typing: Literal['down','up','left','right']
+  description: direction of the gravity
+- name: cohesion mode
+  typing: Literal['cohesive','per-column']
+  description: whether the object falls as a whole (cohesive) or columns fall independently",simulate gravity in the specified direction to translate blocks until they rest on obstacles or boundaries,"- For the chosen direction, sweep cells toward that side.
+- If cohesion mode is 'per-column', collapse each column independently stopping at
+  blockers; else treat the object as one rigid shape and translate until contact.
+- Preserve order/shape; stop when further movement would collide or leave grid.","- Outputs show blocks shifted flush against walls or other blocks along one axis;
+  empty space appears opposite the fall direction.",
+5ffb2104,move object,,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to move
+- name: new position
+  typing: position := tuple[int, int]
+  description: the new position (row, column) to move the object to",move an object to a new position in the grid,"- can draw the object at the new position, but most erase the object pixels from the
+  old position first",- if the object's position changes in the output grid compared to the input grid,
+626c0bcc,missing-corner orientation,routine,intermediate,"orientation := Literal[""tl"",""tr"",""bl"",""br""]","- name: mask
+  typing: grid
+  description: Boolean 2 × 2 mask for the L-shape",identify which of the four corners is *not* occupied in a 3-pixel L-shape.,"- Inspect the 2×2 mask and locate the zero cell; map its position to one of {tl,tr,bl,br}.
+- Robustness: allow one-pixel noise by using majority over local neighbourhood if
+    needed.",- An L-shaped triomino needs to be classified to drive colour assignment.,
+626c0bcc,orientation-based recolor,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to recolor
+- name: orientation
+  typing: orientation
+  description: one of tl/tr/bl/br computed from the object's L-shape mask","recolour an object using a fixed map (tl→red 3, bl→green 2, tr→yellow 4, br→blue 1).","- Compute orientation via missing-corner orientation; pick colour by lookup table.
+- Paint all object pixels with the mapped colour.",- Output shows identical shapes recoloured differently depending on their corner orientation.,
+626c0bcc,recolor object,,,,,,,,
+626c0bcc,square pattern criteria,routine,selection criteria,bool,"- name: window
+  typing: grid
+  description: 2 × 2 slice of the grid being tested
+- name: colour
+  typing: color
+  description: ''","returns **True** when every cell in the 2 × 2 window matches the target colour (here, cyan).",,,
+69889d6e,diagonal zigzag shape pattern,parameter selection,,pattern,"- name: horizontal_step
+  typing: int
+  description: number of pixels to move horizontally before turning
+- name: vertical_step
+  typing: int
+  description: number of pixels to move vertically before turning",draw a diagonal zig zag by alternating between m pixels in left/right direction and then n pixels in up/down direction,"- Starting at the first seed pixel, repeat (horizontal_step, vertical_step) moves,
+  painting along the way.
+- Stop when reaching boundary or the target contact condition.",- Output shows a staircase diagonal composed of axis-aligned runs with constant stride.,
+69889d6e,draw line,,grid manipulation,grid,"- name: start_pixel
+  typing: object
+  description: the starting pixel to draw the line from
+- name: end_pixel
+  typing: object
+  description: the ending pixel to draw the line to
+- name: color
+  typing: color
+  description: the color of the line to draw","draw a line between two pixels in a grid, updating the grid accordingly","- draw the line pixel by pixel, picking a starting point and following the direction
+  to the end point",- output grid contains lines not present in the input grid,
+69889d6e,fixed direction for obstacle navigation,parameter selection,,obstacle handling,"- name: turn
+  typing: Literal['left','right']
+  description: which way to turn when encountering an obstacle",navigate around an obstacle by turning in a specified direction to get past,"- When a drawing step hits an obstacle, change heading by the specified turn and continue
+  until alignment is restored.","- Output shows consistent detours at obstacles, always turning the same way.",
+69889d6e,object selection,intermediate operation,,list[object] | object,"- name: selection criteria
+  typing: Callable[[object], bool] | str
+  description: predicate or named rule to select relevant objects",select object(s) from the grid for a specific role,- Extract connected components and filter them by the selection criteria.,- Only a subset of objects are used as seeds or targets in the output.,
+69889d6e,obstacles,term definition,,,,obstacles are objects that block the path of line drawing typically,,,
+69889d6e,pattern replication,routine,grid manipulation,grid,"- name: starting object
+  typing: object
+  description: which is the start object to replicate
+- name: direction
+  typing: Literal['horizontal','vertical','diagonal']
+  description: direction to extend the replication
+- name: color scheme
+  typing: colour | Callable[[object], colour]
+  description: what color(s) to use for the replication
+- name: number of copies
+  typing: int
+  description: how many copies to make
+- name: obstacles
+  typing: bool | obstacle handling := Literal['bypass','ignore','recolor']
+  description: whether and how to handle obstacles while replicating",,"- Translate and stamp replicated copies along the given direction at a fixed step
+  to form the diagonal staircase.",- Output shows repeated copies aligned along a straight staircase path.,
+69889d6e,specific color based selection,parameter selection,,,"- name: color
+  typing: ''
+  description: the color to select objects of",select objects of a fixed color,,,
+69889d6e,start from guide pixel,parameter selection,,,,use a guide object's position as a starting point,,,
+69889d6e,use guide object color,parameter selection,,,,use the color of a guide object for the line,,,
+79369cc6,capture pattern mask,routine,parameter selection,mask,"- name: block
+  typing: grid
+  description: source grid region (e.g., 3×3 window) to analyse
+- name: predicate
+  typing: Callable[[cell], bool]
+  description: returns **True** for cells that belong to the pattern","Produce a boolean mask marking the coordinates in `block` where `predicate` evaluates to **True** (e.g. ""cells with colour = X""). This mask serves as a transferable template.","- Evaluate `predicate` at every coordinate in `block` and record a True/False mask.
+- Return the mask for reuse when scanning other windows.",- Repeated 3×3 motifs appear; a reusable mask/template is needed to recognise them.,
+79369cc6,fill window cells,routine,grid manipulation,grid,"- name: window_coords
+  typing: list[coord]
+  description: coordinates of the current 3×3 window
+- name: grid
+  typing: grid
+  description: grid to modify in-place or return as copy
+- name: fill_value
+  typing: colour | Any
+  description: value assigned to cells that fail `predicate`","For every cell in `window_coords` whose current value does **not** satisfy `predicate`, assign `fill_value`.  Used to complete each matched 3 × 3 window once the pattern has been recognised.","- Iterate coordinates in the window and check the predicate for each.
+- For those not matching, write `fill_value` to that position.",- Outputs show completed 3×3 motifs where certain slots are consistently filled.,
+79369cc6,locate heterogeneous anchor,routine,selection criteria,coords | object,"- name: grid
+  typing: grid
+  description: grid to scan with a 3×3 sliding window
+- name: required_colours
+  typing: set[colour]
+  description: set of colours that must all appear at least once in the window",Scan each 3 × 3 window and select the one that contains **at least one** cell of every colour in `required_colours`.  This window becomes the anchor template for later steps.,"- Slide a 3×3 window over the grid; for each window, compute the set of colours present.
+- Return the window coordinates when the set is a superset of `required_colours`.",- A small mixed-colour patch acts as a seed for subsequent matching/filling.,
+79369cc6,match pattern mask,routine,selection criteria,bool,"- name: window
+  typing: grid
+  description: candidate 3×3 window to evaluate
+- name: pattern_mask
+  typing: mask
+  description: boolean mask of required True positions
+- name: predicate
+  typing: Callable[[cell], bool]
+  description: test that identifies target cells (e.g., cell == colour)",Return **True** if the set of cells in `window` satisfying `predicate` occupies exactly the coordinates indicated by `pattern_mask`; rotations and flips are **not** considered matches.,"- Build a boolean mask by applying `predicate` to every cell in `window`.
+- Return True if it equals `pattern_mask` element‑wise (no rotations/flips).",- Exact coordinate agreement of the motif within a 3×3 window (orientation matters).,
+7d419a02,contiguous cyan run detection,intermediate operation,,list[cell] | list[list[cell]],"- name: colour
+  typing: color
+  description: target run colour (cyan)",detect maximal contiguous runs of the target colour along rows or columns,"- For each row (or column), scan and collect maximal sequences of the target colour.
+- Return the list of runs as coordinate lists or slices.",- Long straight bands of one colour appear; later steps recolour run ends.,
+7d419a02,edge-recolour ascending,routine,grid manipulation,grid | object,"- name: run
+  typing: list[cell]
+  description: ordered coordinates of a contiguous colour run",recolour ≤3 cells from each end of a cyan run to yellow (colour-4); amount capped at half the run length.,"- Compute k = min(3, len(run)//2). Recolour the first k and last k cells of the run
+  to yellow.
+- Leave interior cells unchanged.",- Outputs show yellow caps growing on the ends of long cyan bands.,
+7d419a02,pivot stripe localisation,routine,search,int,"- name: stripes
+  typing: list[grid]
+  description: list of row-wise bands separated by black
+- name: colour
+  typing: color
+  description: colour of the 2×2 pivot block (magenta)",return the index of the stripe that contains the pink 2×2.,"- For each stripe, scan for any 2×2 block of the target colour; return its stripe
+  index when found.","- Exactly one stripe contains the 2×2 pivot; that stripe dictates where recolouring
+  occurs.",
+7d419a02,stripe orientation detection,routine,classification,"Literal[""horizontal"",""vertical""]","- name: grid
+  typing: grid
+  description: grid containing coloured bands",decide if the dominant cyan bands are rows or columns.,"- Count lengths of contiguous runs per row vs per column for the target colour; choose
+  the larger aggregate.",- The grid shows long uniform bands either across rows or down columns.,
+8719f442,attach sprite copies,grid manipulation,,grid,"- name: sprite
+  typing: grid
+  description: the base 3×3 sprite to copy
+- name: directions
+  typing: set[direction]
+  description: cardinal directions where the sprite touches the input grid border","Translate an un-scaled copy of the sprite by exactly one input-cell width (5 output cells) toward each detected direction so it abuts the large centred sprite, then merge all shapes into the final grid.","- For each direction in `directions`, translate a copy of the sprite by one input-cell
+  width (5 output cells) toward that side.
+- Write the copies into the upscaled canvas, preserving existing pixels (no overlap
+  removal).","- Output shows the central large sprite with identical unscaled copies attached on
+  border-touching sides.",
+8719f442,canvas up-scaling,grid manipulation,,grid,"- name: factor
+  typing: int
+  description: upscaling factor (5 in this puzzle)","Create an empty output grid whose width and height are each multiplied by five, leaving all cells background-colour 0.","- Allocate a new grid of shape (H*factor, W*factor) initialised to 0.",- Output canvas is a larger blank grid before attachments are drawn.,
+8719f442,detect border-touching directions,intermediate operation,,set[direction],"- name: sprite
+  typing: grid
+  description: input sprite","Return the set of cardinal directions (up, right, down, left) where the sprite contains at least one pixel that lies on the corresponding edge of the original input grid.","- Check whether any sprite pixel has row==0 (up), row==H-1 (down), col==0 (left),
+  col==W-1 (right).",- Sprite touches one or more borders in the input; attachments appear on those sides.,
+8719f442,scale object,grid manipulation,,grid,"- name: sprite
+  typing: grid
+  description: input sprite to scale
+- name: factor
+  typing: int
+  description: scale factor (3 in this puzzle)","Replace every pixel of the sprite with a 3 × 3 block of the same colour, yielding a geometrically similar shape.","- For each sprite pixel at (r,c), paint a factor×factor block of that colour at [(r*factor..),(c*factor..)]
+  in the output.",- Output shows a magnified version of the sprite with blocky pixels.,
+891232d6,color change,grid manipulation,,grid,"- name: starting point
+  typing: coord | object
+  description: where to begin recolouring
+- name: target color
+  typing: color
+  description: colour to apply
+- name: pattern
+  typing: Literal['diagonal','horizontal','vertical'] | Callable[[coord], bool]
+  description: path or mask describing which cells to recolour
+- name: continuation
+  typing: Literal['single','to-boundary','fixed-distance'] | int
+  description: how far to continue recolouring (fixed distance uses the int)",recolour cells along a specified path from a starting point,"- Follow the chosen pattern from the starting point; at each step recolour to target
+  color.
+- Stop according to continuation rule (boundary encountered or distance exhausted).","- Output shows a coloured path overlay (e.g., diagonal) originating from a seed pixel.",
+891232d6,draw line,,grid manipulation,grid,"- name: start_pixel
+  typing: object
+  description: the starting pixel to draw the line from
+- name: end_pixel
+  typing: object
+  description: the ending pixel to draw the line to
+- name: color
+  typing: color
+  description: the color of the line to draw","draw a line between two pixels in a grid, updating the grid accordingly","- draw the line pixel by pixel, picking a starting point and following the direction
+  to the end point",- output grid contains lines not present in the input grid,
+891232d6,object selection,intermediate operation,,list[object] | object,"- name: selection criteria
+  typing: Callable[[object], bool] | str
+  description: predicate or rule to choose relevant objects",select object(s) from the grid for a specific role,- Extract connected components; filter them by the selection criteria.,- Only certain objects participate in building the output path.,
+891232d6,obstacle-aware line extension,intermediate operation,,,"- name: bypass direction
+  typing: ''
+  description: the direction to turn when hitting an obstacle (e.g., left, right)
+- name: resume manner
+  typing: ''
+  description: the direction to continue after bypassing the obstacle (e.g., detour
+    around the obstacle and resume to original path (column or row), or continue in
+    a the new column or row with the same direction)
+- name: stopping criteria
+  typing: ''
+  description: the criteria to stop the extension (e.g., hit another obstacle and
+    no available path, reach a boundary, or continue until a certain distance is covered)","When the line drawing hits an obstacle, it should change direction according to a specified rule (e.g., turn left, right, or continue in a different manner).",,,
+891232d6,obstacles,term definition,,,,obstacles are objects that block the path of line drawing typically,,,
+891232d6,specific color based selection,parameter selection,,,"- name: color
+  typing: ''
+  description: the color to select objects of",select objects of a fixed color,,,
+891232d6,start from guide pixel,parameter selection,,,,use a guide object's position as a starting point,,,
+891232d6,use guide object color,parameter selection,,,,use the color of a guide object for the line,,,
+963f59bc,colour-transfer stamping,grid manipulation,,grid,"- name: reflected shape
+  typing: object
+  description: the transformed copy to stamp
+- name: stamp colour
+  typing: color
+  description: colour taken from the pivot mark","Apply the reflection transform, recolour the resulting shape with the pivot mark's colour, and write it into the grid without altering existing non-background pixels.","- Recolour all pixels of the transformed shape to the stamp colour.
+- Paste onto the canvas at the computed location, skipping non-background cells.","- Output adds coloured copies of the reference shape without overwriting existing
+  objects.",
+963f59bc,derive reflection transform,intermediate operation,,transform | list[coord],"- name: reference shape
+  typing: object
+  description: template to reflect
+- name: pivot mark
+  typing: object | coord
+  description: point defining the reflection axis","For a given pivot mark, compute the reflection of the reference shape across the axis that connects the pivot to the reference shape's centre (horizontal, vertical, or diagonal as required).","- Compute the centre of the reference shape; form axis through pivot and centre.
+- Reflect shape coordinates across this axis; return the transformed coordinates or
+  an operator.",- Outputs place mirrored copies consistent with a pivot-defined axis.,
+963f59bc,gather pivot marks,routine,selection criteria,list[object],"- name: objects
+  typing: list[object]
+  description: candidate single-pixel marks",Filter all single-pixel objects that are not part of the reference shape; each such object defines a pivot for replication.,"- Extract 1-pixel components in non-background colours; exclude pixels belonging to
+  the reference shape.",- Small isolated pixels of a distinct colour serve as replication anchors.,
+963f59bc,identify reference shape,routine,selection criteria,object,"- name: objects
+  typing: list[object]
+  description: connected components extracted from the grid",Select the sole grid object whose pixel count exceeds one; this object serves as the template to be replicated elsewhere.,"- Among all components, choose the unique multi-pixel shape; treat it as the reference
+  template.",- Exactly one multi-cell object appears; single pixels are pivots.,
+ac0c5833,"complete object with ""full object""",grid manipulation,,grid,"- name: object
+  typing: object
+  description: the partial object to complete
+- name: color
+  typing: color
+  description: colour used to fill missing pixels
+- name: full object
+  typing: object
+  description: the canonical full shape used as reference",Fill in the missing pixels of an object to make it complete.,"- Align the partial object's bounding box with the full object's box.
+- For every pixel present in the full object but missing in the partial, paint with
+  the given colour.",- Output shows each fragment expanded to match a full prototype of the same orientation.,
+ac0c5833,object selection,,,,"- name: selection criteria
+  typing: ''
+  description: how to select the object(s)",select object(s) from the grid for a specific role,,,
+ac0c5833,pattern replication,intermediate operation,,object,"- name: candidate_objects
+  typing: list[object]
+  description: all pattern candidates extracted previously","From all candidate_objects choose the one whose bounding box contains the largest count of coloured cells; this is deemed the ""full"" object that subsumes all partial copies.","- Compute pixel counts per candidate; if sizes differ, prefer the largest area; else
+  use coverage within a reference box.",- Exactly one candidate appears most filled; others are partials.,
+b0722778,block extraction by black columns,routine,grid partition,list[grid],"- name: stripe
+  typing: grid (2 × N)
+  description: two-row slice of the palette grid","inside a 2-row stripe, cut at full-black columns to isolate three 2 × 2 candidate blocks.","- Scan columns; whenever both cells in the column are 0, cut a partition.
+- Slice contiguous non-zero spans into consecutive 2×2 blocks.",- Clear vertical black separators divide the stripe into 2×2 colour tiles.,
+b0722778,colour-set majority vote,routine,aggregation,"tuple[color, color]","- name: candidates
+  typing: list[tuple[color, color]] (length=3)
+  description: set pairs extracted from the stripes","given three 2-element sets, return the set occurring at least twice (ties impossible by puzzle design).",- Count occurrences of each unordered pair; return the pair with frequency ≥2.,- Two of the three stripes share the same colour pair.,
+b0722778,shape-mask majority vote,routine,aggregation,grid[bool] (2×2),"- name: masks
+  typing: list[grid[bool]] (length=3)
+  description: boolean masks derived from each candidate square","convert each block to a boolean ""minority-colour mask"" and return the mask shared by two of the three blocks.","- Convert each 2×2 square to a bool mask where True marks the minority colour cell(s).
+- Compare masks and choose the one appearing at least twice.",- Two of the three 2×2 shapes share the same minority-colour pattern.,
+b0722778,square synthesis from colour + mask,routine,grid construction,grid (2×2),"- name: mask
+  typing: grid[bool]
+  description: True positions for the first colour
+- name: colours
+  typing: tuple[color, color]
+  description: (first_colour, second_colour)",build a 2 × 2 array where *mask*==True takes the first colour and False takes the second.,"- Allocate a 2×2 grid; set cells with True in mask to colours[0], others to colours[1].",- Output squares contain exactly two colours placed per the mask.,
+b0722778,stripe segmentation by black rows,routine,grid partition,list[grid],"- name: grid
+  typing: grid
+  description: input palette grid","split the grid whenever a full-row of colour-0 appears, ensuring each stripe is exactly two rows tall.",- Find row indices that are entirely 0; slice between them into 2-row bands.,- Horizontal black separators produce clean two-row stripes.,
+b0722778,vertical stacking of squares,routine,grid concatenation,grid,"- name: squares
+  typing: list[grid (2×2)]
+  description: ordered small squares to stack",concatenate an ordered list of 2 × 2 squares along the vertical axis to form the final answer grid.,- Concatenate the square list vertically in their given order to form a tall grid.,- Output shows a single column of 2×2 patches stacked top-to-bottom.,
+b7cb93ac,back-tracking tiler,grid manipulation,,grid,"- name: parts
+  typing: list[grid]
+  description: small tiles extracted from the input
+- name: canvas_shape
+  typing: tuple[int,int]
+  description: target grid height and width",Recursively try every unplaced part at every rotation and every empty position in the 3 × 4 canvas until a non-overlapping covering of all 12 cells is found; prune branches that exceed canvas bounds or collide with already-placed pixels.,"- Depth-first search over placements; for each part consider all rotations and valid
+  positions.
+- Place if the area is empty; mark cells and recurse; backtrack on conflict.
+- Terminate when canvas is fully covered.","- Output is a compact, fully tiled rectangle formed from the input parts.",
+b7cb93ac,extract objects,intermediate operation,,list[object],"- name: grid
+  typing: grid
+  description: input grid to segment","Identify each 4-connected non-background component and record its set of local (row, col) pixel offsets and colour.","- Flood-fill to find connected components per colour; normalise coordinates relative
+  to component origin.",- Distinct small shapes are isolated as separate components ready for packing.,
+b7cb93ac,rotations,intermediate operation,,list[object],"- name: angles
+  typing: list[int]
+  description:
+  - 0
+  - 90
+  - 180
+  - 270
+- name: part
+  typing: object
+  description: shape to rotate",Produce all four orthogonal orientations of a part so it can be fitted in any direction during packing.,"- For each angle, rotate the part's coordinate set around its origin; normalise to
+  top-left origin.",- Rotated duplicates of the same motif appear in candidate list.,
+c62e2108,find object,,,object,"- name: input objects
+  typing: list[object]
+  description: the list of objects to search in
+- name: criteria
+  typing: selection criteria
+  description: criteria to find the object",find n object in a list of objects based on some criteria,- Apply the predicate to each object; return the first (or unique) match.,"- Exactly one object satisfies the given property (e.g., ring, location quadrant).",
+c62e2108,object filtering,grid manipulation,,list[object],"- name: filter criteria
+  typing: selection criteria | Callable[[object], bool]
+  description: the predicate used to retain objects",filter objects based on a specific property or condition so that only relevant objects remain or none of the relevant objects remain,- Evaluate the predicate on each object; return the subset that passes.,"- Only objects with a shared attribute remain (e.g., same colour or being rings).",
+c62e2108,object selection,intermediate operation,,list[object] | object,"- name: selection criteria
+  typing: selection criteria | Callable[[object], bool]
+  description: how to select the object(s)",select object(s) from the grid for a specific role,"- Extract components and filter by the given criteria; return single or multiple as
+  required.",- Chosen objects are those used to define axes or endpoints for drawing.,
+c62e2108,pattern replication,,grid manipulation,grid,"- name: starting object
+  typing: object
+  description: template cell/block to replicate
+- name: direction
+  typing: direction | sequence[direction]
+  description: path or axis along which to place copies
+- name: color scheme
+  typing: Literal['keep','map'] | dict[color,color]
+  description: whether to keep colour or map to target colour
+- name: number of copies
+  typing: int | Literal['to-boundary']
+  description: copy count or until boundary",replicate the template along a direction,"- Translate the template by step vector repeatedly, honouring count/boundary; recolour
+  per scheme.",- Repeated equally spaced blocks aligned with axes.,
+c62e2108,repeated tiling,grid manipulation,,grid,"- name: starting object
+  typing: object
+  description: motif to tile
+- name: direction
+  typing: direction | sequence[direction]
+  description: tiling axis or path
+- name: color scheme
+  typing: Literal['keep','map'] | dict[color,color]
+  description: colour policy for copies
+- name: number of copies
+  typing: int | Literal['to-boundary']
+  description: tile count or until boundary",tile the motif repeatedly to form a longer bar or corner,"- Step along the axis, stamping the motif at each step; stop at count or boundary.",- Long uniform bars with periodic holes/blocks extending from a seed.,
+c62e2108,specific color based selection,parameter selection,,list[object],"- name: color
+  typing: color
+  description: the desired object colour",select objects of a fixed color,- Return all objects whose colour equals the given color.,- Only objects of the specified colour are used in subsequent steps.,
+c62e2108,start from guide object,parameter selection,,coord | object,"- name: guide object
+  typing: object
+  description: the reference object whose position seeds the process",use a guide object's position as a starting point,"- Identify the guide object and extract its anchor coordinate (e.g., centroid or a
+  specific corner).",- Subsequent constructions emanate from the guide object's location.,
+c62e2108,target identification,parameter selection,,color,"- name: guide object
+  typing: object
+  description: object whose colour is to be used",use the color of a guide object for the tiling,- Read the colour attribute of the guide object and propagate it to subsequent operations.,- All generated tiles share the guide object's colour.,
+c6e1b8da,2d layover,routine,pattern recognition,pattern,"- name: occluder
+  typing: object
+  description: the object on top
+- name: occludee
+  typing: object
+  description: the object underneath",find a pattern in a grid where an object is laid over another object. Often one object is a rectangle and the other is a partially-occluded rectangle.,"- Detect rectangles; determine z-order by adjacency/overlap; infer which pixels are
+  hidden.","- look for overlapping regions in the grid
+- identify the shape and position of the objects involved
+- check for partial occlusion or alignment of objects",
+c6e1b8da,extract objects,routine,intermediate,list[object],"- name: input grid
+  typing: grid
+  description: grid (or region of a grid) to extract objects from
+- name: single color
+  typing: bool
+  description: if True, only extract objects of a single color
+- name: connectivity
+  typing: str
+  description: object connectedness (4-way, 8-way, or none). None admits non-contiguous
+    objects.",extract connected components as objects with bbox and color,- Run component labeling by colour; gather pixels into objects; filter per flags.,- Separate rectangles of distinct colours are enumerated as objects.,
+c6e1b8da,extrapolate pattern,routine,pattern recognition,pattern,"- name: grids
+  typing: list[grid]
+  description: a list of sequential grids (e.g., time steps) to analyze for evolving
+    patterns
+- name: feature
+  typing: enum['position', 'size', 'color']
+  description: the aspect of the object to extrapolate from (e.g., movement, growth,
+    recoloring)","infer a consistent transformation pattern (e.g., movement, size change, or color shift) across multiple steps and apply it to predict the next step.","- Reduce each step to the chosen feature time-series; fit a simple progression (constant/linear)
+  and project one step ahead.","- look for step-wise changes in object position, size, or color
+- check for linear, arithmetic, or geometric progressions
+- identify the next logical continuation of a visual or spatial trend",
+c6e1b8da,filter objects,routine,intermediate,list[object],"- name: input objects
+  typing: list[object]
+  description: the list of objects to filter
+- name: criteria
+  typing: selection criteria := Callable[[object], bool]
+  description: filter criteria",filter a list of objects based on some criteria,- Return the subset of objects satisfying the predicate.,"- Only rectangles meeting the rule (e.g., colour or size) remain.",
+c6e1b8da,find object,routine,intermediate,object,"- name: input objects
+  typing: list[object]
+  description: the list of objects to search in
+- name: criteria
+  typing: selection criteria
+  description: criteria to find the object",find an object in a list of objects based on some criteria,"- Return the unique object matching the predicate (e.g., the only object that moved
+  or changed size).",- Exactly one candidate satisfies the rule.,
+c6e1b8da,move object,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to move
+- name: position
+  typing: position
+  description: the position to move the object to","move an object to a new position in the grid, updating the grid accordingly","- can draw the object at the new position, but must erase the object pixels from the
+  old position first","- if existing structures from the input grid appear in the output grid with different
+  positions",
+c87289bb,draw line,,grid manipulation,grid,"- name: start_pixel
+  typing: object
+  description: the starting pixel to draw the line from
+- name: end_pixel
+  typing: object
+  description: the ending pixel to draw the line to
+- name: color
+  typing: color
+  description: the color of the line to draw
+- name: obstacles
+  typing: bool
+  description: whether to bypass, ignore, or recolor obstacles while drawing the line","draw a line between two pixels in a grid, updating the grid accordingly","- draw the line pixel by pixel, picking a starting point and following the direction
+  to the end point",- output grid contains lines not present in the input grid,
+c87289bb,object selection,intermediate operation,,list[object] | object,"- name: selection criteria
+  typing: selection criteria | Callable[[object], bool]
+  description: how to select the object(s)",select object(s) from the grid for a specific role,"- Extract components and filter by the selection rule; return single or multiple as
+  required.",- Selected objects define path endpoints or anchors for drawing.,
+c87289bb,obstacle,term definition,,,,"an object that blocks the path of line drawing, typically a wall or barrier",,,
+c87289bb,obstacle-aware line extension,intermediate operation,,,"- name: bypass direction
+  typing: ''
+  description: the direction to turn when hitting an obstacle (e.g., left, right)
+- name: resume manner
+  typing: ''
+  description: the direction to continue after bypassing the obstacle (e.g., detour
+    around the obstacle and resume to original path (column or row), or continue in
+    a the new column or row with the same direction)
+- name: stopping criteria
+  typing: ''
+  description: the criteria to stop the extension (e.g., hit another obstacle and
+    no available path, reach a boundary, or continue until a certain distance is covered)","When the line drawing hits an obstacle, it should change direction according to a specified rule (e.g., turn left, right, or continue in a different manner).",,,
+c87289bb,obstacles,term definition,,,,obstacles are objects that block the path of line drawing typically,,,
+c87289bb,specific color based selection,parameter selection,,list[object],"- name: color
+  typing: color
+  description: the desired object colour",select objects of a fixed color,- Return all objects whose colour equals the given color.,- Only objects of the specified colour are used in subsequent steps.,
+c87289bb,start from guide pixel or guide object,parameter selection,,color,"- name: guide object
+  typing: object
+  description: object whose colour is to be used",use the color of a guide object for the line,- Read the colour attribute of the guide object and propagate it to subsequent operations.,- Lines or tiles share the guide object's colour.,
+cb227835,axis‑aligned extension,grid manipulation,,grid | list[coord],"- name: extension_direction
+  typing: Literal['vertical','horizontal']
+  description: axis along which to extend
+- name: path_colour
+  typing: color
+  description: colour to draw (3)","From the end of the Step‑2 diagonal, extend straight (vertical if columns already match, otherwise horizontal) in colour 3 until the bridge touches the remaining cyan anchor.","- Step cell by cell along the chosen axis from the seed; colour each cell path_colour
+  until touching the target anchor.",- Output shows a straight vertical/horizontal run connecting to the cyan anchor.,
+cb227835,crop to anchor bounding box,grid manipulation,,grid,"- name: anchor_positions
+  typing: tuple[coord, coord]
+  description: coordinates of the two cyan pixels
+- name: output_size
+  typing: tuple[int,int]
+  description: derived height and width of the bbox",Keep only the smallest axis‑aligned rectangle that contains the two cyan anchors (colour 8); reset all other cells to 0.,"- Compute min/max row/col over the anchors; slice the grid to that rectangle; zero
+  out cells outside the slice.",- Output image is tightly cropped around the two cyan anchors.,
+cb227835,diagonal line drawing,grid manipulation,,grid | list[coord],"- name: start_point
+  typing: coord
+  description: anchor A
+- name: end_point
+  typing: coord
+  description: anchor B
+- name: stop_condition
+  typing: Literal['same-row','same-col']
+  description: termination criterion for the diagonal
+- name: path_colour
+  typing: color
+  description: '3'",From the first anchor draw a checker‑board diagonal (colour 3) toward the second anchor until either the same row OR column is reached.,"- Walk stepwise with (dr,dc) in {(+1,+1),(+1,−1)} choosing the variant heading toward
+  the end; colour every step; stop when stop_condition is met.",- Output shows a 45° staircase path of colour 3 linking toward the opposite anchor.,
+d931c21c,border recolour (inside),grid manipulation,,grid,"- name: hole_colour
+  typing: color
+  description: colour of interior placeholder (4)
+- name: border_colour
+  typing: color
+  description: target colour to paint where touching blue (3)","Re‑colour every interior‑hole pixel (4) that shares an edge with a blue pixel (1) to green 3, leaving deeper interior 4's as‑is.","- Build mask of hole_colour cells that are 4‑adjacent to blue; paint those to border_colour;
+  keep non‑adjacent hole cells unchanged.","- Only the hole cells directly touching the blue frame change to green; deeper holes
+  remain 4.",
+d931c21c,border recolour (outside),grid manipulation,,grid,"- name: bg_colour
+  typing: color
+  description: exterior background colour (0)
+- name: frame_colour
+  typing: color
+  description: blue frame (1)
+- name: out_colour
+  typing: color
+  description: target border colour (2)",(a) Re‑colour every exterior background pixel (0) that is 4‑adjacent to blue (1) to red 2; (b) reset any remaining placeholder‑4 cells back to 0 to match the ARC output.,"- Flood‑fill exterior background; mark bg cells that are 4‑adjacent to frame_colour;
+  recolour those to out_colour; set any lingering 4s to bg_colour.","- Only background cells touching the outer side of the blue ring turn red; interior
+  placeholders become background.",
+d931c21c,flood‑fill interior region,intermediate operation,,grid | mask,"- name: frame_colour
+  typing: color
+  description: colour defining the enclosing ring (1)
+- name: interior_label
+  typing: color | int
+  description: label/colour to assign to enclosed background (4)",Detect every background component that is completely enclosed by blue pixels (colour 1) and relabel those interior cells from 0 → 4; background connected to the frame remains 0.,"- Treat frame_colour cells as obstacles; flood‑fill from the border to mark exterior
+  background; any remaining background components are interior; set them to interior_label
+  or return their mask.",- Interior holes are fully surrounded by the ring and not connected to the image border.,
+d94c3b52,color change,grid manipulation,,grid,"- name: starting point
+  typing: coord | list[coord]
+  description: where to begin recolouring (single pixel or seeds)
+- name: target color
+  typing: color
+  description: colour to apply
+- name: pattern
+  typing: Callable[[coord], bool] | Literal['row','col','diag','region']
+  description: predicate or path describing which cells to recolour
+- name: continuation
+  typing: Literal['single','to-boundary','fixed-distance'] | int
+  description: how far to continue recolouring",recolour cells following a simple rule from given seeds,"- Starting at the seed(s), traverse cells according to the pattern; recolour each
+  visited cell to target color; stop per continuation rule.","- Output exhibits localised patches/lines of changed colour consistent with a simple
+  traversal rule.",
+d94c3b52,color same as guide,grid manipulation,,grid,"- name: guide_object
+  typing: object
+  description: the object whose color is used as a reference
+- name: color
+  typing: color
+  description: the colour copied from the guide","For all non-guide objects, fill them as exact the same as the guide object.","- Read the guide's colour and paint targeted objects/pixels with it according to puzzle
+  rule.",- New coloured regions match the guide object's colour exactly.,
+d94c3b52,connect guide object pairs,grid manipulation,,grid,"- name: guide_object
+  typing: object | list[object]
+  description: the object(s) whose colour is unique and used as reference
+- name: connection color
+  typing: color
+  description: colour to paint along connection paths
+- name: color mode
+  typing: Literal['pixels','objects']
+  description: whether to paint individual pixels or recolour objects along the path","For all non-guide objects or pixels, fill them with a connection color if they are along the path(s) (row/column) between a pair of guide objects. There might be multiple guide objects, and the connection path need to ensure that all pairs of guide objects are connected (in a row/column/row+column way).","- For each unordered guide-object pair, rasterize the Manhattan path (row/column)
+  between their anchors; paint along the path using connection color, respecting color
+  mode.",- Output shows straight orthogonal bands connecting guide objects.,
+d94c3b52,draw line,,grid manipulation,grid,"- name: start_pixel
+  typing: object
+  description: the starting pixel to draw the line from
+- name: end_pixel
+  typing: object
+  description: the ending pixel to draw the line to
+- name: color
+  typing: color
+  description: the color of the line to draw
+- name: obstacles
+  typing: bool
+  description: whether to bypass, ignore, or recolor obstacles while drawing the line","draw a line between two pixels in a grid, updating the grid accordingly","- draw the line pixel by pixel, picking a starting point and following the direction
+  to the end point",- output grid contains lines not present in the input grid,
+d94c3b52,obstacle,term definition,,,,"an object that blocks the path of line drawing, typically a wall or barrier",,,
+d94c3b52,recolor object,parameter selection,,object,"- name: candidate_objects
+  typing: list[object]
+  description: all components detected in the grid",From all candidate_objects choose the one whose color is not shared by any other object; this becomes the guide object.,- Count colours per object; select the unique-colour object.,- Exactly one object has a distinctive colour absent from all others.,
+da515329,detect guide plus,parameter selection,,object | coord,"- name: colour
+  typing: color
+  description: guide colour (cyan)",Locate the cyan plus‑shaped object and treat its first encountered pixel as the point where the spiral must stop to preserve the guide.,"- Extract connected components of the guide colour; choose the plus shape; return
+  the object and/or a designated anchor coordinate.",- A small symmetric plus exists uniquely and remains unpainted in the output.,
+da515329,spiral drawing,grid manipulation,,grid | list[coord],"- name: start_offset
+  typing: int
+  description: cells inset from the outer border before starting (1)
+- name: turn_sequence
+  typing: list[direction]
+  description:
+  - right
+  - down
+  - left
+  - up
+- name: path_colour
+  typing: color
+  description: colour to paint the spiral","Starting one cell in from the outer border, trace a clockwise 1‑pixel‑wide path that forms a rectangular spiral toward the centre.","- Start at the top-left corner inset by start_offset; step in the first direction
+  for the current run length; turn following turn_sequence; increase run length after
+  every two turns; continue until termination rule fires.",- Output shows a single‑width rectangular spiral occupying the canvas interior.,
+da515329,spiral termination upon obstacle,intermediate operation,,coord | None,"- name: obstacle_colour
+  typing: color
+  description: colour of guide plus to avoid","Continue extending the spiral until the next move would overwrite a non‑background pixel (the guide plus), then stop.","- At each step look ahead one cell; if it is non‑background and equals obstacle_colour,
+  halt and return the last valid coordinate; otherwise continue.",- Spiral stops just before touching the guide plus.,
+da515329,use guide object colour,parameter selection,,color,"- name: guide object
+  typing: object
+  description: the cyan plus object",Paint every spiral cell with the same cyan colour as the guide plus.,- Read the colour of the guide object; return it for use by the spiral drawing routine.,- Spiral colour exactly matches the guide plus.,
+de493100,draw object,routine,grid manipulation,grid | object,"- name: object
+  typing: object
+  description: the object to draw
+- name: position
+  typing: position
+  description: the position to draw the object at","draw an object at a specified position in the grid, updating the grid accordingly","- can draw the object at the new position, but must erase the object pixels from the
+  old position first","- if existing structures from the input grid appear in the output grid with different
+  positions",
+de493100,find patch,routine,intermediate,object | region | list[coord],"- name: input grid
+  typing: grid
+  description: the grid to search for a patch in
+- name: criteria
+  typing: selection criteria := Callable[[object], bool]
+  description: criteria to find the patch, often to maintain a specific pattern like
+    symmetry or color",find a patch in a grid based on some criteria that we need to fill in pixels to complete a pattern,"- Partition the grid into candidate blocks; compute simple features (dominant colour,
+  size, location); return the candidate satisfying criteria (e.g., the block with
+  missing/rare colour).","- look for a specific pattern or shape that is incomplete
+- check for missing pixels in a defined area of the grid",
+de493100,symmetry,routine,pattern recognition,bool,"- name: input grid
+  typing: grid
+  description: the grid to check for symmetry
+- name: axis
+  typing: enum['horizontal', 'vertical', 'diagonal', 'center']
+  description: the axis along which to check for symmetry",check if a grid is symmetric along a specified axis,,"- look for mirrored patterns across the specified axis
+- identify if one half of the grid is a reflection of the other half",
+fd096ab6,align template to target,routine,placement strategy,list[coord],"- name: target
+  typing: object
+  description: object receiving a copy of the template
+- name: shape_offsets
+  typing: list[coord]
+  description: template offsets relative to its origin",Determine an anchor point on the target (commonly its top-left corner) and translate `shape_offsets` by that anchor to obtain the placement coordinates for the template copy.,"- Compute target anchor (e.g., top-left of bbox); add each offset to anchor to get
+  absolute coords; clip to grid bounds.",- Placements align with the target object's position and shape.,
+fd096ab6,extract shape offsets,intermediate operation,,list[coord],"- name: template
+  typing: object
+  description: shape whose pixels will be converted to offsets
+- name: origin
+  typing: coord
+  description: reference point, typically top-left of template bbox",Convert the template's absolute coordinates into a set of offsets relative to an origin (e.g. its top-left pixel) so the same shape can be re-positioned anywhere on the grid.,"- For each pixel of the template, subtract origin to obtain (dr, dc) offset; return
+  the list.",- Offsets reproduce the same geometry when added to any anchor.,
+fd096ab6,identify dominant template,routine,selection criteria,object,"- name: objects
+  typing: list[object]
+  description: candidate components
+- name: background_colour
+  typing: color
+  description: colour considered background (to ignore)",Select the non-background object with the maximum area; this object's geometry becomes the template for replication.,"- Filter out objects matching background_colour; choose the one with maximal pixel
+  count.",- The selected shape is the largest non-background component.,
+fd096ab6,recolour and stamp,grid manipulation,,grid,"- name: placements
+  typing: list[coord]
+  description: absolute coordinates to paint
+- name: target_colour
+  typing: color
+  description: colour used when stamping","For each placement coordinate, paint the cell with the target object's colour, thereby embedding a colour-matched copy of the template shape without altering other non-background pixels.","- Iterate placements and set grid cells to target_colour unless the cell is non-background
+  and overwriting is disallowed.","- New coloured pixels appear at placement coordinates, matching the target's colour.",
+fd096ab6,obstacle-aware line extension,intermediate operation,,grid | list[coord],"- name: bypass direction
+  typing: Literal['left','right']
+  description: the direction to turn when hitting an obstacle
+- name: resume manner
+  typing: Literal['resume-row','resume-col']
+  description: whether to return to the original axis after detour
+- name: stopping criteria
+  typing: Literal['blocked','boundary','fixed-distance'] | int
+  description: when to stop extending","When the line drawing hits an obstacle, it should change direction per a rule, optionally resuming the original axis afterward.","- Step along the path; on obstacle, apply bypass turn and continue; if resume is set,
+  realign to the original axis after clearing the obstacle.
+- Stop when stopping criteria is met; return updated grid or visited coordinates.",- Output shows continuous lines that detour around blocks consistently.,

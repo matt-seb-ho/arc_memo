@@ -1,0 +1,135 @@
+src:
+  # Path to the CSV containing hand-written concepts. Each row should include
+  # at least a concept name and a short description used in prompting.
+  concepts_csv: data/clean_concepts_filled.csv
+  # Target CSV to read/write helper results. Defaults to concepts_csv if omitted.
+  target_csv: data/target.csv
+
+  # CSV column mapping used to build a per-concept YAML for Stage A prompting.
+  csv_schema:
+    # Column holding the concept’s identifier or display name
+    name_column: ConceptName
+    # Column holding a brief natural-language description of the concept
+    description_column: Description
+    # Column to store generated helper puzzle reference/path
+    helper_column: helper_puzzle
+    # Optional: additional CSV columns to copy into the YAML.
+    # Use ["*"] to include all other columns by default.
+    extras: ["*"]
+    # Examples of column names you can put here (depends on your CSV headers):
+    # - Kind               # e.g., routine | structure
+    # - RoutineSubtype     # e.g., grid manipulation | intermediate
+    # - OutputTyping       # expected output type
+    # - Parameters         # parameter specs (string or JSON-like)
+    # - Cues               # puzzle signals/heuristics
+    # - Implementation     # notes or steps
+    # - Tags
+    # - Category
+    # - Origin
+    # - Notes
+    # Tip: to see your exact headers, run:
+    #   head -1 data/clean_concepts_filled.csv | tr ',' '\n'
+
+  # How many concepts to process this run, taken from the CSV.
+  # Accepts integer or "all".
+  sample_num: 20
+  # If true, sample randomly; if false, take the first sample_num rows.
+  random: false
+  # Note: The 'progress' stage uses sample_num/random and automatically
+  # skips concepts that already have per-concept results saved under
+  # outputs/problems/by_concept/csv_XXXX.jsonl. It will top-up to at least
+  # 10 descriptions (with nonces) if fewer than 10 are selected to satisfy
+  # BARC codegen's expectation, but does not alter Stage A/B/C behavior.
+  # Values treated as NA for helper column
+  na_values: ["", "NA", "N/A", "None", "null"]
+
+  # Stage A: concept → BARC-style description
+  stage_a:
+    # Prompt template that converts a concept YAML into a BARC-style description.
+    prompt_template: prompts/concept_to_description.md
+    # Optional directory of user-authored few-shot examples (one .txt per example).
+    fewshot_dir: fewshot
+    # Maximum number of few-shot example files to include (0 = all).
+    fewshot_limit: 3
+    # If true, include few-shot snippets derived from BARC seeds for style guidance.
+    fewshot_from_barc_seeds: true
+    # LLM used for Stage A description generation (separate from BARC codegen model).
+    model: gpt-4o
+    # LLM sampling temperature.
+    temperature: 0.2
+    # Max tokens for the Stage A description response.
+    max_output_tokens: 9999
+    # Pad to at least this many descriptions to satisfy BARC codegen’s internal sampling.
+    pad_descriptions_to: 10
+    # Output directory for Stage A artifacts (descriptions JSONL, logs).
+    outdir: outputs/descriptions
+
+    
+  # Stage B: description → BARC code (generate_input + main) using BARC’s codegen.
+  stage_b:
+    # Path to BARC’s generate_code.py (executed with cwd set to external/BARC).
+    barc_generate_code_py: BARC/generate_code.py
+    # BARC codegen model used to produce puzzle programs.
+    prompt_model: gpt-4o
+    # Embedding model for BARC’s RAG over seed programs/common library usage.
+    embedding_model: text-embedding-ada-002
+    # Number of code samples generated per description.
+    num_samples: 8
+    # Number of seed examples included in BARC’s prompt.
+    num_seeds: 4
+    # Max tokens for code generation samples.
+    max_tokens: 9999
+    # Sampling temperature for code generation.
+    temperature: 0.7
+    # Use BARC batch request (high throughput); otherwise use sample_parallel.
+    batch_request: true
+    # Parallelism for non-batch mode (ignored if batch_request is true).
+    sample_parallel: 10
+    # If true, reuse cached generations when available.
+    ignore_cache_samples: true
+    # Output directory for Stage B code JSONLs.
+    outdir: outputs/code
+
+  # Stage C: code → problems via BARC’s validator (generate_problems.py).
+  stage_c:
+    # Overall guardrail timeout (seconds); per-call timeouts are handled by BARC.
+    total_timeout: 60
+    # Number of input grids to attempt per code sample (BARC default 30). Use 5 for speed.
+    num_input_grids: 5
+    # Number of repeated runs to check determinism of transformation.
+    num_deterministic_check: 10
+    # Number of color permutations to test color invariance.
+    num_color_permute_check: 0
+    # Output directory for generated problems JSONLs.
+    outdir: outputs/problems
+
+  # Retry pipeline (per-concept A->B->C until by_concept file exists)
+  retry:
+    # Strategy for retrying: "per_concept" (K descriptions for one concept) or "mini_batch"
+    strategy: mini_batch
+    # For mini_batch: number of concepts/descriptions per pass (BARC expects >=10 total)
+    batch_size: 10
+    # Start index in CSV to begin retrying (0-based)
+    start: 0
+    # Number of rows to process from start (or "all")
+    num_sample: 20
+    # Maximum attempts per row
+    limit: 3
+    # If true, clear/ignore caches on each attempt
+    ignore_cache: true
+    # Number of fresh descriptions to generate per retry attempt for the same concept (>=10 recommended)
+    k_descriptions: 10
+
+  # Visualization of problems (stacked PNG and per-problem PNGs).
+  viz:
+    # If true, render PNGs after problems are generated.
+    enabled: true
+    # Output directory for visualizations.
+    outdir: outputs/viz
+
+  # Logging: prompts and raw model outputs for auditing/debugging.
+  logging:
+    # If true, write prompts/outputs and metadata to disk.
+    enabled: true
+    # Output directory for logs and metadata files.
+    outdir: outputs/logs

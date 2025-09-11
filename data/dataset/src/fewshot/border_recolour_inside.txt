@@ -1,0 +1,28 @@
+
+Original Concept:
+```yaml
+d931c21c:
+  border recolour (inside):
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: hole_colour
+      typing: color
+      description: colour of interior placeholder (4)
+    - name: border_colour
+      typing: color
+      description: target colour to paint where touching blue (3)
+    Description: Re‑colour every interior‑hole pixel (4) that shares an edge with
+      a blue pixel (1) to green 3, leaving deeper interior 4's as‑is.
+    Implementation:
+    - Build mask of hole_colour cells that are 4‑adjacent to blue; paint those to border_colour; keep non‑adjacent hole cells unchanged.
+    Cues:
+    - Only the hole cells directly touching the blue frame change to green; deeper holes remain 4.
+```
+
+Converted Description:
+```python
+# concepts: adjacency (4-connectivity), holes, border tracing, recolor
+# description: Input is a single object that forms a closed frame (blue=1) surrounding interior "hole" cells (4) on a background (0). Treat connectivity as 4-connected. Recolor precisely those 4-cells that share an edge with any blue=1 pixel to border_colour (green=3); leave all other 4-cells unchanged. All non-4 pixels are preserved. The result is that only the interior ring of 4 that touches the frame changes color; deeper 4-regions remain 4.
+```
