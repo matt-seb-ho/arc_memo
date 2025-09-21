@@ -1,0 +1,55 @@
+
+Original Concept:
+```yaml
+b0722778:
+  block extraction by black columns:
+    Kind: routine
+    Routine Subtype: grid partition
+    Output Typing: list[grid]
+    Parameters:
+    - name: stripe
+      typing: grid (2 × N)
+      description: two-row slice of the palette grid
+    Description: inside a 2-row stripe, cut at full-black columns to isolate three
+      2 × 2 candidate blocks.
+    Implementation:
+    - Scan columns; whenever both cells in the column are 0, cut a partition.
+    - Slice contiguous non-zero spans into consecutive 2×2 blocks.
+    Cues:
+    - Clear vertical black separators divide the stripe into 2×2 colour tiles.
+  colour-set majority vote:
+    Kind: routine
+    Routine Subtype: aggregation
+    Output Typing: tuple[color, color]
+    Parameters:
+    - name: candidates
+      typing: list[tuple[color, color]] (length=3)
+      description: set pairs extracted from the stripes
+    Description: given three 2-element sets, return the set occurring at least twice
+      (ties impossible by puzzle design).
+    Implementation:
+    - Count occurrences of each unordered pair; return the pair with frequency ≥2.
+    Cues:
+    - Two of the three stripes share the same colour pair.
+  shape-mask majority vote:
+    Kind: routine
+    Routine Subtype: aggregation
+    Output Typing: grid[bool] (2×2)
+    Parameters:
+    - name: masks
+      typing: list[grid[bool]] (length=3)
+      description: boolean masks derived from each candidate square
+    Description: convert each block to a boolean "minority-colour mask" and return
+      the mask shared by two of the three blocks.
+    Implementation:
+    - Convert each 2×2 square to a bool mask where True marks the minority colour cell(s).
+    - Compare masks and choose the one appearing at least twice.
+    Cues:
+    - Two of the three 2×2 shapes share the same minority-colour pattern.
+```
+
+Converted Description:
+```python
+# concepts: partition by separators, majority vote (set + mask), tile synthesis
+# description: The input consists of three disjoint 2×N stripes separated by full-black (0) columns. In each stripe, cut at 0-columns and isolate the single 2×2 colored candidate. From the three candidates: (a) compute the unordered color pair in each 2×2 block (ignore zeros); pick the pair that appears ≥2 times; (b) convert each 2×2 to a boolean mask where True marks cells of the minority color within its pair; choose the mask occurring ≥2 times. Synthesize the output as a single 2×2: fill False cells with the lower-index color of the chosen pair and True cells with the higher-index color. Return only this 2×2 tile.
+```
