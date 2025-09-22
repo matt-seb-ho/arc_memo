@@ -31,6 +31,7 @@ data:
   # - str: path made relative to a list[int | str]
   # - list[int | str]: list of indices (barc) or problem uids (arc-agi)
   problem_ids: null 
+  custom_directory: null
 
 prompt:
   # ICL examples
