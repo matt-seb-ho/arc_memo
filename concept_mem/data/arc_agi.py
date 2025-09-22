@@ -177,6 +177,7 @@ def load_arc_data(
     split: str = "train",
     barc_seeds_path: Path = BARC_SEEDS_PATH,
     puzzle_ids: Path | str | list[str] | None = None,
+    directory_path: Path | None = None,
 ) -> dict[str, Problem]:
     if puzzle_ids is None and split in CUSTOM_SPLITS:
         puzzle_ids = CUSTOM_SPLITS[split]
@@ -232,3 +233,20 @@ def load_arc_data(
         }
 
     raise ValueError(f"Undefined split: {split} provided without puzzle IDs.")
+
+
+def load_custom_arc_data(file_path: Path | None) -> dict[str, Problem]:
+    # assume it's a directory containing "{uid}.json" files
+    assert file_path.is_dir(), f"File path {file_path} is not a directory"
+    problems = {}
+    for item in file_path.iterdir():
+        if item.suffix != ".json":
+            continue
+        puzzle_id = item.stem
+        if "_" in puzzle_id:
+            puzzle_id = puzzle_id.split("_")[0]
+        problems[puzzle_id] = Problem.from_file(
+            file_path=item,
+            uid=puzzle_id,
+        )
+    return problems

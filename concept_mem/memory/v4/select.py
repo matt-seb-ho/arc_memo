@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 
 from concept_mem.constants import DATA_DIR, DOTENV_PATH, HYRDA_CONFIG_PATH, REPO_ROOT
-from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.data.arc_agi import Problem, load_arc_data, load_custom_arc_data
 from concept_mem.evaluation.prompts import format_puzzle_for_prompt
 from concept_mem.utils import (
     extract_yaml_block,
@@ -149,8 +149,13 @@ async def async_main(cfg: DictConfig) -> None:
         raise ValueError("No memory string path provided in config.")
 
     # prepare target puzzles
-    pzids = read_json(cfg.selection.problems)
-    target_puzzles = {pzid: Problem.from_puzzle_id(pzid) for pzid in pzids}
+    problem_path = Path(cfg.selection.problems)
+    if problem_path.suffix == ".json":
+        pzids = read_json(cfg.selection.problems)
+        target_puzzles = {pzid: Problem.from_puzzle_id(pzid) for pzid in pzids}
+    else:
+        assert problem_path.is_dir(), "problems must be a json file or a directory"
+        target_puzzles = load_custom_arc_data(problem_path)
 
     # model related setup
     llm_client = LLMClient(

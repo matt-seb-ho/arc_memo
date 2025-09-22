@@ -1,10 +1,11 @@
 import logging
 import random
 from itertools import islice
+from pathlib import Path
 
 import omegaconf
 
-from concept_mem.data.arc_agi import Problem, load_arc_data
+from concept_mem.data.arc_agi import Problem, load_arc_data, load_custom_arc_data
 from concept_mem.utils import read_json
 
 logger = logging.getLogger(__name__)
@@ -15,8 +16,14 @@ def load_problems_from_config(
     split: str,
     num_problems: int | None,
     problem_ids: list | str | dict[str, str] | None,
+    custom_directory: Path | str | None = None,
 ) -> dict[str, Problem]:
     """Load ARC‑AGI problems and subset them according to the config."""
+    if custom_directory is not None:
+        if isinstance(custom_directory, str):
+            custom_directory = Path(custom_directory)
+        return load_custom_arc_data(custom_directory)
+
     if dataset.lower() == "arc-agi":
         data = load_arc_data(split)
         if problem_ids is None:

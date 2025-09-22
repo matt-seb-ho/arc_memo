@@ -356,6 +356,7 @@ async def async_main(cfg: DictConfig) -> None:
         split=cfg.data.split,
         num_problems=cfg.data.num_problems,
         problem_ids=cfg.data.problem_ids,
+        custom_directory=cfg.data.custom_directory,
     )
     prompt_options = hydra.utils.instantiate(cfg.prompt)
 
