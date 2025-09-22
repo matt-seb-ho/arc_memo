@@ -23,15 +23,19 @@ puzzle_retry:
   reselect_with_prev_attempt: true
 
 data:
-  dataset: barc0/200k_HEAVY_gpt4o-description-gpt4omini-code_generated_problems
-  split: train
-  num_problems: 500
-  random_seed: 88
+  # dataset: barc0/200k_HEAVY_gpt4o-description-gpt4omini-code_generated_problems
+  # split: train
+  # num_problems: 500
+  # random_seed: 88
+  # problem_ids: null 
   # str | list[int | str] | null
   # - str: path made relative to a list[int | str]
   # - list[int | str]: list of indices (barc) or problem uids (arc-agi)
-  problem_ids: null 
-  custom_directory: null
+  dataset: arc-agi
+  split: validation
+  num_problems: null
+  random_seed: 88
+  problem_ids: null
 
 prompt:
   # ICL examples
