@@ -81,12 +81,59 @@ The shape of the problem data json file is as follows:
 }
 ```
 
-## Dataset (Under Construction)
-We release our concept annotations for difficult target puzzles in `data/dataset/`.
-The current annotations support future work in reformatting the current concepts to determine an optimal representation to enable the model to solve the previously unsolved puzzles.
+## Dataset
+We release our concept annotations and a self-contained helper-puzzle generation pipeline under `data/dataset/`.
+The pipeline converts hand-written concepts into BARC-style descriptions, code, and validated problems, with
+visualization and consolidation utilities.
 
-We are currently working on (1) additional annotations for these puzzles and (2) an automated pipeline to convert individual concepts into helper puzzles.
-The goal here is to simulate the end-to-end setting of learning concepts from helper puzzles -> reusing the concept to solve target puzzles.
-This in-progress dataset would enable future work in measuring model abilities to extract salient concepts from puzzles, with and without distractors.
+### Layout
+- `data/dataset/src/`: finalized pipeline (Concept → Description → Code → Problems)
+  - `config.yaml`: pipeline configuration (paths are relative to this folder)
+  - `prompts/concept_to_description.md`: Stage A template; optional few-shots in `fewshot/`
+  - `BARC/`: local BARC code for Stage B/C (codegen, problem generation, prompts, seeds)
+  - `scripts/`: orchestration and tools — `pipeline.py` (stages listed below), `render.py`
+  - `data/`: inputs (`clean_concepts_filled.csv/.yaml`); `target.csv` for writing helper references
+  - `outputs/`: artifacts written here (`descriptions/`, `code/`, `problems/`, `problems/by_concept/`, `viz/`, `viz_by_concept/`, `logs/`)
+  - `setup_api_key.sh`: helper to export `OPENAI_API_KEY` and `OPENAI_MODEL`
 
-We are continuing to improve and clean the puzzle generation pipeline, but it is currently functional and documented on this [branch](https://github.com/matt-seb-ho/arc_memo/tree/update_data).
+### Prerequisites
+- Python 3.11
+- From project root, install dependencies:
+```bash
+pip install -r requirements.txt
+```
+- Export API keys (example):
+```bash
+source data/dataset/src/setup_api_key.sh
+```
+
+### Inputs
+- `data/dataset/src/data/clean_concepts_filled.csv`: annotated concept table (primary input)
+
+### Outputs
+- `data/dataset/src/outputs/problems/by_concept/*.jsonl`: per-concept helper problem files (primary dataset artifact to use directly)
+- `data/dataset/src/outputs/viz_by_concept/*.png`: visualizations corresponding to the above helpers
+
+These two folders are the primary dataset contribution and can be used immediately for training, evaluation, or inspection without rerunning the pipeline.
+
+#### Example (helper visualization)
+![Helper grid example](data/dataset/src/outputs/viz_by_concept/csv_0000.png)
+
+### Usage (run from project root)
+- Retry mode (per-row or mini-batch until success/limit)
+```bash
+python -m data.dataset.src.scripts.pipeline --stage retry
+```
+- Visualize helpers (renders by_concept JSONLs)
+```bash
+python -m data.dataset.src.scripts.pipeline --stage viz_helpers
+```
+Additional modes (e.g., descriptions, code, problems, consolidate, progress) are part of the same pipeline and are documented in `data/dataset/src/instruction.md`.
+
+### Configuration
+Edit `data/dataset/src/config.yaml` to customize:
+- `src.concepts_csv` and `src.target_csv`
+- Stage A (`src.stage_a`): model, few-shots, prompt, outputs
+- Stage B (`src.stage_b`): BARC paths/models, `num_samples`, `num_seeds`, caching/parallelism
+- Stage C (`src.stage_c`): `num_input_grids`, determinism/color checks, outputs
+- Visualization (`src.viz`, `src.viz_helpers`), consolidation, and logging

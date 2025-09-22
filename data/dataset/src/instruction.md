@@ -5,11 +5,13 @@ This folder contains a self-contained environment for the finalized BARC two-sta
 ## Layout
 - `config.yaml`: Pipeline configuration (paths relative to this folder)
 - `prompts/concept_to_description.md`: Stage A prompt template
-- `data/clean_concepts_filled.csv` (and `.yaml`): Concept source
+- `data/clean_concepts_filled.csv`: Annotated concepts table (primary input consumed by the pipeline)
+- `data/clean_concepts_filled.yaml`: Optional human-readable mirror; not consumed by the pipeline
+- `data/target.csv`: Target CSV updated by the `save` stage; optionally read by `retry` as the working table
 - `scripts/pipeline.py`: Entrypoint to run Stage A/B/C
 - `scripts/render.py`: Renderer for generated problems PNGs
 - `BARC/`: Local copy of the BARC codebase used by Stage B/C
-- `outputs/`: Artifacts written here (`descriptions`, `code`, `problems`, `viz`, `logs`)
+- `outputs/`: Artifacts written here (`descriptions`, `code`, `problems`, `problems/by_concept`, `viz`, `viz_by_concept`, `logs`)
 - `setup_api_key.sh`: Helper to export API keys
 
 ## Prereqs
