@@ -1,0 +1,17 @@
+_target_: llmplus.GenerationConfig
+n: 1
+temperature: 0.3
+max_tokens: 32000
+top_p: 1
+batch_size: 32
+seed: 88
+ignore_cache: false
+extra_kwargs:
+  reasoning_effort: "high"
+
+# wre_resp = await llm_client._client_async.chat.completions.with_raw_response.create(
+#   model="google/gemini-2.5-flash",
+#   messages=[{"role": "user", "content": dummy_prompt}],
+#   max_tokens=128,
+#   reasoning_effort="low",
+# )
