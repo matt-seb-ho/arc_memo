@@ -1,0 +1,30 @@
+_target_: llmplus.GenerationConfig
+n: 1
+temperature: 0.3
+max_tokens: 32000
+top_p: 1
+batch_size: 32
+seed: 88
+ignore_cache: false
+extra_kwargs:
+  extra_body:
+    extra_body:
+      google:
+        thinking_config:
+          thinking_budget: 16000
+          include_thoughts: true
+
+# response = client.chat.completions.create(
+#     model="gemini-2.5-flash",
+#     messages=[{"role": "user", "content": "Explain to me how AI works"}],
+#     extra_body={
+#       'extra_body': {
+#         "google": {
+#           "thinking_config": {
+#             "thinking_budget": 800,
+#             "include_thoughts": True
+#           }
+#         }
+#       }
+#     }
+# )
