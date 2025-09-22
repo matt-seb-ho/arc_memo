@@ -99,7 +99,38 @@ We also have some recommendations on how to approach problem solving with these 
 
 {hints}"""
 
+# this is the prompt template used for
+# concept_mem_arc/outputs/2025-07-31/03-30-44
+# concept_mem_arc/outputs/2025-07-31/04-20-37
 HINT_TEMPLATE_OP3A = """\
+### Concepts from Previously Solved Puzzles
+We recorded concepts about structures and routines we observed in previously solved puzzles. These concepts may or may not be relevant to this puzzle, but they provide useful context to show examples of what structures may appear in the grids, what operations may be used, and how they might be composed. Concepts are annotated with fields like:
+- cues: (short for "relevance cues"), what to look for that might indicate this concept is relevant in this puzzle
+- implementation: notes on how this concept was implemented in past solution programs
+- output typing: what the output of this routine is (e.g. a grid, a list, a number, a bool, etc.)
+- parameters: a list of parameters that describe ways the concept may vary
+We also have some recommendations on how to approach problem solving with these concepts in mind:
+- We label the grid manipulation routines separately-- these directly affect the grids so they are easier to spot (along with structure concepts)
+- You might try to first identify which grid manipulation operations are used, then investigate their parameters
+- The non-grid manipulation routines might describe ways we've seen previous puzzles set parameters, so you can look to these for inspiration
+- There may not be exact matches to this list, so we encourage you to think about variations, novel ways to recombine existing ideas, as well as completely new concepts
+- These concepts and this approach are only suggestions, use them as you see fit
+We want to emphasize:
+- These concepts are not exhaustive, but rather a set that has been (1) observed in previous solved puzzles (2) marked as potentially relevant to this puzzle. 
+- This initial analysis's selection is likely imperfect or incomplete, so we include the titles of all other concepts in case they might be useful.
+- These represent only problem solving pieces that can be put together in interesting ways such as:
+  - combining `color criteria` with `size criteria` and `tiling`, where maybe you only tile an object if it's red and the number of tiling copies depends on the size of the object
+  - or maybe you combine `counting` with `recolor object` and `line drawing` and `collision criteria`, where you are drawing a line pixel by pixel, navigate around obstacles when you collide with an object and change the line color according to the number of obstacles hit
+- It is unlikely these past 2 examples match any real puzzle-- they are just to illustrate how you can combine concepts in interesting ways.
+- Again, the puzzle at hand may require entirely new operations, the concepts are just to show what's been used in the past
+
+{hints}"""
+
+# this is the prompt template used for
+# concept_mem_arc/outputs/2025-07-31/05-47-33
+# it appears in the config records as "op3a" because I edited the template in place
+# this version (below) appears to be slightly worse
+HINT_TEMPLATE_OP3B = """\
 ### Concepts from Previously Solved Puzzles
 We recorded concepts about structures and routines we observed in previously solved puzzles. These concepts may or may not be relevant to this puzzle, but they provide useful context to show examples of what structures may appear in the grids, what operations may be used, and how they might be composed. Concepts are annotated with fields like:
 - cues: (short for "relevance cues"), what to look for that might indicate this concept is relevant in this puzzle
@@ -149,6 +180,7 @@ HINT_TEMPLATES = {
     "curr3": HINT_TEMPLATE_CURR3,
     "op3": HINT_TEMPLATE_OP3,
     "op3a": HINT_TEMPLATE_OP3A,
+    "op3b": HINT_TEMPLATE_OP3B,
     "cheatsheet_min": HINT_TEMPLATE_CHEATSHEET_MIN,
 }
 
