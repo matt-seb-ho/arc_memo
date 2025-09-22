@@ -116,6 +116,9 @@ source data/dataset/src/setup_api_key.sh
 
 These two folders are the primary dataset contribution and can be used immediately for training, evaluation, or inspection without rerunning the pipeline.
 
+#### BARC integration
+The helper-grid generation pipeline adapts the BARC codebase for Stage B/C (description → code, code → problems). We vendor a truncated local copy under `data/dataset/src/BARC` (unused components removed) with light modifications to support our retry/consolidation flow and per‑concept outputs (`outputs/problems/by_concept`, `outputs/viz_by_concept`). The original project is available at [BARC](https://github.com/xu3kev/BARC).
+
 #### Example (helper visualization)
 ![Helper grid example](data/dataset/src/outputs/viz_by_concept/csv_0000.png)
 
