@@ -5,7 +5,7 @@ temperature: 1.0
 # apparently temperature can only be 1 when thinking is enabled
 max_tokens: 32000
 top_p: 1
-batch_size: 32
+batch_size: 8
 seed: 88
 ignore_cache: false
 extra_kwargs:
