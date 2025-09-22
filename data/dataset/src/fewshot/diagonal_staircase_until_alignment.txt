@@ -1,0 +1,33 @@
+
+Original Concept:
+```yaml
+diagonal line drawing:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid | list[coord]
+    Parameters:
+    - name: start_point
+      typing: coord
+      description: anchor A
+    - name: end_point
+      typing: coord
+      description: anchor B
+    - name: stop_condition
+      typing: Literal['same-row','same-col']
+      description: termination criterion for the diagonal
+    - name: path_colour
+      typing: color
+      description: '3'
+    Description: From the first anchor draw a checker‑board diagonal (colour 3) toward
+      the second anchor until either the same row OR column is reached.
+    Implementation:
+    - Walk stepwise with (dr,dc) in {(+1,+1),(+1,−1)} choosing the variant heading toward the end; colour every step; stop when stop_condition is met.
+    Cues:
+    - Output shows a 45° staircase path of colour 3 linking toward the opposite anchor.
+```
+
+Converted Description:
+```python
+# concepts: diagonal staircase path, stepwise walk, termination on alignment
+# description: Given two anchor pixels A and B, paint a 1-pixel-wide staircase path starting at A with steps (±1, +1) chosen to greedily reduce |row−row_B| and |col−col_B| each step. Color each visited cell with path_colour=3. Stop immediately when either A’s current row equals B’s row (same-row) or A’s current column equals B’s column (same-col), according to the provided stop_condition. Do not paint beyond alignment; leave all other cells unchanged.
+```

@@ -1,0 +1,29 @@
+
+Original Concept:
+```yaml
+5ffb2104:
+  gravity movement:
+    Kind: intermediate operation
+    Routine Subtype: N/A
+    Output Typing: grid
+    Parameters:
+    - name: direction
+      typing: Literal['down','up','left','right']
+      description: direction of the gravity
+    - name: cohesion mode
+      typing: Literal['cohesive','per-column']
+      description: whether the object falls as a whole (cohesive) or columns fall independently
+    Description: simulate gravity in the specified direction to translate blocks until they rest on obstacles or boundaries
+    Implementation:
+    - For the chosen direction, sweep cells toward that side.
+    - If cohesion mode is 'per-column', collapse each column independently stopping at blockers; else treat the object as one rigid shape and translate until contact.
+    - Preserve order/shape; stop when further movement would collide or leave grid.
+    Cues:
+    - Outputs show blocks shifted flush against walls or other blocks along one axis; empty space appears opposite the fall direction.
+```
+
+Converted Description:
+```python
+# concepts: gravity (per-column), blocking, collision, stable resting state
+# description: Input may contain multiple colored pixels/objects on background 0. Apply gravity straight DOWN with per-column collapse: for each column independently (treat 4-connectivity vertically), compress all nonzero pixels downward until each pixel either sits on the grid bottom or directly atop another nonzero pixel. Preserve the vertical order of pixels within each column; do not move horizontally; do not merge colors. Return the grid after a single maximal collapse pass (no oscillation).
+```

@@ -1,0 +1,45 @@
+
+Original Concept:
+```yaml
+da515329:
+  spiral drawing:
+    Kind: grid manipulation
+    Routine Subtype: N/A
+    Output Typing: grid | list[coord]
+    Parameters:
+    - name: start_offset
+      typing: int
+      description: cells inset from the outer border before starting (1)
+    - name: turn_sequence
+      typing: list[direction]
+      description: ['right','down','left','up']
+    - name: path_colour
+      typing: color
+      description: colour to paint the spiral
+    Description: Starting one cell in from the outer border, trace a clockwise 1‑pixel‑wide
+      path that forms a rectangular spiral toward the centre.
+    Implementation:
+    - Start at the top-left corner inset by start_offset; step in the first direction for the current run length; turn following turn_sequence; increase run length after every two turns; continue until termination rule fires.
+    Cues:
+    - Output shows a single‑width rectangular spiral occupying the canvas interior.
+  spiral termination upon obstacle:
+    Kind: intermediate operation
+    Routine Subtype: N/A
+    Output Typing: coord | None
+    Parameters:
+    - name: obstacle_colour
+      typing: color
+      description: colour of guide plus to avoid
+    Description: Continue extending the spiral until the next move would overwrite
+      a non‑background pixel (the guide plus), then stop.
+    Implementation:
+    - At each step look ahead one cell; if it is non‑background and equals obstacle_colour, halt and return the last valid coordinate; otherwise continue.
+    Cues:
+    - Spiral stops just before touching the guide plus.
+```
+
+Converted Description:
+```python
+# concepts: rectangular spiral, clockwise turn sequence, obstacle-aware termination, color from guide
+# description: Let the canvas borders be background (0) and locate a unique cyan plus (+). Start a 1-pixel-wide path at (row=1, col=1) — one cell inset from the top-left corner — and trace a clockwise rectangular spiral: run lengths increase by 1 after every two turns, with turn order [right, down, left, up]. Color each visited cell with the cyan color. Before each step, look ahead; if the next cell is the cyan plus (non-background), STOP and do not overwrite it. The spiral may end early when blocked by the plus. All other pixels remain unchanged.
+```
