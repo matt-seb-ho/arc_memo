@@ -100,7 +100,8 @@ class EvaluationRunner:
         self.initial_prompts: dict[tuple[str, str], str] = {}  # (puzzle_id, variant_id)
 
     async def run(self, problems: dict[str, Problem]) -> None:
-        for i in range(1, self.retry.max_passes + 1):
+        range_end = 2 if self.dry_run else self.retry.max_passes + 1
+        for i in range(1, range_end):
             logger.info(f"running iteration {i} of {self.retry.max_passes}")
             await self._run_iteration(problems, iteration=i)
 

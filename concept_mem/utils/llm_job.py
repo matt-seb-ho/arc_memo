@@ -36,6 +36,8 @@ async def run_llm_job(
     # save prompts only for dry runs
     if dry_run:
         logger.info("dry run enabled, returning dummy results without generation")
+        gen_kwargs = gen_cfg.to_kwargs(llm_client.provider_meta.models[model])
+        logger.info(f"gen_cfg.to_kwargs(): {gen_kwargs}")
         return [["dummy"] for _ in prompts]
 
     # generate completions and track token usage
