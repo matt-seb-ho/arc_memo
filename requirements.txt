@@ -21,6 +21,6 @@ hydra-core
 omegaconf
 PyYAML
 chromadb
-llmpus @ git+https://github.com/matt-seb-ho/llm_wrapper.git
+llmplus @ git+https://github.com/matt-seb-ho/llm_wrapper.git
 hydra-core
 Pebble
