@@ -15,8 +15,9 @@ While inference-time scaling enables LLMs to carry out increasingly long and cap
 ## Usage
 Again we rely on hydra for managing experiments, the following examples highlight the main entry points and scripts to run:
 
-### baseline
+### Baseline (No Memory)
 ```bash
+# running puzzle solving in our harness
 python -m concept_mem.evaluation.driver \
   data=val100 \
   model=o4_mini \
@@ -26,14 +27,15 @@ python -m concept_mem.evaluation.driver \
   generation.n=1
 ```
 
-### ArcMemo
+### ArcMemo-PS
 Here are some example commands to run the ArcMemo pipeline.
 
-```
-# preprocess seed solutions into pseudocode
+Initialize Memory
+```bash
+# preprocess seed solutions into pseudocode (produces initial_analysis.json)
 python -m concept_mem.memory.v4.pseudocode \
 	+annotate=default \
-	annotate.limit_problems=10
+	annotate.limit_problems=null
 
 # abstract memories
 # - pseudocode output by the previous step
@@ -43,12 +45,26 @@ python -m concept_mem.memory.v4.abstract \
 	annotate.pseudocode=".../initial_analysis.json" \
 	annotate.hand_annotations_file="data/abstract_anno/op3/op3a.yaml" \
 	annotate.batch_size=1
+```
 
+Abstracting memories outputs a ConceptMem json file.
+To get the memory into a fixed string, load from the file and write use the `to_string` method.
+See `notebooks/memory_compression.ipynb` to see extra preprocessing details (querying model to summarize long entries, etc.).
+```python
+cm = ConceptMemory()
+cm.load_from_file(latest_dir / "memory.json")
+
+target_mem_str_path = DATA_DIR / "abstract_anno/op3/barc_init_mem.txt"
+target_mem_str_path.write_text(cm.to_string())
+```
+
+Next for puzzle solving we (1) select relevant memories (2) run inference
+```bash
 # select memories
 python -m concept_mem.memory.v4.select \
 	model@selection.model=o4_mini \
 	generation@selection.generation=long_cot_defaults \
-	selection.problems="data/testbeds/op3f_unsolved_ids.json" \
+	selection.problems="data/testbeds/validation_n100_uids.json.json" \
 	selection.mem_str_path="data/abstract_anno/op3/barc_init_mem.txt" \
 	selection.mem_path="data/memory/compressed_v1.json" 
 
@@ -80,6 +96,92 @@ The shape of the problem data json file is as follows:
     ...
 }
 ```
+
+## Reproducing Other Experiments
+
+### Cheatsheet
+First initialize the cheatsheet from seed solutions:
+```bash
+python -m concept_mem.memory.cheatsheet.bootstrap \
+	+annotate=default \
+	+annotate.data.limit_problems=null \
+	annotate.generation.max_tokens=4096
+```
+Then format cheatsheet contents into problem data (add the same cheatsheet to all problems):
+```python
+frozen_barc_cheatsheet_pi = {}
+for k in val100.keys():
+    frozen_barc_cheatsheet_pi[k] = {
+        "frozen_barc_cheatsheet": {
+            "hint": final_cheatsheet,
+        }
+    }
+target_path = cheatsheet_output_dir / "frozen_barc_cheatsheet_pi.json"
+with open(target_path, "w") as f:
+    json.dump(frozen_barc_cheatsheet_pi, f, indent=2)
+```
+Then run inference as before:
+```bash
+python -m concept_mem.evaluation.driver \
+  data=val100 \
+  prompt.problem_data=".../frozen_barc_cheatsheet_pi.json" \
+  model=o4_mini \
+  generation=long_cot_defaults \
+  generation.ignore_cache=true \
+  prompt.hint_template_key="cheatsheet_min" \
+  puzzle_retry.max_passes=3 \
+  generation.n=1
+```
+
+### ArcMemo-OE
+```bash
+# generate post-hoc thought processes from seed solutions:
+python -m concept_mem.abstraction.thought_process \
+	+abstraction=default_thought_process
+
+# abstract into analytical lessons (situation-suggestion pairs)
+python -m concept_mem.abstraction.analysis_concepts \
+	model=gpt41 \
+	+abstraction=default_lesson_from_trace \
+	abstraction.thought_processes=".../thought_processes.json"
+
+# generate VLM puzzle descriptions
+python -m detective.description.run \
+	model=gpt41 \
+	data=val30 \
+	module=desc
+
+# select concepts
+python -m concept_mem.selection.description.select \
+  selection.description_file=".../gpt41_vlm.json" \
+  model@selection.model=gpt41 \
+  selection.generation.temperature=0
+
+# create problem data (as before)
+...
+# run inference (as before)
+...
+```
+
+### ArcMemo-OE (Continual)
+```bash
+# use a different evaluation driver this time for puzzle solving
+python -m concept_mem.evaluation.continual_driver \
+  data=val100 \
+  continual_batch_size=10 \
+  concept_mem_init_file="[lesson json file path, output from analysis_concepts.py]" \
+  +abstraction=default_lesson_from_trace \
+  abstraction.thought_processes="[thought process json file path, output from thought_process.py]" \
+  model=o4_mini \
+  generation=long_cot_defaults \
+  puzzle_retry.max_passes=3 \
+  puzzle_retry.reselect_concepts=true \
+  generation.n=1
+```
+
+## Oracle@k Scoring
+Please refer to `notebooks/scoring_tutorial.ipynb` for aggregating results across runs and computing oracle@k scores.
+
 
 ## Dataset
 We release our concept annotations and a self-contained helper-puzzle generation pipeline under `data/dataset/`.
