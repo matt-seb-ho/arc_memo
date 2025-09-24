@@ -1,0 +1,30 @@
+
+Original Concept:
+```yaml
+c6e1b8da:
+  2d layover:
+    Kind: routine
+    Routine Subtype: pattern recognition
+    Output Typing: pattern
+    Parameters:
+    - name: occluder
+      typing: object
+      description: the object on top
+    - name: occludee
+      typing: object
+      description: the object underneath
+    Description: find a pattern in a grid where an object is laid over another object.
+      Often one object is a rectangle and the other is a partially-occluded rectangle.
+    Implementation:
+    - Detect rectangles; determine z-order by adjacency/overlap; infer which pixels are hidden.
+    Cues:
+    - look for overlapping regions in the grid
+    - identify the shape and position of the objects involved
+    - check for partial occlusion or alignment of objects
+```
+
+Converted Description:
+```python
+# concepts: rectangle detection, occlusion reasoning, reconstruction, bounding boxes
+# description: Extract connected components by color; among rectangular components that overlap, treat the visually frontmost (occluder) as the one whose pixels sit atop another rectangle. Reconstruct the occludee by completing its axis-aligned rectangle: take the occludee’s minimal bbox inferred from its visible edges (left/right/top/bottom extents) and fill the entire bbox with the occludee’s color. Set occluder pixels to background 0 (remove the top layer). All other pixels remain unchanged.
+```
