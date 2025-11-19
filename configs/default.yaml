@@ -54,6 +54,7 @@ prompt:
   test_hint_file: null
   hint_template_key: selected # options: "min", "selected", "all_hints"
   require_hint_citations: false
+  hint_lessons_limit: null # max number of retrieved lessons to inject (null = no limit)
 
   # ground truth concept (barc)
   include_concepts: false

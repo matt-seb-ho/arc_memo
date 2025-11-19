@@ -1,0 +1,36 @@
+# AIME lesson selection config
+# Retrieves relevant mathematical lessons for AIME validation problems
+
+defaults:
+  - /model: gpt41
+  - /generation: gen_default
+
+# AIME problems (use validation set problem IDs)
+problems: data/aime/validation_ids.json
+
+# Problem descriptions (for retrieval context)
+# Uses validation problem statements directly
+description_file: data/aime/validation.json
+
+# AIME lesson memory (from training abstraction)
+lesson_file: experiments/aime_train/abstraction/lessons.json
+
+# Retrieval settings
+top_k: 5  # Select top 5 most relevant lessons
+situation_only: false  # Include both situation and suggestion
+use_hint_v2: false
+domain: aime
+
+# Ensemble method for multiple descriptions (not used for AIME)
+ensemble_method: null
+
+# Emit prompt_info.json compatible with ArcMemo inference
+prompt_info_key: aime_lessons
+prompt_info_include_description: true
+
+# Generation config for selection
+generation:
+  temperature: 0.0
+  max_tokens: 512
+  batch_size: 4
+  ignore_cache: true

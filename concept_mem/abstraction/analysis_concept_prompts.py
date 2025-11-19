@@ -1,5 +1,133 @@
 # prompts for abstracting analysis-oriented concepts
 
+# ============================================================================
+# AIME-Specific Prompts (Mathematical Reasoning)
+# ============================================================================
+
+EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE = """### Introduction
+You are analyzing AIME (American Invitational Mathematics Examination) problems to extract reusable mathematical reasoning patterns. AIME problems span various domains including algebra, geometry, number theory, combinatorics, and probability.
+
+Your task is to analyze a solved problem and its reasoning process to extract reusable lessons for solving other AIME problems. Write problem-solving "rules" that describe a **situation** (what patterns to recognize) and a **suggestion** (what techniques to try).
+
+### Instructions
+We will provide you with a problem answer and the solver's reasoning process.
+- The "situation" should describe mathematical patterns, structures, or conditions to recognize
+- The "suggestion" should recommend specific techniques or approaches
+- Make lessons general and reusable across different problems
+  - Focus on high-level mathematical insights
+  - Parameterize specific values (use "when coefficients form a pattern" not "when a=5")
+  - Ask: "Would this help with similar problems that use different numbers?"
+- Write lessons in a markdown YAML block in the following format:
+
+```yaml
+- situation: [mathematical pattern or condition to recognize]
+  suggestion: [technique or approach to try]
+```
+
+### Examples
+{examples}
+
+### Problem Answer
+{solution}
+
+### Solver's Reasoning
+{thought_process}
+"""
+
+EXTRACT_LESSON_FROM_AIME_ZS_TEMPLATE = """### Introduction
+You are analyzing an AIME (American Invitational Mathematics Examination) problem to extract reusable mathematical reasoning patterns.
+
+Your task is to analyze a solved problem and its reasoning process to extract reusable lessons for solving other AIME problems.
+
+### Instructions
+We will provide you with a problem answer and the solver's reasoning process.
+- Extract the key mathematical insights and techniques used
+- Write situation-suggestion pairs that are broadly applicable
+- Focus on generalizable patterns, not problem-specific details
+
+Format:
+```yaml
+- situation: [mathematical pattern or condition]
+  suggestion: [technique or approach]
+```
+
+### Problem Answer
+{solution}
+
+### Solver's Reasoning
+{thought_process}
+"""
+
+# ============================================================================
+# AIME-Specific Prompts - Strict Version (v2)
+# More explicit constraints and anti-overfitting guards
+# ============================================================================
+
+EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT = """### Introduction
+
+You are analyzing AIME (American Invitational Mathematics Examination) problems to extract reusable mathematical reasoning patterns. AIME problems span algebra, geometry, number theory, combinatorics, and probability, and are typically solvable with high-school level contest techniques.
+
+Your task is to analyze a solved problem and its reasoning process to extract reusable lessons for solving other AIME problems. These lessons should be phrased as problem-solving "rules" that describe:
+
+- a **situation** (what structural pattern to recognize), and
+- a **suggestion** (what concrete technique to try).
+
+### Instructions
+
+We will provide you with a problem answer and the solver's reasoning process.
+
+Your job is to output ONLY a markdown YAML block containing 2–5 lessons, each of the form:
+
+```yaml
+- situation: [mathematical pattern or condition to recognize]
+  suggestion: [technique or approach to try]
+```
+
+No extra prose, no headings, no explanation outside the YAML list.
+
+Design the lessons with the following constraints:
+
+1. **General but Detectable Situations**
+   - Describe structural patterns, not specific numbers.
+   - Parameterize values: e.g. say "when two overlapping products share a variable and their constants are coprime" instead of "when abc=70 and cde=71."
+   - It is acceptable to mention qualitative properties like "prime," "perfect square," "consecutive integers," "equally spaced points," "similar triangles," etc.
+
+2. **Concrete, Executable Suggestions**
+   - Each *suggestion* must describe specific mathematical actions a capable student could carry out: introduce a variable, write a recurrence, apply similarity, set up a system, use the shoelace formula, count lattice points, etc.
+   - Avoid vague advice like "analyze carefully," "be systematic," or "consider symmetry" unless you immediately follow it with a concrete procedure.
+   - At least **one** lesson must encode the **main key step** from the solution in an explicit way (for example, "define P(k) as … and write a recurrence P(k) = …", or "view each k-digit block of 9s as 10^k − 1 and sum these as a geometric series").
+
+3. **AIME-Level Methods Only**
+   - Use tools appropriate for AIME: algebraic manipulation, inequalities, modular arithmetic, recurrences, casework, combinatorial counting, similarity, Pythagorean triples, coordinate geometry, area/ratio arguments, parity, basic number theory (gcd/lcm, prime factorization, divisor-count formulas), etc.
+   - Do NOT invoke heavy or unnecessary methods such as Fourier analysis, character sums, measure theory, advanced group theory, or anything beyond typical high-school olympiad/AIME level.
+
+4. **Avoid Problem-Specific Overfitting**
+   - Do not refer to problem labels, specific variable names from the statement, or the problem's numerical constants.
+   - Do NOT restate the original problem in disguise.
+   - Ask yourself: "Would this lesson still be useful if all the numbers were changed but the structure stayed the same?" If not, generalize it.
+
+5. **No Trivial or Meta Advice**
+   - Do not include lessons like "re-read the problem," "check your arithmetic," or "answer the question at the end."
+   - Focus only on *mathematical structure* and *methods*.
+
+6. **Faithfulness to the Given Solution**
+   - Base your lessons on actual reasoning steps visible in the solver's process.
+   - You may compress, reorganize, or generalize those steps, but do not invent fundamentally different solution methods that are not suggested by the reasoning.
+
+### Examples
+{examples}
+
+### Problem Answer
+{solution}
+
+### Solver's Reasoning
+{thought_process}
+"""
+
+# ============================================================================
+# ARC-Specific Prompts (Grid Puzzles)
+# ============================================================================
+
 EXTRACT_LESSON_FROM_PUZZLE_FS_TEMPLATE = """### Introduction
 Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule. Grids are 2D numpy integer arrays with integers representing colors. 0 represents black and should be treated as the background.
 

@@ -1,0 +1,39 @@
+# AIME-specific lesson/concept abstraction config - STRICT VERSION
+# Uses strict prompt with explicit constraints and anti-overfitting guards
+# For A/B testing against original aime_lesson_from_trace.yaml
+
+defaults:
+  - /model: gpt41
+  - /generation: gen_default
+
+# Paths to o4's outputs (from aime_solver.py)
+problem_solutions: data/aime/o4_solutions.json
+thought_processes: data/aime/o4_reasoning.json
+example_thought_processes: null  # Use same thought processes for examples
+
+# Few-shot examples - using first 3 from 2019
+examples:
+  - 2019-I-1
+  - 2019-I-2
+  - 2019-I-3
+example_file: data/abstract_anno/aime_icl_examples.yaml
+
+# Retrieval settings (not used for AIME)
+retrieve_examples: false
+
+# Math-specific settings - STRICT VERSION
+abstraction:
+  batch_size: 5  # Can batch since format is uniform
+  limit_problems: null
+  use_barc_solution: false  # AIME doesn't use BARC solutions
+  domain_template: aime_strict  # Strict AIME template with 6 explicit constraints
+  
+  # Customize instruction for math domain
+  instruction_note: |
+    Focus on mathematical patterns and techniques:
+    - Problem patterns (symmetric structures, special cases)
+    - Solution techniques (substitution, Vieta's, modular arithmetic)
+    - Key insights (reciprocal relationships, invariants)
+    
+    Format as situation-suggestion pairs suitable for future problem-solving.
+

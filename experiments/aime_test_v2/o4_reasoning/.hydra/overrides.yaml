@@ -1,0 +1,4 @@
+- +abstraction=aime_thought_process
+- abstraction.solutions_file=experiments/aime_test_v2/o4_solve/solutions.json
+- data=aime_test
+- model=o4_mini

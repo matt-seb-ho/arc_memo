@@ -1,0 +1,5 @@
+- data=aime_test
+- model=o4_mini
+- generation.ignore_cache=true
+- generation.max_tokens=2048
+- generation.temperature=0.3

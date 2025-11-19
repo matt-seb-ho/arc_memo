@@ -48,7 +48,7 @@ async def run_llm_job(
         gen_cfg=gen_cfg,
         progress_file=progress_file,
     )
-    token_usage = llm_client.get_token_usage_dict()
+    token_usage = llm_client.get_token_usage_dict(include_per_request=True)
     token_info = {
         "before": previous_token_usage,
         "after": token_usage,

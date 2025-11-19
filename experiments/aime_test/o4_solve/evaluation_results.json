@@ -1,0 +1,52 @@
+{
+  "correct": 1,
+  "total": 10,
+  "accuracy": 0.1,
+  "errors": [
+    {
+      "id": "2019-II-1",
+      "predicted": "",
+      "ground_truth": "59"
+    },
+    {
+      "id": "2019-II-2",
+      "predicted": "",
+      "ground_truth": "107"
+    },
+    {
+      "id": "2019-II-3",
+      "predicted": "",
+      "ground_truth": "96"
+    },
+    {
+      "id": "2019-II-4",
+      "predicted": "",
+      "ground_truth": "187"
+    },
+    {
+      "id": "2019-II-5",
+      "predicted": "",
+      "ground_truth": "520"
+    },
+    {
+      "id": "2019-II-7",
+      "predicted": "",
+      "ground_truth": "715"
+    },
+    {
+      "id": "2019-II-8",
+      "predicted": "",
+      "ground_truth": "53"
+    },
+    {
+      "id": "2019-II-9",
+      "predicted": "",
+      "ground_truth": "472"
+    },
+    {
+      "id": "2019-II-10",
+      "predicted": "",
+      "ground_truth": "547"
+    }
+  ]
+}

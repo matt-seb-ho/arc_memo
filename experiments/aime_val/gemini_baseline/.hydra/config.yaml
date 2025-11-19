@@ -1,0 +1,96 @@
+continual_batch_size: 10
+concept_mem_init_file: data/lessons/from_trace_fs/gpt41_lessons.json
+puzzle_retry:
+  _target_: concept_mem.evaluation.retry_policy.RetryPolicy
+  max_passes: 3
+  criterion: train
+  error_feedback: all
+  num_feedback_passes: 1
+  include_past_outcomes: true
+  lesson_file: data/lessons/from_trace_fs/parsed_lessons.json
+  reselect_concepts: false
+  reselect_with_description: true
+  reselect_with_prev_attempt: true
+data:
+  dataset: aime
+  split: validation
+  num_problems: null
+  random_seed: 88
+  problem_ids: null
+  custom_directory: null
+prompt:
+  include_examples: false
+  num_examples: null
+  example_ids: null
+  include_common_lib: false
+  include_hint: false
+  hint_file: null
+  test_hint_file: null
+  hint_template_key: selected
+  require_hint_citations: false
+  hint_lessons_limit: null
+  include_concepts: false
+  problem_data: null
+  instruction_key: default
+  system_prompt_key: default
+  file: null
+model:
+  provider: openrouter
+  name: google/gemini-2.5-flash-lite-preview-09-2025
+generation:
+  _target_: llmplus.GenerationConfig
+  'n': 3
+  temperature: 0.3
+  max_tokens: 4096
+  top_p: 1
+  batch_size: 32
+  ignore_cache: true
+  expand_multi: null
+  seed: 88
+  extra_kwargs:
+    extra_body:
+      extra_body:
+        google:
+          thinking_config:
+            thinking_budget: 16000
+            include_thoughts: true
+long_cot_selection:
+  _target_: concept_mem.evaluation.driver.LongCoTSelectionConfig
+  use_lcs: false
+  concept_memory_file: data/anno_scheme/concept_memory_v5_g41.json
+  annotation_file: data/anno_scheme/anno_v5_g41_merged.json
+  detailed_examples: 3
+  max_examples: 5
+  pass_initial_analysis_notes: null
+  selected_concepts_file: null
+transpose: false
+excluded_concepts:
+- color change
+dry_run: false
+debug: false
+selection:
+  model:
+    provider: openai
+    name: gpt-4.1-2025-04-14
+  generation:
+    _target_: llmplus.GenerationConfig
+    'n': 1
+    temperature: 0.3
+    max_tokens: 1024
+    top_p: 1
+    batch_size: 16
+    seed: 88
+    ignore_cache: false
+    expand_multi: null
+  problems: data/testbeds/validation_n100_uids.json
+  description_file: data/descriptions/gpt41_vlm.json
+  lesson_file: data/lessons/from_trace_fs/parsed_lessons.json
+  top_k: 5
+  situation_only: false
+  use_hint_v2: false
+  ensemble_method: null
+  summary_generation:
+    temperature: 0.0
+    max_tokens: 1024
+  mem_str_path: null
+  mem_path: null

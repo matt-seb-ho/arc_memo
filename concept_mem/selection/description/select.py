@@ -4,6 +4,7 @@ import logging
 import re
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 import hydra
 import yaml
@@ -19,6 +20,16 @@ from concept_mem.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+AIME_CONTEXT = """\
+You are selecting helper lessons for an AIME (American Invitational Mathematics Examination) problem. AIME answers are three-digit integers (000–999). Typical domains include:
+- Algebra (equations, inequalities, polynomials, sequences, Vieta, functional relations)
+- Number theory (divisibility, primes, modular arithmetic, Diophantine equations, divisor/sum functions)
+- Combinatorics and probability (counting arguments, binomial identities, probability setups)
+- Geometry (plane geometry, circles, power of a point, occasional 3D configurations)
+
+Only choose lessons whose situation genuinely matches the math structure of the given problem."""
 
 
 LLM_RET_TOPK_SITUATION_TEMPLATE = """\
@@ -44,6 +55,27 @@ We will provide you with a numbered list of situations and a puzzle description.
 {description} 
 """
 
+AIME_RET_TOPK_SITUATION_TEMPLATE = """\
+### Context
+{aime_context}
+
+### Task
+We will provide you with a numbered list of situations and an AIME problem statement.
+- Select the {top_k} situations whose advice would help solve the problem.
+- Return the situation numbers in a markdown YAML list:
+```yaml
+- 3
+- 12
+- 19
+```
+
+### Situations
+{concept_list}
+
+### AIME Problem
+{description}
+"""
+
 LLM_RET_SCORE_SITUATION_TEMPLATE = """\
 ### Introduction
 Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule.
@@ -63,6 +95,22 @@ Please output your scores as a markdown YAML dictionary like below:
 {concept_list}
 
 ### Puzzle Description
+{description}
+"""
+
+AIME_RET_SCORE_SITUATION_TEMPLATE = """\
+### Context
+{aime_context}
+
+### Task
+Given the AIME problem and situation list, assign each situation a relevance score between 0.0 and 1.0. High scores should go to situations whose suggestion directly matches the problem’s structure or topic.
+
+Output the scores in YAML dictionary form.
+
+### Situations
+{concept_list}
+
+### AIME Problem
 {description}
 """
 
@@ -89,6 +137,22 @@ We will provide you with a numbered list of lessons and a puzzle description.
 {description} 
 """
 
+AIME_RET_TOPK_CONCEPT_TEMPLATE = """\
+### Context
+{aime_context}
+
+### Task
+You are given an AIME problem and a lesson catalog (each lesson has a “situation” and a “suggestion”). Pick the {top_k} lessons whose situations genuinely match this problem’s math content, and whose suggestions would help reach the integer answer.
+
+Return lesson numbers in a YAML list.
+
+### Lessons
+{concept_list}
+
+### AIME Problem
+{description}
+"""
+
 LLM_RET_SCORE_CONCEPT_TEMPLATE = """\
 ### Introduction
 Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule.
@@ -108,6 +172,22 @@ Please output your scores as a markdown YAML dictionary like below:
 {concept_list}
 
 ### Puzzle Description
+{description}
+"""
+
+AIME_RET_SCORE_CONCEPT_TEMPLATE = """\
+### Context
+{aime_context}
+
+### Task
+Score each lesson (0.0–1.0) for how relevant its situation/suggestion is to the given AIME problem. Prioritize lessons whose math domain and structure align closely with the problem.
+
+Return a YAML dictionary mapping lesson numbers to scores.
+
+### Lessons
+{concept_list}
+
+### AIME Problem
 {description}
 """
 
@@ -134,6 +214,20 @@ We will provide you with a numbered list of lessons and a puzzle description.
 {description} 
 """
 
+AIME_TOPK_HINT_TEMPLATE = """\
+### Context
+{aime_context}
+
+### Task
+Select the {top_k} lessons from the list below whose situations and suggestions would help solve the AIME problem. Output the lesson numbers in a YAML list.
+
+### Lessons
+{concept_list}
+
+### AIME Problem
+{description}
+"""
+
 RESELECT_PROMPT = """\
 ### Introduction
 Consider a class of "ARC" puzzles where each puzzle has a hidden transformation rule that maps input grids to output grids. Each puzzle presents several input-output grid pairs as reference examples and the task is to predict the transformation rule.
@@ -155,6 +249,20 @@ We will provide you with a numbered list of lessons and a previous attempt at so
 
 ### Previous Attempt
 {completion} 
+"""
+
+AIME_RESELECT_PROMPT = """\
+### Context
+{aime_context}
+
+### Task
+Given the lesson list and a previous AIME attempt, re-select the {top_k} lessons that would most improve the next attempt. Return lesson numbers in a YAML list.
+
+### Lessons
+{concept_list}
+
+### Previous Attempt
+{completion}
 """
 
 RESELECT_PROMPT_WITH_DESC = """\
@@ -183,9 +291,85 @@ We will provide you with a numbered list of lessons, a visual description of the
 {completion} 
 """
 
+AIME_RESELECT_PROMPT_WITH_DESC = """\
+### Context
+{aime_context}
+
+### Task
+We provide (1) the lesson list, (2) the AIME problem statement, and (3) a previous attempt. Choose the {top_k} lessons whose advice best addresses this problem and prior attempt. Return lesson numbers in YAML list form.
+
+### Lessons
+{concept_list}
+
+### AIME Problem
+{description}
+
+### Previous Attempt
+{completion}
+"""
+
 
 CONCAT_DESC_INTRO = "Here are the descriptions of the puzzles from different sources:"
 DEFAULT_SCORE_THRESHOLD = 0.5
+
+
+def _normalize_description_table(raw_table: Any) -> dict[str, str]:
+    """
+    Normalize description json blobs to a {uid: description} mapping.
+
+    Supports files that directly store the mapping as well as blobs with a
+    `problems` list (e.g., AIME exports).
+    """
+    if isinstance(raw_table, dict):
+        if "problems" in raw_table and isinstance(raw_table["problems"], list):
+            normalized: dict[str, str] = {}
+            for entry in raw_table["problems"]:
+                if not isinstance(entry, dict):
+                    continue
+                uid = entry.get("id") or entry.get("problem_id")
+                text = entry.get("problem") or entry.get("description")
+                if uid and text:
+                    normalized[uid] = text
+            return normalized
+        return raw_table
+    if isinstance(raw_table, list):
+        normalized: dict[str, str] = {}
+        for entry in raw_table:
+            if not isinstance(entry, dict):
+                continue
+            uid = entry.get("id") or entry.get("problem_id")
+            text = entry.get("description") or entry.get("problem")
+            if uid and text:
+                normalized[uid] = text
+        if normalized:
+            return normalized
+    raise ValueError("Description file must map puzzle ids to description text.")
+
+
+def _write_prompt_info_file(
+    output_dir: Path,
+    prompt_key: str,
+    retrieved_lessons: dict[str, str],
+    descriptions: dict[str, str] | None,
+    include_description: bool,
+) -> None:
+    """
+    Emit a prompt_info.json artifact compatible with ArcMemo inference.
+    """
+    prompt_info: dict[str, dict[str, dict[str, str]]] = {}
+    all_uids = set(retrieved_lessons.keys())
+    if descriptions:
+        all_uids.update(descriptions.keys())
+    for uid in sorted(all_uids):
+        hint_text = retrieved_lessons.get(uid, "")
+        entry: dict[str, str] = {}
+        if include_description:
+            entry["description"] = (descriptions or {}).get(uid, "")
+        entry["hint"] = hint_text or ""
+        prompt_info[uid] = {prompt_key: entry}
+    path = output_dir / "prompt_info.json"
+    write_json(prompt_info, path)
+    logger.info(f"Wrote prompt info to {path}")
 
 
 def prepare_concept_list(
@@ -215,6 +399,7 @@ async def reselect_concepts(
     top_k: int,
     output_dir: Path | None,
     dry_run: bool = False,
+    domain: str = "arc",
 ) -> tuple[dict[str, str], dict[str, list[str]]]:
     """Reselect concepts based on previous completion."""
     logger.info("Reselecting concepts based on previous completion...")
@@ -223,20 +408,29 @@ async def reselect_concepts(
     formatted_concept_list, concept_number_to_uid = prepare_concept_list(lessons)
     uids = []
     prompts = []
+    aime_mode = domain.lower() == "aime"
     for uid in puzzles:
         uids.append(uid)
         if descriptions is None:
-            prompt = RESELECT_PROMPT.format(
+            template = AIME_RESELECT_PROMPT if aime_mode else RESELECT_PROMPT
+            prompt = template.format(
                 top_k=top_k,
                 concept_list=formatted_concept_list,
                 completion=completions[uid],
+                aime_context=AIME_CONTEXT,
             )
         else:
-            prompt = RESELECT_PROMPT_WITH_DESC.format(
+            template = (
+                AIME_RESELECT_PROMPT_WITH_DESC
+                if aime_mode
+                else RESELECT_PROMPT_WITH_DESC
+            )
+            prompt = template.format(
                 top_k=top_k,
                 concept_list=formatted_concept_list,
                 description=descriptions[uid],
                 completion=completions[uid],
+                aime_context=AIME_CONTEXT,
             )
         prompts.append(prompt)
 
@@ -293,6 +487,7 @@ async def select_concepts(
     output_dir: Path = REPO_ROOT / "data/llm_concept_retrieval",
     use_hint_v2: bool = False,
     dry_run: bool = False,
+    domain: str = "arc",
 ) -> dict[str, str]:
     # prepare prompts
     concept_entries = []
@@ -329,12 +524,18 @@ async def select_concepts(
     concept_list = "\n".join(concept_entries)
     uids = []
     prompts = []
-    template = _route_template(score_concepts, situation_only, use_hint_v2)
+    template = _route_template(
+        score_concepts,
+        situation_only,
+        use_hint_v2,
+        domain=domain,
+    )
     for uid in puzzles:
         prompt = template.format(
             top_k=top_k,
             description=descriptions[uid],
             concept_list=concept_list,
+            aime_context=AIME_CONTEXT,
         )
         uids.append(uid)
         prompts.append(prompt)
@@ -351,7 +552,12 @@ async def select_concepts(
     )
 
     # parse completions, extract retrieved lesson uids, and prepare hint file
-    completion_dict = {uid: completion[0] for uid, completion in zip(uids, completions)}
+    completion_dict = {}
+    for uid, completion in zip(uids, completions):
+        if not completion:
+            logger.warning("No completion received for %s; skipping.", uid)
+            continue
+        completion_dict[uid] = completion[0]
     retrieved_concept_uids = {}
     retrieved_lessons = {}
     parsing_errors = []
@@ -547,16 +753,28 @@ def _route_template(
     score_concepts: bool,
     situation_only: bool,
     use_hint_v2: bool,
+    domain: str = "arc",
 ) -> str:
+    aime_mode = domain.lower() == "aime"
     if use_hint_v2:
+        if aime_mode:
+            return AIME_TOPK_HINT_TEMPLATE
         return TOPK_HINT_V2
     if score_concepts:
         if situation_only:
+            if aime_mode:
+                return AIME_RET_SCORE_SITUATION_TEMPLATE
             return LLM_RET_SCORE_SITUATION_TEMPLATE
+        if aime_mode:
+            return AIME_RET_SCORE_CONCEPT_TEMPLATE
         return LLM_RET_SCORE_CONCEPT_TEMPLATE
     else:
         if situation_only:
+            if aime_mode:
+                return AIME_RET_TOPK_SITUATION_TEMPLATE
             return LLM_RET_TOPK_SITUATION_TEMPLATE
+        if aime_mode:
+            return AIME_RET_TOPK_CONCEPT_TEMPLATE
         return LLM_RET_TOPK_CONCEPT_TEMPLATE
 
 
@@ -567,14 +785,16 @@ async def get_descriptions(
     # handle simple case
     if (not ensemble_method) or ensemble_method == "none":
         assert isinstance(cfg.selection.description_file, str)
-        desc_dict = read_json(REPO_ROOT / cfg.selection.description_file)
+        raw_desc = read_json(REPO_ROOT / cfg.selection.description_file)
+        desc_dict = _normalize_description_table(raw_desc)
         return desc_dict
 
     # combine multiple description files into dict[str, list[str]]
     assert isinstance(cfg.selection.description_file, list)
     description_tables = []
     for description_file in cfg.selection.description_file:
-        desc_dict = read_json(REPO_ROOT / description_file)
+        raw_desc = read_json(REPO_ROOT / description_file)
+        desc_dict = _normalize_description_table(raw_desc)
         description_tables.append(desc_dict)
     description_lists = _combine_description_tables(description_tables)
     descriptions = {}
@@ -656,7 +876,7 @@ async def async_main(cfg: DictConfig) -> None:
     gen_cfg = hydra.utils.instantiate(cfg.selection.generation)
 
     # retrieve concepts
-    _ = await select_concepts(
+    retrieved_lessons = await select_concepts(
         puzzles=problems,
         descriptions=descriptions,
         lessons=lessons,
@@ -667,7 +887,20 @@ async def async_main(cfg: DictConfig) -> None:
         top_k=cfg.selection.top_k,
         output_dir=output_dir,
         use_hint_v2=cfg.selection.use_hint_v2,
+        domain=cfg.selection.get("domain", "arc"),
     )
+    prompt_info_key = cfg.selection.get("prompt_info_key")
+    if prompt_info_key:
+        include_desc = cfg.selection.get(
+            "prompt_info_include_description", True
+        )
+        _write_prompt_info_file(
+            output_dir=output_dir,
+            prompt_key=prompt_info_key,
+            retrieved_lessons=retrieved_lessons,
+            descriptions=descriptions,
+            include_description=include_desc,
+        )
 
 
 @hydra.main(config_path=HYRDA_CONFIG_PATH, config_name="default", version_base=None)

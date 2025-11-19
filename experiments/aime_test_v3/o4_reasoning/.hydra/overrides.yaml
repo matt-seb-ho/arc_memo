@@ -1,0 +1,5 @@
+- +abstraction=aime_thought_process
+- abstraction.solutions_file=experiments/aime_test_v3/o4_solve/solutions.json
+- data=aime_test
+- model=o4_mini
+- generation.max_tokens=8192

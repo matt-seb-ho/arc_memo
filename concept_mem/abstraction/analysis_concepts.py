@@ -9,6 +9,9 @@ from llmplus import GenerationConfig, LLMClient, Provider
 from omegaconf import DictConfig
 
 from concept_mem.abstraction.analysis_concept_prompts import (
+    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE,
+    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT,
+    EXTRACT_LESSON_FROM_AIME_ZS_TEMPLATE,
     EXTRACT_LESSON_FROM_PUZZLE_FS_TEMPLATE,
     EXTRACT_LESSON_FROM_PUZZLE_FS_TEMPLATE_RETRIEVAL,
     EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE,
@@ -52,6 +55,7 @@ async def extract_lessons(
     gen_cfg: GenerationConfig = DEFAULT_CONCEPT_ABSTRACTION_GEN_CFG,
     output_dir: Path = REPO_ROOT / "data/lessons",
     use_barc_solution: bool = True,
+    domain_template: str = "arc",
     dry_run: bool = False,
 ) -> tuple[dict[str, list[dict]], dict]:
     """Return lesssons and token usage"""
@@ -81,6 +85,7 @@ async def extract_lessons(
             fixed_examples=fixed_examples,
             retrieved_examples=rxs_for_puzzle,
             example_thought_processes=example_thought_processes,
+            domain_template=domain_template,
         )
         problem_ids.append(problem_id)
         prompts.append(prompt)
@@ -109,7 +114,14 @@ def build_abstraction_prompt(
     fixed_examples: dict | None = None,
     retrieved_examples: dict | None = None,
     example_thought_processes: dict[str, str] | None = None,
+    domain_template: str = "arc",
 ) -> str:
+    """
+    Build abstraction prompt based on domain template.
+    
+    Args:
+        domain_template: Template style - "arc", "aime", "aime_strict", "gpqa" (future)
+    """
     if thought_process is None:
         # puzzle, solution -> lesson
         puzzle = format_puzzle_for_prompt(
@@ -135,34 +147,67 @@ def build_abstraction_prompt(
     else:
         # [previous step:] puzzle, solution -> thought process
         # thought process, solution -> lesson(s)
-        if retrieved_examples is not None:
-            # few-shot ICL using retrieved examples
-            formatted_examples = format_lesson_examples(
-                formatted_examples,
-                thought_processes=example_thought_processes,
-            )
-            prompt = EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE_RETRIEVAL.format(
-                examples=formatted_examples,
-                solution=solution,
-                thought_process=thought_process,
-            )
-        elif fixed_examples is not None:
-            # few-shot ICL using fixed examples
-            formatted_examples = format_lesson_examples(
-                fixed_examples,
-                thought_processes=example_thought_processes,
-            )
-            prompt = EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE.format(
-                examples=formatted_examples,
-                solution=solution,
-                thought_process=thought_process,
-            )
+        
+        # Select template based on domain
+        if domain_template in ["aime", "aime_strict"]:
+            # AIME-specific templates (no ARC/grid references)
+            if fixed_examples is not None:
+                formatted_examples = format_lesson_examples(
+                    fixed_examples,
+                    thought_processes=example_thought_processes,
+                )
+                # Choose between original and strict AIME template
+                if domain_template == "aime_strict":
+                    prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT.format(
+                        examples=formatted_examples,
+                        solution=solution,
+                        thought_process=thought_process,
+                    )
+                else:  # "aime"
+                    prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE.format(
+                        examples=formatted_examples,
+                        solution=solution,
+                        thought_process=thought_process,
+                    )
+            else:
+                # Zero-shot AIME
+                prompt = EXTRACT_LESSON_FROM_AIME_ZS_TEMPLATE.format(
+                    solution=solution,
+                    thought_process=thought_process,
+                )
+        elif domain_template == "gpqa":
+            # Future: GPQA-specific templates
+            raise NotImplementedError("GPQA templates not yet implemented")
         else:
-            # zero-shot abstraction (no examples)
-            prompt = EXTRACT_LESSON_FROM_TRACE_ZS_TEMPLATE.format(
-                solution=solution,
-                thought_process=thought_process,
-            )
+            # ARC-specific templates (original)
+            if retrieved_examples is not None:
+                # few-shot ICL using retrieved examples
+                formatted_examples = format_lesson_examples(
+                    formatted_examples,
+                    thought_processes=example_thought_processes,
+                )
+                prompt = EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE_RETRIEVAL.format(
+                    examples=formatted_examples,
+                    solution=solution,
+                    thought_process=thought_process,
+                )
+            elif fixed_examples is not None:
+                # few-shot ICL using fixed examples
+                formatted_examples = format_lesson_examples(
+                    fixed_examples,
+                    thought_processes=example_thought_processes,
+                )
+                prompt = EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE.format(
+                    examples=formatted_examples,
+                    solution=solution,
+                    thought_process=thought_process,
+                )
+            else:
+                # zero-shot abstraction (no examples)
+                prompt = EXTRACT_LESSON_FROM_TRACE_ZS_TEMPLATE.format(
+                    solution=solution,
+                    thought_process=thought_process,
+                )
     return prompt
 
 
@@ -243,29 +288,35 @@ def format_lesson_examples(
     use_thought_process = thought_processes is not None
     components = []
     for i, (puzzle_id, example) in enumerate(examples.items(), start=1):
-        problem = Problem.from_puzzle_id(puzzle_id)
-        if problem is None:
-            continue
-        formatted_puzzle = format_puzzle_for_prompt(
-            problem=problem,
-            include_dim=True,
-            include_test=False,
-        )
-        solution = _get_puzzle_solution(
-            puzzle_id=puzzle_id,
-            problems=examples,
-            solutions=example_solutions or {},
-            use_barc_solution=True,
-        )
         lessons = format_lesson_as_yaml_block(example)
+        
         if use_thought_process:
+            # Trace-based: only needs solution text + thought_process + lessons
+            # No Problem objects needed - works for AIME!
+            solution = example_solutions.get(puzzle_id, "") if example_solutions else ""
+            thought_proc = thought_processes.get(puzzle_id, "")
             lesson = LESSON_FROM_TRACE_EXAMPLE_TEMPLATE.format(
                 example_num=i,
                 solution=solution,
-                thought_process=thought_processes[puzzle_id],
+                thought_process=thought_proc,
                 lessons=lessons,
             )
         else:
+            # Puzzle-based: needs Problem objects for formatting (ARC only)
+            problem = Problem.from_puzzle_id(puzzle_id)
+            if problem is None:
+                continue
+            formatted_puzzle = format_puzzle_for_prompt(
+                problem=problem,
+                include_dim=True,
+                include_test=False,
+            )
+            solution = _get_puzzle_solution(
+                puzzle_id=puzzle_id,
+                problems=examples,
+                solutions=example_solutions or {},
+                use_barc_solution=True,
+            )
             lesson = LESSON_FROM_PUZZLE_EXAMPLE_TEMPLATE.format(
                 example_num=i,
                 puzzle=formatted_puzzle,
@@ -310,12 +361,25 @@ async def async_main(cfg: DictConfig) -> None:
         }
     else:
         problem_solutions = read_json(problem_solutions)
-    problems = {uid: Problem.from_puzzle_id(uid) for uid in problem_solutions.keys()}
+    
+    # Load Problem objects only when needed
+    # For trace-based extraction with thought processes, Problem objects are not used
+    if cfg.abstraction.thought_processes:
+        # When we have thought processes, the Problem object is never used in the prompt
+        # Create dummy objects to satisfy the function signature
+        class DummyProblem:
+            def __init__(self, uid):
+                self.uid = uid
+        problems = {uid: DummyProblem(uid) for uid in problem_solutions.keys()}
+    else:
+        # Original ARC path: load full Problem objects for puzzle formatting
+        problems = {uid: Problem.from_puzzle_id(uid) for uid in problem_solutions.keys()}
 
     # load thought processes and examples
     if cfg.abstraction.thought_processes:
         thought_processes = read_json(cfg.abstraction.thought_processes)
-        if cfg.abstraction.example_thought_processes:
+        # Use .get() for optional config fields
+        if cfg.abstraction.get('example_thought_processes'):
             etp = read_json(cfg.abstraction.example_thought_processes)
         else:
             etp = thought_processes
@@ -323,8 +387,14 @@ async def async_main(cfg: DictConfig) -> None:
         thought_processes = None
 
     # load examples
-    if cfg.abstraction.examples:
-        all_examples = read_json(cfg.abstraction.example_file)
+    if cfg.abstraction.get('examples'):
+        # Support both JSON and YAML example files
+        example_file_path = Path(cfg.abstraction.example_file)
+        if example_file_path.suffix in ['.yaml', '.yml']:
+            from concept_mem.utils import read_yaml
+            all_examples = read_yaml(REPO_ROOT / cfg.abstraction.example_file)
+        else:
+            all_examples = read_json(cfg.abstraction.example_file)
         examples = {}
         for uid in cfg.abstraction.examples:
             examples[uid] = all_examples[uid]
@@ -332,7 +402,7 @@ async def async_main(cfg: DictConfig) -> None:
         examples = None
 
     # retrieve examples if requested
-    if cfg.abstraction.retrieve_examples:
+    if cfg.abstraction.get('retrieve_examples', False):
         retrieved_examples = retrieve_examples(
             problems=problems,
             top_k=cfg.abstraction.example_retrieval.top_k,
@@ -355,7 +425,8 @@ async def async_main(cfg: DictConfig) -> None:
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
-        use_barc_solution=cfg.abstraction.use_barc_solution,
+        use_barc_solution=cfg.abstraction.get('use_barc_solution', False),
+        domain_template=cfg.abstraction.get('domain_template', 'arc'),
         dry_run=cfg.dry_run,
     )
     logger.info(f"lesson abstraction complete. wrote to {output_dir}")

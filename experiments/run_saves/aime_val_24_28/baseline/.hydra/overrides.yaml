@@ -1,0 +1,5 @@
+- data=aime_val
+- model=gpt41_mini
+- generation.ignore_cache=true
+- generation.max_tokens=4096
+- generation.n=3

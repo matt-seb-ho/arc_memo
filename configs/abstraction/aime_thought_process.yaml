@@ -1,0 +1,19 @@
+# AIME thought process generation config
+# Uses aime_thought_process.py (adapted from ArcMemo pattern)
+
+defaults:
+  - /model: o4_mini
+  - /generation: gen_default
+
+# Path to solutions from aime_simple_solver.py
+solutions_file: data/aime/o4_solutions.json
+
+data:
+  dataset: aime
+  split: train
+  num_problems: null
+
+generation:
+  max_tokens: 4096
+  temperature: 0.3
+

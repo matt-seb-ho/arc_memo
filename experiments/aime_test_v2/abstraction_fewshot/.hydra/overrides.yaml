@@ -1,0 +1,4 @@
+- +abstraction=aime_lesson_from_trace
+- abstraction.problem_solutions=experiments/aime_test_v2/o4_solve/solutions.json
+- abstraction.thought_processes=experiments/aime_test_v2/o4_reasoning/thought_processes.json
+- model=gpt41
