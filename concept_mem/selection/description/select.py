@@ -142,9 +142,25 @@ AIME_RET_TOPK_CONCEPT_TEMPLATE = """\
 {aime_context}
 
 ### Task
-You are given an AIME problem and a lesson catalog (each lesson has a “situation” and a “suggestion”). Pick the {top_k} lessons whose situations genuinely match this problem’s math content, and whose suggestions would help reach the integer answer.
+You are given an AIME problem and a catalog of lessons. Each lesson has:
+- **situation** – when the lesson is applicable
+- **suggestion** – the recommended strategy or check
 
-Return lesson numbers in a YAML list.
+Choose the {top_k} lessons whose situations *truly* match the structure of the
+problem and whose suggestions would materially help reach the boxed integer
+answer. Favor lessons that align with the problem's mathematical domain and the
+specific reasoning steps implied by the statement. Discard lessons that only
+vaguely relate. If relevance is uncertain, prefer lessons that offer diagnostic
+checks (e.g., parity, modular sanity checks) to catch mistakes.
+
+Return the lesson numbers in a YAML list, ordered by decreasing relevance, like this:
+```yaml
+- 3
+- 12
+- 19
+- 7
+- 25
+```
 
 ### Lessons
 {concept_list}
@@ -588,6 +604,12 @@ async def select_concepts(
         except yaml.YAMLError as e:
             parsing_errors.append((uid, completion, str(e)))
             continue
+        
+        # Skip if parsing returned None
+        if concept_numbers is None:
+            parsing_errors.append((uid, completion, "Could not extract lesson numbers"))
+            continue
+        
         concept_uids = [concept_number_to_uid[i] for i in concept_numbers]
         retrieved_concept_uids[uid] = concept_uids
         retrieved_lessons[uid] = format_retrieved_lesson_hint(lessons, concept_uids)
@@ -624,7 +646,7 @@ def format_retrieved_lesson_hint(
     return "\n".join(components)
 
 
-def parse_top_k_yaml_list(yaml_block: str) -> list[int]:
+def parse_top_k_yaml_list(yaml_block: str) -> list[int] | None:
     # expected format:
     # ```yaml
     # - 18
@@ -632,10 +654,32 @@ def parse_top_k_yaml_list(yaml_block: str) -> list[int]:
     # ...
     # ```
     # step 1: remove markdown delimiters
-    yaml_string = extract_first_yaml_block(yaml_block) or yaml_block
+    yaml_string = extract_first_yaml_block(yaml_block)
+    
     # step 2: parse yaml string
-    yaml_data = yaml.safe_load(yaml_string)
-    return yaml_data
+    if yaml_string:
+        try:
+            yaml_data = yaml.safe_load(yaml_string)
+            if isinstance(yaml_data, list):
+                return yaml_data
+        except yaml.YAMLError:
+            pass
+    
+    # Fallback: extract lesson numbers from prose (e.g., "Lesson 57", "lesson 3")
+    # This handles cases where the model explains choices but doesn't wrap in yaml
+    numbers = re.findall(r'[Ll]esson\s+(\d+)', yaml_block)
+    if numbers:
+        return [int(n) for n in numbers]
+    
+    # Last resort: try parsing the whole block as yaml
+    try:
+        yaml_data = yaml.safe_load(yaml_block)
+        if isinstance(yaml_data, list):
+            return yaml_data
+    except yaml.YAMLError:
+        pass
+    
+    return None
 
 
 def parse_scored_yaml_dict(yaml_block: str) -> dict[int, float]:
@@ -775,7 +819,7 @@ def _route_template(
             return LLM_RET_TOPK_SITUATION_TEMPLATE
         if aime_mode:
             return AIME_RET_TOPK_CONCEPT_TEMPLATE
-        return LLM_RET_TOPK_CONCEPT_TEMPLATE
+        return AIME_RET_TOPK_CONCEPT_TEMPLATE
 
 
 async def get_descriptions(

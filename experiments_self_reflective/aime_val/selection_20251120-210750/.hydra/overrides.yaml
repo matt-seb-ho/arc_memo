@@ -1,0 +1,7 @@
+- selection=aime
+- selection.lesson_file=experiments_self_reflective/aime_train/abstraction_20251120-194938/lessons.json
+- model@selection.model=gemini_2_5_flash_lite_thinking
+- selection.generation.max_tokens=32000
+- +selection.generation.extra_kwargs.extra_body.reasoning.max_tokens=8000
+- selection.generation.ignore_cache=true
+- selection.generation.seed=null

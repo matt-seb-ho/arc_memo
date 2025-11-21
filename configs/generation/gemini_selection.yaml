@@ -1,0 +1,22 @@
+_target_: llmplus.GenerationConfig
+n: 1
+temperature: 0.3
+max_tokens: 32000  # High total budget for selection explanations + YAML
+top_p: 1
+batch_size: 4      # Lower batch size to avoid rate limits on long completions
+seed: null
+ignore_cache: false
+extra_kwargs:
+  extra_body:
+    reasoning:
+      max_tokens: 8000  # Moderate thinking budget, leaving ~24k for output
+      exclude: false
+
+# Gemini 2.5 Flash Lite Thinking - Selection Preset
+# For lesson retrieval where the model explains its choices before emitting YAML.
+# The high max_tokens ensures the completion doesn't truncate mid-explanation.
+#
+# Example usage:
+#   generation@selection.generation=gemini_selection \
+#   selection.generation.max_tokens=32000
+

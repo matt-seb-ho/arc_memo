@@ -1,0 +1,28 @@
+defaults:
+  - /model: gemini_2_5_flash_lite_thinking
+  - /generation: gemini_thinking_16k
+
+problem_solutions: data/aime/o4_solutions.json
+thought_processes: data/aime/o4_reasoning.json
+example_thought_processes: null
+
+examples:
+  - 2019-I-1
+  - 2019-I-2
+  - 2019-I-3
+  - 2019-I-4
+  - 2019-I-10
+example_file: data/abstract_anno/aime_icl_examples.yaml
+
+retrieve_examples: false
+
+abstraction:
+  batch_size: 5
+  limit_problems: null
+  use_barc_solution: false
+  domain_template: aime_strict_uncertain
+  instruction_note: |
+    The reflections may contain unresolved uncertainties. Extract lessons that
+    highlight reliable techniques and call out safeguards when reasoning is not
+    fully confirmed.
+

@@ -1,30 +1,29 @@
 _target_: llmplus.GenerationConfig
 n: 1
 temperature: 0.3
-max_tokens: 32000
+max_tokens: 20000  # Total tokens (thinking + output)
 top_p: 1
 batch_size: 32
-seed: 88
+seed: null  # Changed from 88 to allow non-deterministic generation (better for retries)
 ignore_cache: false
 extra_kwargs:
   extra_body:
-    extra_body:
-      google:
-        thinking_config:
-          thinking_budget: 16000
-          include_thoughts: true
+    reasoning:  # OpenRouter unified reasoning API
+      max_tokens: 16000  # Budget for internal thinking (Gemini-specific)
+      exclude: false  # Include reasoning in response (though Gemini won't return it)
 
-# response = client.chat.completions.create(
-#     model="gemini-2.5-flash",
-#     messages=[{"role": "user", "content": "Explain to me how AI works"}],
-#     extra_body={
-#       'extra_body': {
-#         "google": {
-#           "thinking_config": {
-#             "thinking_budget": 800,
-#             "include_thoughts": True
-#           }
-#         }
-#       }
+# OpenRouter Unified Reasoning API (https://openrouter.ai/docs/use-cases/reasoning-tokens)
+# For Gemini thinking models, use:
+#   reasoning.max_tokens: Budget for internal thinking
+#
+# NOTE: Gemini Flash Thinking does NOT return reasoning_tokens in the response!
+# The model WILL use internal thinking, but reasoning_tokens will always show 0.
+# This is a Gemini API limitation, not an OpenRouter or config issue.
+#
+# Example usage:
+# extra_body={
+#     "reasoning": {
+#         "max_tokens": 16000,  # Thinking budget for Gemini
+#         "exclude": false      # Try to include reasoning (Gemini won't return it anyway)
 #     }
-# )
+# }

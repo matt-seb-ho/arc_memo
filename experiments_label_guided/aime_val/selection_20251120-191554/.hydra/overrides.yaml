@@ -1,0 +1,10 @@
+- selection=aime
+- data=aime_val
+- model=gpt41
+- selection.problems=data/aime/validation_ids.json
+- selection.lesson_file=experiments_label_guided/aime_train/abstraction_20251120-191321/lessons_correct.json
+- selection.description_file=data/aime/validation.json
+- generation.ignore_cache=true
+- selection.generation.ignore_cache=true
+- selection.generation.max_tokens=16384
+- selection.generation.seed=null

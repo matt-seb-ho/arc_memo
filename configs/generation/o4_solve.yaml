@@ -1,0 +1,21 @@
+_target_: llmplus.GenerationConfig
+n: 1
+temperature: null  # o4 reasoning models ignore sampling controls
+max_tokens: 20000    # final answer budget; reasoning effort handled server-side
+top_p: null        # explicitly null to document unsupported parameter
+batch_size: 8
+seed: null        # allow stochastic sampling for diverse attempts
+ignore_cache: false
+expand_multi: false  # send each attempt as a separate request (o4 prefers 1-per-call)
+extra_kwargs: {}
+
+# OpenAI o4 series via /chat/completions
+# - Reasoning models expose `reasoning.effort` to trade latency for deeper thinking.
+# - `max_tokens` is renamed to `max_completion_tokens` by llmplus (completion cap only).
+# - Increase `batch_size` cautiously; the default 8 balances throughput with rate limits.
+#
+# Example overrides:
+#   generation.max_tokens=256 \
+#   generation.max_tokens=256 \
+#   generation.n=4 generation.expand_multi=true
+

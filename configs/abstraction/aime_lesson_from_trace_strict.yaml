@@ -11,11 +11,15 @@ problem_solutions: data/aime/o4_solutions.json
 thought_processes: data/aime/o4_reasoning.json
 example_thought_processes: null  # Use same thought processes for examples
 
-# Few-shot examples - using first 3 from 2019
+# Few-shot examples - using 5 from 2019 covering all AIME domains
+# Number Theory (2019-I-1), Probability (2019-I-2), Geometry (2019-I-3), 
+# Combinatorics (2019-I-4), Algebra (2019-I-10)
 examples:
   - 2019-I-1
   - 2019-I-2
   - 2019-I-3
+  - 2019-I-4
+  - 2019-I-10
 example_file: data/abstract_anno/aime_icl_examples.yaml
 
 # Retrieval settings (not used for AIME)

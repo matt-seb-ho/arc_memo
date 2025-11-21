@@ -1,0 +1,24 @@
+{
+  "baseline_20251120-184133": {
+    "total": 60,
+    "pass@1": {
+      "correct": 42,
+      "rate": 0.7
+    },
+    "pass@2": {
+      "correct": 43,
+      "rate": 0.7167
+    }
+  },
+  "with_memory_top2_20251120-192122": {
+    "total": 60,
+    "pass@1": {
+      "correct": 44,
+      "rate": 0.7333
+    },
+    "pass@2": {
+      "correct": 48,
+      "rate": 0.8
+    }
+  }
+}

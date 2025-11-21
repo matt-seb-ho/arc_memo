@@ -1,0 +1,5 @@
+- data=aime_train
+- model=gemini_2_5_flash_lite_thinking
+- generation=gemini_thinking_16k
+- generation.ignore_cache=true
+- +joint_responses_file=experiments_self_reflective/aime_train/joint_20251120-194113/joint_responses.json

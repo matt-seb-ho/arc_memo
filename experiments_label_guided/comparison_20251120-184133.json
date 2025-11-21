@@ -1,0 +1,268 @@
+{
+  "summary": {
+    "total_problems": 60,
+    "pass@1": {
+      "baseline_correct": 42,
+      "memory_correct": 44,
+      "flipped_right_count": 5,
+      "flipped_wrong_count": 3,
+      "stayed_right_count": 39,
+      "stayed_wrong_count": 13,
+      "net_improvement": 2
+    },
+    "pass@2": {
+      "baseline_correct": 43,
+      "memory_correct": 48,
+      "flipped_right_count": 6,
+      "flipped_wrong_count": 1,
+      "stayed_right_count": 42,
+      "stayed_wrong_count": 11,
+      "net_improvement": 5
+    }
+  },
+  "pass@1": {
+    "flipped_right": [
+      {
+        "problem_id": "2024_I_10",
+        "baseline_answer": "2",
+        "memory_answer": "113",
+        "ground_truth": "113",
+        "problem_text": "Let $ABC$ be a triangle inscribed in circle $\\omega$. Let the tangents to $\\omega$ at $B$ and $C$ intersect at point $D$, and let $\\overline{AD}$ intersect $\\omega$ at $P$. If $AB=5$, $BC=9$, and $AC=10$, $AP$ can be written as the form $\\frac{m}{n}$, where $m$ and $n$ are relatively prime integers. Find $m + n$.\n\n[asy] import olympiad;  unitsize(15);  pair A, B, C, D, E, F, P, O;  C = origin; A = (10,0); B = (7.8, 4.4899); draw(A--B--C--cycle); draw(A..B..C..cycle, red+dotted);  O = circumcenter(A, B, C);  E = rotate(90,B) * (O); F = rotate(90,C) * (O);  D = IP(B..E + (B-E)*4, C..F + (C-F)*-3);  draw(B--D--C--D--A);  P = IP(D..A, A..B..C);  dot(A); dot(B); dot(C); dot(D); dot(P); label(\"$A$\", A, dir(335)); label(\"$B$\", B, dir(65)); label(\"$C$\", C, dir(200)); label(\"$D$\", D, dir(135)); label(\"$P$\", P, dir(235)); [/asy]",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Number Theory] When the solution for a variable is a rational power of a rational number, and you are asked for the sum of numerator and denominator in lowest terms.\n  suggestion: Express the result as a reduced fraction by raising numerator and denominator to the required power, simplify, and add the resulting coprime numerator and denominator."
+      },
+      {
+        "problem_id": "2025_I_2",
+        "baseline_answer": "",
+        "memory_answer": "588",
+        "ground_truth": "588",
+        "problem_text": "On $\\triangle ABC$ points $A,D,E$, and $B$ lie that order on side $\\overline{AB}$ with $AD=4, DE=16$, and $EB=8$. Points $A,F,G$, and $C$ lie in that order on side $\\overline{AC}$ with $AF=13, FG=52$, and $GC=26$. Let $M$ be the reflection of $D$ through $F$, and let $N$ be the reflection of $G$ through $E$. Quadrilateral $DEGF$ has area 288. Find the area of heptagon $AFNBCEM$.",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates."
+      },
+      {
+        "problem_id": "2025_I_7",
+        "baseline_answer": "107",
+        "memory_answer": "821",
+        "ground_truth": "821",
+        "problem_text": "The twelve letters $A,B,C,D,E,F,G,H,I,J,K$, and $L$ are randomly grouped into six pairs of letters. The two letters in each pair are placed next to each other in alphabetical order to form six two-letter words, and those six words are listed alphabetically. For example, a possible result is $AB,CJ,DG,EK,FL,HI$. The probability that the last word listed contains $G$ is $\\frac{m}{n}$, where $m$ and $n$ are relatively prime positive integers. Find $m+n$.",
+        "lessons_used": "- situation: [Combinatorics] When arranging a multiset of objects with repeated types and seeking the total number of linear arrangements.\n  suggestion: Compute the total number of arrangements as the multinomial coefficient: divide the factorial of the total number of objects by the factorials of the counts of each repeated type.\n- situation: [Combinatorics] When the arrangement problem reduces to independently assigning objects to two disjoint sets of positions (e.g., odd and even slots) with matching constraints.\n  suggestion: Count the number of bijections for each set separately (using factorials), then multiply these counts to obtain the total number of valid arrangements.\n- situation: [Probability] When the probability of a combinatorial event is required and both the favorable and total counts are products of factorials or multinomial coefficients.\n  suggestion: Express the probability as a ratio of these counts, substitute explicit factorial values, and simplify the resulting fraction to lowest terms to answer the question.\n- situation: [Combinatorics] When you must assign distinct objects to labeled positions with some reserved for specific types (e.g., some spots must be occupied by one group, their opposites by another group), and the rest are filled freely.\n  suggestion: First, select which positions are reserved for each group, assign the objects of those groups to those positions (accounting for order if necessary), and then permute the remaining objects among the remaining positions.\n- situation: [Combinatorics] When a complicated arrangement count involves sequential choices (such as selecting pairs, assigning people, then filling remaining spots), and the numbers become large factorials or products.\n  suggestion: Express each stage as a binomial coefficient, power, or permutation, then combine and simplify the resulting factorial expressions, looking for cancellations or identities (such as P(n, k)\u00b7(n\u2212k)! = n!) to reduce the computation."
+      },
+      {
+        "problem_id": "2025_II_9",
+        "baseline_answer": "150",
+        "memory_answer": "149",
+        "ground_truth": "149",
+        "problem_text": "There are $ n $ values of $ x $ in the interval $ 0 < x < 2\\pi $ where $ f(x) = \\sin(7\\pi \\cdot \\sin(5x)) = 0 $. For $ t $ of these $ n $ values of $ x $, the graph of $ y = f(x) $ is tangent to the $ x $-axis. Find $ n + t $.",
+        "lessons_used": "- situation: [Trigonometry/Number Theory] When you have a trigonometric equation like sin(kx) = 1 for integer k.\n  suggestion: Express the argument as congruent to the angle where the sine attains its maximum, i.e., set kx \u2261 \u03c0/2 mod 2\u03c0, and solve for x in terms of integer parameters.\n- situation: [Algebra] When the number of real solutions to an equation depends on the number of intersections between a function and horizontal lines at two or more levels (e.g., |f(x) \u2212 c| = k).\n  suggestion: Express the equation as f(x) = c + k or f(x) = c \u2212 k, determine for which parameter values each level yields a given number of intersections, and sum these to match the required total number of solutions.\n- situation: [Algebra] When determining the integer values of a parameter constrained by strict inequalities.\n  suggestion: Translate the inequalities into a range for the parameter, then count the number of integer values in that range by subtracting endpoints and adding one.\n- situation: [Trigonometry] When the sum of two sine functions equals their maximum possible sum.\n  suggestion: Recognize that both sine terms must individually attain their maximum value, and translate this condition into simultaneous equations for their arguments.\n- situation: [Algebra] When a function is even or symmetric (e.g., depends only on |x|), and you are counting real solutions.\n  suggestion: Restrict your analysis to x \u2265 0 (or another fundamental domain), count the solutions there, and multiply appropriately, taking care to check for solutions at the symmetry axis (such as x = 0) to avoid double-counting."
+      },
+      {
+        "problem_id": "2025_II_14",
+        "baseline_answer": "98",
+        "memory_answer": "104",
+        "ground_truth": "104",
+        "problem_text": "Let $ \\triangle ABC $ be a right triangle with $ \\angle A = 90^\\circ $ and $ BC = 38 $. There exist points $ K $ and $ L $ inside the triangle such that $ AK = AL = BK = CL = KL = 14. $ The area of the quadrilateral $ BKLC $ can be expressed as $ n \\sqrt{3} $ for some positive integer $ n $. Find $ n $.",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates."
+      }
+    ],
+    "flipped_wrong": [
+      {
+        "problem_id": "2024_I_13",
+        "baseline_answer": "110",
+        "memory_answer": "155",
+        "ground_truth": "110",
+        "problem_text": "Let $p$ be the least prime number for which there exists a positive integer $n$ such that $n^{4}+1$ is divisible by $p^{2}$. Find the least positive integer $m$ such that $m^{4}+1$ is divisible by $p^{2}$.",
+        "lessons_used": "- situation: [Number Theory] When a prime divides both an expression of the form 2^m + 1 and 2^n - 1.\n  suggestion: Let t be the order of 2 modulo the prime, and use properties of orders (such as t dividing certain linear combinations of exponents and not others) to translate divisibility into constraints on the exponents.\n- situation: [Number Theory] When a problem asks for pairs of integers where the gcd of two expressions involving exponents is greater than 1.\n  suggestion: Reformulate the gcd condition as the existence of a common prime divisor, and analyze what divisibility or order conditions this imposes on the variables.\n- situation: [Number Theory] When a congruence of the form a^n \u2261 n (mod m) is given and m is a power of a prime, and a is coprime to m.\n  suggestion: Apply Euler's theorem to reduce the exponent modulo \u03c6(m), and if necessary, express n in terms of its quotient and remainder with respect to \u03c6(m) to analyze solvability and lift solutions stepwise from lower to higher powers of the prime.\n- situation: [Number Theory] When a parameter in your solution must satisfy both divisibility and parity constraints.\n  suggestion: Parameterize the variable (e.g., as an arithmetic progression), impose the congruence and parity conditions, and identify the minimal value that satisfies all requirements.\n- situation: [Algebra] When determining the integer values of a parameter constrained by strict inequalities.\n  suggestion: Translate the inequalities into a range for the parameter, then count the number of integer values in that range by subtracting endpoints and adding one."
+      },
+      {
+        "problem_id": "2024_I_14",
+        "baseline_answer": "104",
+        "memory_answer": "94",
+        "ground_truth": "104",
+        "problem_text": "Let $ABCD$ be a tetrahedron such that $AB=CD= \\sqrt{41}$, $AC=BD= \\sqrt{80}$, and $BC=AD= \\sqrt{89}$. There exists a point $I$ inside the tetrahedron such that the distances from $I$ to each of the faces of the tetrahedron are all equal. This distance can be written in the form $\\frac{m \\sqrt n}{p}$, where $m$, $n$, and $p$ are positive integers, $m$ and $p$ are relatively prime, and $n$ is not divisible by the square of any prime. Find $m+n+p$.",
+        "lessons_used": "- situation: [Geometry] When a three-dimensional solid has a base with high symmetry (such as a square or regular polygon) and an apex aligned above the center.\n  suggestion: Place the base in a coordinate plane centered at the origin and align the apex along the axis of symmetry (e.g., the z-axis) to simplify calculations and exploit symmetry.\n- situation: [Geometry] When finding the circumsphere of a symmetric polyhedron (such as a right pyramid with a regular base) and the center must be equidistant from all vertices.\n  suggestion: Argue by symmetry that the sphere's center lies along the axis of symmetry, then set up equations equating the distances from the center to the apex and to a base vertex, and solve for the center's coordinate and the radius.\n- situation: [Algebra] When two distances from a variable point to fixed points must be equal (such as for a sphere passing through multiple points).\n  suggestion: Write explicit distance formulas, set them equal, and solve the resulting equation for the unknown coordinate(s).\n- situation: [Geometry] When a problem involves distances from a point to several vertices of a cube or regular polyhedron, and you are asked to find another distance or coordinate.\n  suggestion: Assign coordinates to the vertices using a variable for the side length, introduce variables for the unknown point, and write distance-squared equations for each given distance.\n- situation: [Geometry] When the volume and dimensions of a pyramid (or cone) are given and the height is unknown.\n  suggestion: Use the volume formula for pyramids or cones to solve for the unknown height in terms of the given base area and volume."
+      },
+      {
+        "problem_id": "2025_II_3",
+        "baseline_answer": "82",
+        "memory_answer": "106",
+        "ground_truth": "82",
+        "problem_text": "Four unit squares form a $2 \\times 2$ grid. Each of the 12 unit line segments forming the sides of the squares is colored either red or blue in such a way that each unit square has 2 red sides and 2 blue sides. Find the number of such colorings.",
+        "lessons_used": "- situation: [Combinatorics] When a coloring or labeling problem involves forbidden monochromatic structures that correspond to pairs or groups (such as diameters or edges).\n  suggestion: Partition the set of elements into natural pairs or groups (e.g., diameter pairs), and track the coloring status of each group to reformulate the forbidden condition in terms of these groups.\n- situation: [Combinatorics] When the problem asks for the number of colorings avoiding certain monochromatic configurations, especially when 'at least k' groups are monochromatic is forbidden.\n  suggestion: Apply the principle of inclusion\u2013exclusion: count colorings with at least k monochromatic groups, then subtract overlaps, using combinatorial coefficients and the number of ways to color the remaining groups.\n- situation: [Combinatorics] When inclusion\u2013exclusion is used and the forbidden configurations can overlap (e.g., some pairs red, some pairs blue), and you need to count colorings with multiple types of forbidden groups.\n  suggestion: For the intersection terms, sum over all possible disjoint choices of group types (e.g., k red pairs and l blue pairs), and for the remaining groups, count only colorings that avoid both forbidden monochromatic patterns.\n- situation: [Geometry] When rectangles are to be inscribed in a regular polygon or circle, and you need to enumerate or analyze them.\n  suggestion: Observe that each rectangle corresponds to a pair of diameters (i.e., pairs of opposite vertices), and enumerate rectangles by counting unordered pairs of diameters.\n- situation: [Combinatorics] When a complicated arrangement count involves sequential choices (such as selecting pairs, assigning people, then filling remaining spots), and the numbers become large factorials or products.\n  suggestion: Express each stage as a binomial coefficient, power, or permutation, then combine and simplify the resulting factorial expressions, looking for cancellations or identities (such as P(n, k)\u00b7(n\u2212k)! = n!) to reduce the computation."
+      }
+    ],
+    "stayed_right_ids": [
+      "2024_I_1",
+      "2024_I_2",
+      "2024_I_3",
+      "2024_I_4",
+      "2024_I_5",
+      "2024_I_6",
+      "2024_I_7",
+      "2024_I_9",
+      "2024_I_15",
+      "2024_II_1",
+      "2024_II_2",
+      "2024_II_3",
+      "2024_II_4",
+      "2024_II_5",
+      "2024_II_6",
+      "2024_II_7",
+      "2024_II_8",
+      "2024_II_10",
+      "2024_II_11",
+      "2024_II_12",
+      "2024_II_13",
+      "2024_II_14",
+      "2025_I_1",
+      "2025_I_3",
+      "2025_I_4",
+      "2025_I_5",
+      "2025_I_6",
+      "2025_I_8",
+      "2025_I_9",
+      "2025_I_11",
+      "2025_II_1",
+      "2025_II_2",
+      "2025_II_4",
+      "2025_II_6",
+      "2025_II_7",
+      "2025_II_8",
+      "2025_II_10",
+      "2025_II_11",
+      "2025_II_12"
+    ],
+    "stayed_wrong_ids": [
+      "2024_I_8",
+      "2024_I_11",
+      "2024_I_12",
+      "2024_II_9",
+      "2024_II_15",
+      "2025_I_10",
+      "2025_I_12",
+      "2025_I_13",
+      "2025_I_14",
+      "2025_I_15",
+      "2025_II_5",
+      "2025_II_13",
+      "2025_II_15"
+    ]
+  },
+  "pass@2": {
+    "flipped_right": [
+      {
+        "problem_id": "2024_I_10",
+        "baseline_answer": "2",
+        "memory_answer": "113",
+        "ground_truth": "113",
+        "problem_text": "Let $ABC$ be a triangle inscribed in circle $\\omega$. Let the tangents to $\\omega$ at $B$ and $C$ intersect at point $D$, and let $\\overline{AD}$ intersect $\\omega$ at $P$. If $AB=5$, $BC=9$, and $AC=10$, $AP$ can be written as the form $\\frac{m}{n}$, where $m$ and $n$ are relatively prime integers. Find $m + n$.\n\n[asy] import olympiad;  unitsize(15);  pair A, B, C, D, E, F, P, O;  C = origin; A = (10,0); B = (7.8, 4.4899); draw(A--B--C--cycle); draw(A..B..C..cycle, red+dotted);  O = circumcenter(A, B, C);  E = rotate(90,B) * (O); F = rotate(90,C) * (O);  D = IP(B..E + (B-E)*4, C..F + (C-F)*-3);  draw(B--D--C--D--A);  P = IP(D..A, A..B..C);  dot(A); dot(B); dot(C); dot(D); dot(P); label(\"$A$\", A, dir(335)); label(\"$B$\", B, dir(65)); label(\"$C$\", C, dir(200)); label(\"$D$\", D, dir(135)); label(\"$P$\", P, dir(235)); [/asy]",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Number Theory] When the solution for a variable is a rational power of a rational number, and you are asked for the sum of numerator and denominator in lowest terms.\n  suggestion: Express the result as a reduced fraction by raising numerator and denominator to the required power, simplify, and add the resulting coprime numerator and denominator."
+      },
+      {
+        "problem_id": "2025_I_2",
+        "baseline_answer": "",
+        "memory_answer": "588",
+        "ground_truth": "588",
+        "problem_text": "On $\\triangle ABC$ points $A,D,E$, and $B$ lie that order on side $\\overline{AB}$ with $AD=4, DE=16$, and $EB=8$. Points $A,F,G$, and $C$ lie in that order on side $\\overline{AC}$ with $AF=13, FG=52$, and $GC=26$. Let $M$ be the reflection of $D$ through $F$, and let $N$ be the reflection of $G$ through $E$. Quadrilateral $DEGF$ has area 288. Find the area of heptagon $AFNBCEM$.",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates."
+      },
+      {
+        "problem_id": "2025_I_7",
+        "baseline_answer": "107",
+        "memory_answer": "821",
+        "ground_truth": "821",
+        "problem_text": "The twelve letters $A,B,C,D,E,F,G,H,I,J,K$, and $L$ are randomly grouped into six pairs of letters. The two letters in each pair are placed next to each other in alphabetical order to form six two-letter words, and those six words are listed alphabetically. For example, a possible result is $AB,CJ,DG,EK,FL,HI$. The probability that the last word listed contains $G$ is $\\frac{m}{n}$, where $m$ and $n$ are relatively prime positive integers. Find $m+n$.",
+        "lessons_used": "- situation: [Combinatorics] When arranging a multiset of objects with repeated types and seeking the total number of linear arrangements.\n  suggestion: Compute the total number of arrangements as the multinomial coefficient: divide the factorial of the total number of objects by the factorials of the counts of each repeated type.\n- situation: [Combinatorics] When the arrangement problem reduces to independently assigning objects to two disjoint sets of positions (e.g., odd and even slots) with matching constraints.\n  suggestion: Count the number of bijections for each set separately (using factorials), then multiply these counts to obtain the total number of valid arrangements.\n- situation: [Probability] When the probability of a combinatorial event is required and both the favorable and total counts are products of factorials or multinomial coefficients.\n  suggestion: Express the probability as a ratio of these counts, substitute explicit factorial values, and simplify the resulting fraction to lowest terms to answer the question.\n- situation: [Combinatorics] When you must assign distinct objects to labeled positions with some reserved for specific types (e.g., some spots must be occupied by one group, their opposites by another group), and the rest are filled freely.\n  suggestion: First, select which positions are reserved for each group, assign the objects of those groups to those positions (accounting for order if necessary), and then permute the remaining objects among the remaining positions.\n- situation: [Combinatorics] When a complicated arrangement count involves sequential choices (such as selecting pairs, assigning people, then filling remaining spots), and the numbers become large factorials or products.\n  suggestion: Express each stage as a binomial coefficient, power, or permutation, then combine and simplify the resulting factorial expressions, looking for cancellations or identities (such as P(n, k)\u00b7(n\u2212k)! = n!) to reduce the computation."
+      },
+      {
+        "problem_id": "2025_I_12",
+        "baseline_answer": "3",
+        "memory_answer": "0",
+        "ground_truth": "510",
+        "problem_text": "The set of points in 3-dimensional coordinate space that lie in the plane $x+y+z=75$ whose coordinates satisfy the inequalities $x-yz<y-zx<z-xy$ forms three disjoint convex regions. Exactly one of those regions has finite area. The area of this finite region can be expressed in the form $a\\sqrt{b}$, where $a$ and $b$ are positive integers and $b$ is not divisible by the square of any prime. Find $a+b$.",
+        "lessons_used": "- situation: [Algebra] When you obtain two or more equations in two variables from geometric conditions (such as distances or lengths).\n  suggestion: Manipulate the equations (such as by subtraction or division) to isolate ratios or relationships between variables, then substitute back to solve for explicit values.\n- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates."
+      },
+      {
+        "problem_id": "2025_I_14",
+        "baseline_answer": "74",
+        "memory_answer": "37",
+        "ground_truth": "60",
+        "problem_text": "Let $ABCDE$ be a convex pentagon with $AB=14, BC=7, CD=24, DE=13, EA=26,$ and $\\angle B=\\angle E=60^\\circ$. For each point $X$ in the plane, define $f(X)=AX+BX+CX+DX+EX$. The least possible value of $f(X)$ can be expressed as $m+n\\sqrt{p}$, where $m$ and $n$ are positive integers and $p$ is not divisible by the square of any prime. Find $m+n+p$.",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When a triangle has side lengths given and multiple lines (such as angle bisectors and perpendicular bisectors) are involved, especially when their intersections define new points.\n  suggestion: Place the triangle in a coordinate system with one vertex at the origin and another on the x-axis, solve for the third vertex using distance formulas, and express all relevant points in coordinates.\n- situation: [Geometry] When you need the equation of a line such as a perpendicular bisector or angle bisector in coordinates.\n  suggestion: Compute the necessary slopes and midpoints, then write the equation of the line using point-slope form or by expressing locus conditions (such as distance ratios for angle bisectors).\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates.\n- situation: [Geometry] When several distances along a straight line or axis sum to a known total, and some segments are expressed as functions of a variable (e.g., via square roots from Pythagoras).\n  suggestion: Write an explicit sum-of-distances equation along the axis, substitute the expressions for each segment, and solve for the variable."
+      },
+      {
+        "problem_id": "2025_II_14",
+        "baseline_answer": "98",
+        "memory_answer": "104",
+        "ground_truth": "104",
+        "problem_text": "Let $ \\triangle ABC $ be a right triangle with $ \\angle A = 90^\\circ $ and $ BC = 38 $. There exist points $ K $ and $ L $ inside the triangle such that $ AK = AL = BK = CL = KL = 14. $ The area of the quadrilateral $ BKLC $ can be expressed as $ n \\sqrt{3} $ for some positive integer $ n $. Find $ n $.",
+        "lessons_used": "- situation: [Geometry] When a triangle with known side lengths is involved and points are defined by intersections of lines parallel or perpendicular to the triangle's sides.\n  suggestion: Place the triangle in a coordinate system with one side on the x-axis and a vertex at the origin; assign coordinates to all relevant points using geometric constraints.\n- situation: [Geometry] When lines intersect triangle sides at unknown points, and these lines are parallel or perpendicular to known sides.\n  suggestion: Parameterize the intersection points using a single variable (such as the y-coordinate for a horizontal line), then express all relevant coordinates in terms of this parameter.\n- situation: [Geometry] When area ratios of two triangles (with coordinates expressed in a parameter) are given.\n  suggestion: Write explicit area formulas for both triangles in terms of the parameter, set up the ratio equation, and solve the resulting equation (often quadratic) for the parameter.\n- situation: [Geometry] When the distance between two points with coordinates in terms of a parameter is needed.\n  suggestion: Substitute the solved parameter values into the coordinates, then compute the distance using the distance formula.\n- situation: [Geometry] When the area of a triangle is required and the coordinates of its vertices are known or can be found.\n  suggestion: Apply the shoelace formula or compute the area as half the absolute value of the determinant formed by the vertices\u2019 coordinates."
+      }
+    ],
+    "flipped_wrong": [
+      {
+        "problem_id": "2024_I_14",
+        "baseline_answer": "104",
+        "memory_answer": "94",
+        "ground_truth": "104",
+        "problem_text": "Let $ABCD$ be a tetrahedron such that $AB=CD= \\sqrt{41}$, $AC=BD= \\sqrt{80}$, and $BC=AD= \\sqrt{89}$. There exists a point $I$ inside the tetrahedron such that the distances from $I$ to each of the faces of the tetrahedron are all equal. This distance can be written in the form $\\frac{m \\sqrt n}{p}$, where $m$, $n$, and $p$ are positive integers, $m$ and $p$ are relatively prime, and $n$ is not divisible by the square of any prime. Find $m+n+p$.",
+        "lessons_used": "- situation: [Geometry] When a three-dimensional solid has a base with high symmetry (such as a square or regular polygon) and an apex aligned above the center.\n  suggestion: Place the base in a coordinate plane centered at the origin and align the apex along the axis of symmetry (e.g., the z-axis) to simplify calculations and exploit symmetry.\n- situation: [Geometry] When finding the circumsphere of a symmetric polyhedron (such as a right pyramid with a regular base) and the center must be equidistant from all vertices.\n  suggestion: Argue by symmetry that the sphere's center lies along the axis of symmetry, then set up equations equating the distances from the center to the apex and to a base vertex, and solve for the center's coordinate and the radius.\n- situation: [Algebra] When two distances from a variable point to fixed points must be equal (such as for a sphere passing through multiple points).\n  suggestion: Write explicit distance formulas, set them equal, and solve the resulting equation for the unknown coordinate(s).\n- situation: [Geometry] When a problem involves distances from a point to several vertices of a cube or regular polyhedron, and you are asked to find another distance or coordinate.\n  suggestion: Assign coordinates to the vertices using a variable for the side length, introduce variables for the unknown point, and write distance-squared equations for each given distance.\n- situation: [Geometry] When the volume and dimensions of a pyramid (or cone) are given and the height is unknown.\n  suggestion: Use the volume formula for pyramids or cones to solve for the unknown height in terms of the given base area and volume."
+      }
+    ],
+    "stayed_right_ids": [
+      "2024_I_1",
+      "2024_I_2",
+      "2024_I_3",
+      "2024_I_4",
+      "2024_I_5",
+      "2024_I_6",
+      "2024_I_7",
+      "2024_I_9",
+      "2024_I_13",
+      "2024_I_15",
+      "2024_II_1",
+      "2024_II_2",
+      "2024_II_3",
+      "2024_II_4",
+      "2024_II_5",
+      "2024_II_6",
+      "2024_II_7",
+      "2024_II_8",
+      "2024_II_10",
+      "2024_II_11",
+      "2024_II_12",
+      "2024_II_13",
+      "2024_II_14",
+      "2025_I_1",
+      "2025_I_3",
+      "2025_I_4",
+      "2025_I_5",
+      "2025_I_6",
+      "2025_I_8",
+      "2025_I_9",
+      "2025_I_11",
+      "2025_II_1",
+      "2025_II_2",
+      "2025_II_3",
+      "2025_II_4",
+      "2025_II_6",
+      "2025_II_7",
+      "2025_II_8",
+      "2025_II_9",
+      "2025_II_10",
+      "2025_II_11",
+      "2025_II_12"
+    ],
+    "stayed_wrong_ids": [
+      "2024_I_8",
+      "2024_I_11",
+      "2024_I_12",
+      "2024_II_9",
+      "2024_II_15",
+      "2025_I_10",
+      "2025_I_13",
+      "2025_I_15",
+      "2025_II_5",
+      "2025_II_13",
+      "2025_II_15"
+    ]
+  }
+}

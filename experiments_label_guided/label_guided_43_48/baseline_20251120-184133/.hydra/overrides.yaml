@@ -1,0 +1,6 @@
+- data=aime_val
+- model=gemini_2_5_flash_lite_thinking
+- generation=gemini_thinking_16k
+- generation.ignore_cache=true
+- generation.n=3
+- generation.expand_multi=true

@@ -8,16 +8,21 @@ import yaml
 from llmplus import GenerationConfig, LLMClient, Provider
 from omegaconf import DictConfig
 
+# ARC-specific prompts (grid puzzles)
 from concept_mem.abstraction.analysis_concept_prompts import (
-    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE,
-    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT,
-    EXTRACT_LESSON_FROM_AIME_ZS_TEMPLATE,
     EXTRACT_LESSON_FROM_PUZZLE_FS_TEMPLATE,
     EXTRACT_LESSON_FROM_PUZZLE_FS_TEMPLATE_RETRIEVAL,
     EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE,
     EXTRACT_LESSON_FROM_TRACE_FS_TEMPLATE_RETRIEVAL,
     EXTRACT_LESSON_FROM_TRACE_ZS_TEMPLATE,
     LESSON_FROM_PUZZLE_EXAMPLE_TEMPLATE,
+)
+
+# AIME-specific prompts (mathematical reasoning)
+from concept_mem.abstraction.aime_concept_prompts import (
+    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT,
+    EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT_UNCERTAIN,
+    LESSON_FROM_REFLECTION_EXAMPLE_TEMPLATE,
     LESSON_FROM_TRACE_EXAMPLE_TEMPLATE,
 )
 
@@ -75,6 +80,10 @@ async def extract_lessons(
             )
             continue
         thought_proc = thought_processes.get(problem_id) if thought_processes else None
+        if thought_processes and thought_proc is None:
+            logger.warning(f"Problem {problem_id} not found in thought_processes dict")
+        if problem_id == list(problems.keys())[0]:  # Log first problem for debugging
+            logger.info(f"First problem: {problem_id}, thought_proc is None: {thought_proc is None}, domain_template: {domain_template}")
         rxs_for_puzzle = (
             retrieved_examples.get(problem_id, None) if retrieved_examples else None
         )
@@ -149,30 +158,33 @@ def build_abstraction_prompt(
         # thought process, solution -> lesson(s)
         
         # Select template based on domain
-        if domain_template in ["aime", "aime_strict"]:
+        if domain_template in ["aime_strict", "aime_strict_uncertain"]:
             # AIME-specific templates (no ARC/grid references)
-            if fixed_examples is not None:
-                formatted_examples = format_lesson_examples(
-                    fixed_examples,
-                    thought_processes=example_thought_processes,
+            # Only support the two active templates used by current pipelines
+            if fixed_examples is None:
+                raise ValueError(
+                    f"AIME domain templates require few-shot examples. "
+                    f"Please provide examples in config (domain_template={domain_template})"
                 )
-                # Choose between original and strict AIME template
-                if domain_template == "aime_strict":
-                    prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT.format(
-                        examples=formatted_examples,
-                        solution=solution,
-                        thought_process=thought_process,
-                    )
-                else:  # "aime"
-                    prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE.format(
-                        examples=formatted_examples,
-                        solution=solution,
-                        thought_process=thought_process,
-                    )
-            else:
-                # Zero-shot AIME
-                prompt = EXTRACT_LESSON_FROM_AIME_ZS_TEMPLATE.format(
+            
+            include_solution_in_examples = domain_template != "aime_strict_uncertain"
+            formatted_examples = format_lesson_examples(
+                fixed_examples,
+                thought_processes=example_thought_processes,
+                include_solution_in_examples=include_solution_in_examples,
+            )
+            
+            if domain_template == "aime_strict":
+                # Label-Guided pipeline: verified correct solutions
+                prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT.format(
+                    examples=formatted_examples,
                     solution=solution,
+                    thought_process=thought_process,
+                )
+            else:  # "aime_strict_uncertain"
+                # Self-Reflective pipeline: uncertain reflections
+                prompt = EXTRACT_LESSON_FROM_AIME_FS_TEMPLATE_STRICT_UNCERTAIN.format(
+                    examples=formatted_examples,
                     thought_process=thought_process,
                 )
         elif domain_template == "gpqa":
@@ -220,15 +232,33 @@ def parse_lessons(
     for problem_id, model_output in zip(problem_ids, model_outputs):
         try:
             yaml_block = extract_yaml_block(model_output[0])
-            lesson_list = yaml.safe_load(yaml_block)
+            # Handle LaTeX math in YAML: double backslashes to escape them for YAML
+            # YAML interprets \c, \a, etc. as invalid escape sequences
+            # We need \\ to represent a literal backslash
+            yaml_block_safe = yaml_block.replace('\\', '\\\\') if yaml_block else yaml_block
+            lesson_list = yaml.safe_load(yaml_block_safe)
         except Exception as e:
             logger.error(
                 f"Error extracting lesson for problem {problem_id}: {e}. Model output: {model_output}"
             )
             lesson_list = []
         if lesson_list:
+            # Restore single backslashes in the parsed data (for LaTeX)
+            lesson_list = _restore_latex_backslashes(lesson_list)
             lessons[problem_id] = lesson_list
     return lessons
+
+
+def _restore_latex_backslashes(data):
+    """Recursively restore single backslashes that were doubled for YAML parsing."""
+    if isinstance(data, dict):
+        return {k: _restore_latex_backslashes(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [_restore_latex_backslashes(item) for item in data]
+    elif isinstance(data, str):
+        return data.replace('\\\\', '\\')
+    else:
+        return data
 
 
 def retrieve_examples(
@@ -270,7 +300,41 @@ def retrieve_examples(
     # return retrieved_examples
 
 
-def format_lesson_as_yaml_block(lessons: list[dict]) -> str:
+def _normalize_example_lessons(example: Any) -> list[dict]:
+    """Ensure example lessons are in list-of-dict format."""
+    if isinstance(example, dict):
+        for key in ("concepts", "lessons", "examples"):
+            if key in example and isinstance(example[key], list):
+                example = example[key]
+                break
+        else:
+            raise TypeError(
+                "Lesson example dictionary must contain a list under one of "
+                "'concepts', 'lessons', or 'examples'"
+            )
+    if not isinstance(example, list):
+        raise TypeError(
+            f"Lesson example must be a list of dicts, got {type(example)!r}"
+        )
+
+    normalized: list[dict] = []
+    for entry in example:
+        if not isinstance(entry, dict):
+            logger.debug(
+                "Skipping non-dict lesson entry in few-shot examples: %r", entry
+            )
+            continue
+        if "situation" not in entry or "suggestion" not in entry:
+            logger.debug(
+                "Skipping lesson missing required keys: %s", entry.keys()
+            )
+            continue
+        normalized.append(entry)
+    return normalized
+
+
+def format_lesson_as_yaml_block(example: Any) -> str:
+    lessons = _normalize_example_lessons(example)
     components = ["```yaml"]
     for lesson in lessons:
         components.append(
@@ -284,6 +348,7 @@ def format_lesson_examples(
     examples: dict[str, list[dict]],
     example_solutions: dict[str, str] | None = None,
     thought_processes: dict[str, str] | None = None,
+    include_solution_in_examples: bool = True,
 ) -> str:
     use_thought_process = thought_processes is not None
     components = []
@@ -295,12 +360,19 @@ def format_lesson_examples(
             # No Problem objects needed - works for AIME!
             solution = example_solutions.get(puzzle_id, "") if example_solutions else ""
             thought_proc = thought_processes.get(puzzle_id, "")
-            lesson = LESSON_FROM_TRACE_EXAMPLE_TEMPLATE.format(
-                example_num=i,
-                solution=solution,
-                thought_process=thought_proc,
-                lessons=lessons,
-            )
+            if include_solution_in_examples and solution.strip():
+                lesson = LESSON_FROM_TRACE_EXAMPLE_TEMPLATE.format(
+                    example_num=i,
+                    solution=solution,
+                    thought_process=thought_proc,
+                    lessons=lessons,
+                )
+            else:
+                lesson = LESSON_FROM_REFLECTION_EXAMPLE_TEMPLATE.format(
+                    example_num=i,
+                    thought_process=thought_proc,
+                    lessons=lessons,
+                )
         else:
             # Puzzle-based: needs Problem objects for formatting (ARC only)
             problem = Problem.from_puzzle_id(puzzle_id)
@@ -378,6 +450,7 @@ async def async_main(cfg: DictConfig) -> None:
     # load thought processes and examples
     if cfg.abstraction.thought_processes:
         thought_processes = read_json(cfg.abstraction.thought_processes)
+        logger.info(f"Loaded {len(thought_processes)} thought processes from {cfg.abstraction.thought_processes}")
         # Use .get() for optional config fields
         if cfg.abstraction.get('example_thought_processes'):
             etp = read_json(cfg.abstraction.example_thought_processes)
@@ -385,6 +458,7 @@ async def async_main(cfg: DictConfig) -> None:
             etp = thought_processes
     else:
         thought_processes = None
+        logger.info("No thought_processes file specified in config")
 
     # load examples
     if cfg.abstraction.get('examples'):
@@ -414,6 +488,8 @@ async def async_main(cfg: DictConfig) -> None:
         retrieved_examples = None
 
     # run lesson extraction
+    # Handle nested abstraction config structure
+    abstraction_cfg = cfg.abstraction.get('abstraction', cfg.abstraction)
     await extract_lessons(
         problems=problems,
         solutions=problem_solutions,
@@ -425,8 +501,8 @@ async def async_main(cfg: DictConfig) -> None:
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
-        use_barc_solution=cfg.abstraction.get('use_barc_solution', False),
-        domain_template=cfg.abstraction.get('domain_template', 'arc'),
+        use_barc_solution=abstraction_cfg.get('use_barc_solution', False),
+        domain_template=abstraction_cfg.get('domain_template', 'arc'),
         dry_run=cfg.dry_run,
     )
     logger.info(f"lesson abstraction complete. wrote to {output_dir}")

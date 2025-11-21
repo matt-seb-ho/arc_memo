@@ -17,3 +17,5 @@ generation:
   max_tokens: 4096
   temperature: 0.3
 
+reflection_style: corrective  # options: corrective, mistake_only
+

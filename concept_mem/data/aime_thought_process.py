@@ -28,7 +28,7 @@ AIME_THOUGHT_PROCESS_TEMPLATE = """You are a mathematics expert who has just sol
 {problem}
 
 ### Your Answer
-{answer}
+{correct_answer}
 
 ### Instruction
 Explain your thought process for solving this problem.
@@ -40,11 +40,54 @@ Explain your thought process for solving this problem.
 Format: Write a clear explanation of your solution approach and reasoning.
 """
 
+REFLECTIVE_THOUGHT_PROCESS_TEMPLATE = """You are a math expert helping to analyze solutions. For each problem, you will be given:
+- The Problem.
+- An initial Solution Attempt (with the answer given by the solver).
+- The Correct Answer.
+
+Your job: Explain **why the attempt was wrong and how to correctly solve the problem**. Identify any mistakes in the attempt, then provide a step-by-step corrected solution that leads to the correct answer.
+
+**Example 1:**
+Problem: A jar has 5 red and 3 blue marbles. If 2 marbles are drawn without replacement, what is the probability both are red?
+Initial Attempt and Answer: "We treat it as independent draws: P(red, then red) = 5/8 × 5/8 = 25/64. So the answer is 25/64."
+Correct Answer: 5/14.
+**Reflection:** The attempt assumed the draws were independent with replacement, which was a mistake. After drawing one red, the total marbles and red count change. The correct calculation is P(red then red) = (5/8) × (4/7) = 20/56 = 5/14. The error was not accounting for the decreased total and red count on the second draw.
+
+**Example 2:**
+Problem: How many ways can you choose 2 people out of 5 people to form a team?
+Initial Attempt and Answer: "Order might matter, so compute 5P2 = 5 × 4 = 20 ways."
+Correct Answer: 10.
+**Reflection:** The attempt counted each pair twice because order doesn’t matter in a combination. The correct approach is to use combinations: C(5,2) = (5 × 4)/2! = 10. The mistake was treating it as an ordered permutation instead of an unordered selection.
+
+**Now your turn:**
+Problem: {problem}
+Initial Attempt and Answer: "{attempt}" (Incorrect)
+Correct Answer: {correct_answer}
+**Reflection:**"""
+
+REFLECTIVE_THOUGHT_PROCESS_TEMPLATE_MISTAKE_ONLY = """You are a math expert reviewing your previous attempt at an AIME problem.
+
+### Problem
+{problem}
+
+### Your Previous Attempt
+- Provided answer: "{attempt}"
+- The grader reported that this answer is incorrect.
+
+### Instruction
+- Diagnose why the previous reasoning/answer failed.
+- Highlight faulty assumptions, overlooked constraints, or computation errors.
+- Describe concrete checks or heuristics to avoid repeating this pitfall.
+- Do **not** reveal the final correct answer; focus on the mistake analysis and preventative guidance.
+
+**Reflection:**"""
+
 
 def prepare_aime_prompts(
-    problems: dict[str, dict],  # {pid: {'problem': text, 'answer': answer}}
+    problems: dict[str, dict],
+    reflection_style: str,
 ) -> tuple[list[str], list[str]]:
-    """Prepare prompts for AIME thought process generation"""
+    """Prepare prompts for AIME thought process generation."""
     
     prompts = []
     problem_ids = []
@@ -52,11 +95,26 @@ def prepare_aime_prompts(
     for pid, data in problems.items():
         problem_ids.append(pid)
         
-        prompt = AIME_THOUGHT_PROCESS_TEMPLATE.format(
-            problem=data['problem'],
-            answer=data['answer']
-        ).strip()
-        
+        if data["was_correct"]:
+            prompt = AIME_THOUGHT_PROCESS_TEMPLATE.format(
+                problem=data["problem"],
+                correct_answer=data["correct_answer"],
+            )
+        else:
+            attempt = data["solver_answer"] or "No answer provided."
+            if reflection_style == "mistake_only":
+                prompt = REFLECTIVE_THOUGHT_PROCESS_TEMPLATE_MISTAKE_ONLY.format(
+                    problem=data["problem"],
+                    attempt=attempt,
+                )
+            else:
+                prompt = REFLECTIVE_THOUGHT_PROCESS_TEMPLATE.format(
+                    problem=data["problem"],
+                    attempt=attempt,
+                    correct_answer=data["correct_answer"],
+                )
+
+        prompt = prompt.strip()
         prompts.append(prompt)
     
     return prompts, problem_ids
@@ -68,7 +126,8 @@ async def generate_thought_processes(
     model: str,
     gen_cfg: GenerationConfig = DEFAULT_GEN_CFG,
     output_dir: Path | None = None,
-    dry_run: bool = False
+    dry_run: bool = False,
+    reflection_style: str = "corrective",
 ) -> dict[str, str]:
     """
     Generate thought processes for AIME solutions
@@ -80,7 +139,10 @@ async def generate_thought_processes(
         {problem_id: thought_process_text}
     """
     
-    prompts, problem_ids = prepare_aime_prompts(problems)
+    prompts, problem_ids = prepare_aime_prompts(
+        problems,
+        reflection_style=reflection_style,
+    )
     
     outputs = await run_llm_job(
         prompts=prompts,
@@ -132,10 +194,27 @@ async def async_main(cfg: DictConfig) -> None:
     problems = {}
     for pid, answer in solutions.items():
         if pid in problems_data:
+            solver_answer = str(answer or "").strip()
+            correct_answer = str(problems_data[pid].answer or "").strip()
+            was_correct = bool(solver_answer) and solver_answer == correct_answer
+
             problems[pid] = {
                 'problem': problems_data[pid].problem_text,
-                'answer': answer
+                'solver_answer': solver_answer,
+                'correct_answer': correct_answer,
+                'was_correct': was_correct,
             }
+
+    # Determine reflection style (corrective vs mistake_only)
+    reflection_style = "corrective"
+    if hasattr(cfg, "abstraction"):
+        reflection_style = getattr(cfg.abstraction, "reflection_style", "corrective")
+    reflection_style = reflection_style.lower()
+    if reflection_style not in {"corrective", "mistake_only"}:
+        raise ValueError(
+            f"Unsupported reflection_style '{reflection_style}'. "
+            "Use 'corrective' or 'mistake_only'."
+        )
     
     print(f"Generating thought processes for {len(problems)} problems")
     
@@ -146,7 +225,8 @@ async def async_main(cfg: DictConfig) -> None:
         model=model,
         gen_cfg=gen_cfg,
         output_dir=output_dir,
-        dry_run=cfg.get('dry_run', False)
+        dry_run=cfg.get('dry_run', False),
+        reflection_style=reflection_style,
     )
     
     # Save

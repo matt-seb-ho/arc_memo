@@ -1,0 +1,33 @@
+# AIME-specific lesson abstraction config (mistake-focused reflections)
+
+defaults:
+  - /model: gpt41
+  - /generation: gen_default
+
+# Paths to solver outputs; override on the command line when using alternate runs.
+problem_solutions: data/aime/o4_solutions.json
+thought_processes: data/aime/o4_reasoning.json
+example_thought_processes: null
+
+# Few-shot examples (optional; reuse the standard set)
+examples:
+  - 2019-I-1
+  - 2019-I-2
+  - 2019-I-3
+  - 2019-I-4
+  - 2019-I-10
+example_file: data/abstract_anno/aime_icl_examples.yaml
+
+retrieve_examples: false
+
+abstraction:
+  batch_size: 5
+  limit_problems: null
+  use_barc_solution: false
+  domain_template: aime_mistake
+  instruction_note: |
+    These reflections describe *what went wrong* during an earlier attempt.
+    Extract lessons that warn about common pitfalls and outline safeguards
+    (sanity checks, invariants, cross-checks) that prevent similar errors.
+    Keep lessons general and avoid revealing the final answer.
+

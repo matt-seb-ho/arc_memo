@@ -1,0 +1,6 @@
+- +abstraction=aime_thought_process
+- abstraction.solutions_file=experiments_label_guided/debug/solve_20251120-170045/solutions.json
+- data=aime_train_debug
+- model=o4_mini
+- generation.max_tokens=8192
+- generation.seed=null

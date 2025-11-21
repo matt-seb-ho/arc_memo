@@ -1,0 +1,8 @@
+- data=aime_val
+- model=gemini_2_5_flash_lite_thinking
+- generation=gemini_thinking_16k
+- prompt.problem_data=experiments_label_guided/aime_val/selection_20251120-191554/prompt_info.json
+- prompt.hint_lessons_limit=2
+- generation.ignore_cache=true
+- generation.n=3
+- generation.expand_multi=true

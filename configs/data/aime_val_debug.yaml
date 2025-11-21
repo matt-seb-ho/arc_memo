@@ -1,0 +1,9 @@
+dataset: aime
+split: validation
+num_problems: 1
+random_seed: 88
+problem_ids:
+  - 2024_I_10
+custom_directory: null
+description_file: data/aime/validation_debug.json
+

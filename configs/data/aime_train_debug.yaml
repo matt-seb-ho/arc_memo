@@ -1,0 +1,8 @@
+dataset: aime
+split: train
+num_problems: 1
+random_seed: 88
+problem_ids:
+  - 2020-I-1
+custom_directory: null
+

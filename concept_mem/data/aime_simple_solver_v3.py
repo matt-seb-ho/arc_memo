@@ -145,7 +145,9 @@ def build_problem_prompt(
                 components.extend(
                     [
                         "",
-                        "Lessons distilled from similar problems:",
+                        "First think about how you would solve this problem on your own. Then read the following lessons from similar AIME problems and use any techniques that clearly apply.",
+                        "",
+                        "Lessons from similar problems:",
                         hint.strip(),
                     ]
                 )
@@ -344,6 +346,17 @@ async def async_main(cfg: DictConfig) -> None:
     
     # Load AIME data
     problems_data = load_aime_data(split=cfg.data.split)
+    
+    # Filter by problem_ids if specified
+    if cfg.data.get('problem_ids'):
+        problems_data = {
+            pid: p for pid, p in problems_data.items()
+            if pid in cfg.data.problem_ids
+        }
+    # Or limit by num_problems if specified
+    elif cfg.data.get('num_problems'):
+        problems_data = dict(list(problems_data.items())[:cfg.data.num_problems])
+    
     problems = {
         p.problem_id: {'problem': p.problem_text, 'answer': p.answer}
         for p in problems_data.values()

@@ -1,0 +1,5 @@
+- +abstraction=aime_lesson_from_trace_strict
+- abstraction.problem_solutions=experiments_label_guided/debug/solve_20251120-170045/solutions.json
+- abstraction.thought_processes=experiments_label_guided/debug/reasoning_20251120-170518/thought_processes.json
+- model=gpt41
+- generation.seed=null
